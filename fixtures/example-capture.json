@@ -1,0 +1,20 @@
+{
+  "query_id": "FIXTURE-01",
+  "product": "fixture",
+  "model_id": "none",
+  "generated_at": "2026-08-07T12:00:00+00:00",
+  "captured_at": "2026-08-07T12:00:05+00:00",
+  "source": "handwritten",
+  "_note": [
+    "A fixture, not a capture. Nothing here came out of an AI product, and it is not part of the frozen",
+    "query set in queries/. It exists so the Phase 0 and Phase 2 path can be run end to end before the",
+    "extension exists. The URLs are chosen to exercise different G2 outcomes against the live web:",
+    "one readable page, one guaranteed 404, and one path that robots.txt disallows."
+  ],
+  "answer_text": "Adjuvant therapy is given after primary treatment to lower the risk of recurrence [1]. A page that does not exist returns a 404 rather than an absence of evidence [2]. Some paths are disallowed by robots.txt, which is a decision not to look rather than a failure to reach [3].",
+  "citations": [
+    { "marker": "[1]", "url": "https://en.wikipedia.org/wiki/Adjuvant_therapy" },
+    { "marker": "[2]", "url": "https://en.wikipedia.org/wiki/SaysWho_fixture_page_that_does_not_exist" },
+    { "marker": "[3]", "url": "https://en.wikipedia.org/w/index.php?title=Adjuvant_therapy&action=edit" }
+  ]
+}

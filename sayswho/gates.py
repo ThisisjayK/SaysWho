@@ -1,0 +1,86 @@
+"""Gates. Each one has an explicit failure path and each one is tested against the bug it exists to catch.
+
+`SCOPE.md` §3: "A claim that fails a gate exits the pipeline with a reason code and is never silently
+downgraded." A gate with no failure path is decoration, so the tests in `tests/` assert that each gate fires,
+not merely that it exists.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .records import AUDITABLE_CODES, NO_CITATIONS, Capture, FetchRecord
+
+
+@dataclass(frozen=True)
+class GateResult:
+    passed: bool
+    code: str = ""
+    detail: str = ""
+
+
+def g0_has_citations(capture: Capture) -> GateResult:
+    """Gate G0. An answer with no inline citations is not scored.
+
+    It is reported as uncitable. An uncited answer is not a zero percent answer, it is a different object,
+    and giving it a zero would put a number under something that was never measured.
+    """
+    if not capture.citations:
+        return GateResult(False, NO_CITATIONS, "answer contains no inline citations")
+    missing = [c.marker for c in capture.citations if not c.url.strip()]
+    if missing:
+        return GateResult(False, NO_CITATIONS, f"citation markers with no URL: {missing}")
+    return GateResult(True)
+
+
+def g2_auditable(record: FetchRecord) -> GateResult:
+    """Gate G2. Anything other than SOURCE_OK stops the claim before the judge sees it."""
+    if record.code in AUDITABLE_CODES:
+        return GateResult(True)
+    return GateResult(False, record.code, record.detail or f"source not readable: {record.code}")
+
+
+class DenominatorContract(Exception):
+    """Raised when an unauditable claim reaches a published denominator.
+
+    This is break attempt 6 in `SCOPE.md` §6 and it is core, not stretch. The test forces the violation and
+    asserts this fires.
+    """
+
+
+def auditable_denominator(records: list[FetchRecord]) -> int:
+    """Count of claims eligible for a published rate.
+
+    The contract check lives here rather than at the reporting layer on purpose. A denominator computed
+    anywhere else in the codebase would bypass it, so there is one function and everything uses it.
+    """
+    for record in records:
+        if record.code not in AUDITABLE_CODES and record.auditable:
+            raise DenominatorContract(
+                f"{record.url} has code {record.code} but reports auditable=True. "
+                "An unauditable claim cannot enter a denominator."
+            )
+    return sum(1 for record in records if record.auditable)
+
+
+def assert_no_confidence_number(payload) -> None:
+    """`SCOPE.md` §1b: no numeric confidence anywhere, enforced by a test rather than by intention.
+
+    Walks any nested structure and rejects a key that looks like a confidence score. It is a blunt check on
+    purpose. The failure it prevents is a plausible number appearing next to a claim nobody could verify.
+    """
+    banned = ("confidence", "certainty", "probability", "trust_score", "score")
+
+    def walk(node, path="$"):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                lowered = str(key).lower()
+                for bad in banned:
+                    if bad in lowered:
+                        raise AssertionError(f"confidence-like field {path}.{key} is not allowed")
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, (list, tuple)):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+
+    walk(payload)
