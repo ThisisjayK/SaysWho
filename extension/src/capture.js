@@ -48,7 +48,12 @@ function saysWhoExtractCitations(adapter, element) {
         continue;
       }
 
-      const label = (anchor.innerText || "").trim();
+      // "Massachusetts Government\n+1" is one visible chip plus a control meaning "and 1 more source".
+      // The newline and the +1 are UI, not part of the marker the reader sees beside the sentence.
+      const label = (anchor.innerText || "")
+        .replace(/\s*\+\d+\s*$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
       const marker = label.length > 0 && label.length <= 40 ? label : `[pos:${citations.length + 1}]`;
       const key = `${marker}|${url}`;
       if (seen.has(key)) continue;
@@ -60,6 +65,35 @@ function saysWhoExtractCitations(adapter, element) {
   }
 
   return { citations, excluded };
+}
+
+/**
+ * Citations the page is admitting to and hiding.
+ *
+ * Both ChatGPT and Perplexity collapse extra sources behind a "+N" control next to a visible chip. Those
+ * sources are real citations that the DOM does not expose until the control is used, so a capture taken
+ * without expanding them is short by at least the sum of the Ns.
+ *
+ * This has to be counted rather than ignored. A capture that is quietly short computes a support rate over
+ * a subset of the answer and looks completely normal doing it, which is the one failure a citation auditor
+ * cannot afford to have.
+ *
+ * The number is a floor. It counts what the expanders admit to, not what is actually behind them.
+ */
+function saysWhoCountHiddenCitations(element) {
+  let expanders = 0;
+  let hidden = 0;
+
+  for (const node of element.querySelectorAll("*")) {
+    if (node.children.length) continue;
+    const text = (node.textContent || "").trim();
+    const match = /^\+(\d{1,3})$/.exec(text);
+    if (!match) continue;
+    expanders += 1;
+    hidden += parseInt(match[1], 10);
+  }
+
+  return { expanders, hidden };
 }
 
 /**
@@ -76,6 +110,7 @@ function saysWhoAnswerText(element) {
 async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }) {
   const answerText = saysWhoAnswerText(found.element);
   const { citations, excluded } = saysWhoExtractCitations(adapter, found.element);
+  const { expanders, hidden } = saysWhoCountHiddenCitations(found.element);
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
 
   return {
@@ -92,6 +127,9 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     // How many links in the answer were dropped as page furniture. Published rather than hidden: if this
     // number is large, the exclusion list is eating real citations.
     chrome_links_excluded: excluded.length,
+    // Citations the page showed behind a "+N" control and this capture did not reach. A floor.
+    citations_possibly_hidden: hidden,
+    expanders_seen: expanders,
     answer_text: answerText,
     answer_sha256: await saysWhoSha256Hex(answerText),
     citations,

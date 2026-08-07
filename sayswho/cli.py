@@ -47,6 +47,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"user-agent   {user_agent()}")
     print()
 
+    if capture.capture_is_known_incomplete:
+        print(
+            f"INCOMPLETE   {capture.expanders_seen} '+N' controls on the page hide at least "
+            f"{capture.citations_possibly_hidden} more citations that this capture did not reach."
+        )
+        print("             Any rate computed from this capture is over a subset of the answer's sources.")
+        print()
+
     named = analyse_named(capture)
     if named.named_count:
         print(
