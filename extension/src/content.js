@@ -84,6 +84,11 @@
           `citations: ${record.citations.length}\n` +
           `chars: ${record.answer_text.length}\n` +
           `chrome links dropped: ${record.chrome_links_excluded}\n` +
+          (record.citations_possibly_hidden
+            ? `\nINCOMPLETE: ${record.expanders_seen} "+N" controls hide at least ` +
+              `${record.citations_possibly_hidden} more citations.\n` +
+              `Expand them and capture again, or this answer is audited over a subset of its sources.\n`
+            : "") +
           `sha256: ${record.answer_sha256.slice(0, 16)}...\n` +
           `adapter: ${record.adapter}\n` +
           `verified: ${record.adapter_verified}` +

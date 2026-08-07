@@ -11,6 +11,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 # Phase 0, gate G0
 NO_CITATIONS = "NO_CITATIONS"
@@ -42,6 +43,35 @@ ALL_G2_CODES = frozenset(
         SOURCE_ROBOTS_EXCLUDED,
     }
 )
+
+
+#: Parameters products append to citation URLs for their own analytics. ChatGPT adds
+#: `?utm_source=chatgpt.com` to every citation it emits.
+_TRACKING_PARAMS = frozenset(
+    {
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+        "fbclid", "gclid", "mc_cid", "mc_eid", "igshid",
+    }
+)
+
+
+def normalise_url(url: str) -> str:
+    """Drop known tracking parameters, keeping everything else.
+
+    Only the listed keys are removed. Stripping the whole query string would break citations whose
+    parameters carry meaning, such as the cancer.gov trial link with `?id=NCI-2021-00403`.
+
+    The citation keeps the URL exactly as the answer gave it. This normalised form is what gets fetched and
+    deduplicated, so the same page cited three times with three different tracking tags is one fetch rather
+    than three, and the publisher does not receive an analytics tag from us that they would then attribute
+    to a product we are auditing.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return url
+    kept = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k.lower() not in _TRACKING_PARAMS]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), parts.fragment))
 
 
 def sha256(data: bytes | str) -> str:
@@ -86,17 +116,32 @@ class Capture:
     #: Recorded rather than hidden: a large value means the exclusion list is eating real citations.
     chrome_links_excluded: int = 0
 
+    #: Citations the page showed but the capture could not reach, counted from the "+N" expanders both
+    #: ChatGPT and Perplexity use to collapse extra sources behind one visible chip. This is a floor: it
+    #: counts what the expanders admit to, not what is actually hidden.
+    citations_possibly_hidden: int = 0
+    expanders_seen: int = 0
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)
 
     @property
     def cited_urls(self) -> list[str]:
-        """Unique cited URLs, in the order they first appear."""
+        """Unique cited URLs, tracking parameters removed, in the order they first appear."""
         seen: dict[str, None] = {}
         for c in self.citations:
-            seen.setdefault(c.url, None)
+            seen.setdefault(normalise_url(c.url), None)
         return list(seen)
+
+    @property
+    def capture_is_known_incomplete(self) -> bool:
+        """True when the page showed citations the capture could not reach.
+
+        A capture that is quietly short produces a support rate over a subset of the answer and looks
+        entirely normal doing it. This is the one thing about a capture that must never be silent.
+        """
+        return self.citations_possibly_hidden > 0
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

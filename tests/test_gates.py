@@ -176,3 +176,79 @@ def test_capture_carries_its_adapter_provenance():
     d = c.to_dict()
     assert d["adapter_verified"] is False
     assert Capture.from_dict(d).adapter == c.adapter
+
+
+# ---------------------------------------------------------------- URL normalisation
+
+
+def test_tracking_parameters_are_stripped_for_fetching():
+    """ChatGPT appends ?utm_source=chatgpt.com to every citation it emits.
+
+    Left alone, the same page cited three times becomes three fetches and three cache entries, and the
+    publisher receives an analytics tag from us that they would attribute to a product we are auditing.
+    """
+    from sayswho.records import normalise_url
+
+    assert normalise_url("https://www.bmc.org/x?utm_source=chatgpt.com") == "https://www.bmc.org/x"
+
+
+def test_meaningful_query_parameters_survive_normalisation():
+    """Stripping the whole query string would break a citation whose parameters carry the identity."""
+    from sayswho.records import normalise_url
+
+    url = "https://www.cancer.gov/v?id=NCI-2021-00403&r=1&utm_source=chatgpt.com"
+    assert normalise_url(url) == "https://www.cancer.gov/v?id=NCI-2021-00403&r=1"
+
+
+def test_one_page_cited_three_times_with_different_tags_is_one_fetch():
+    base = "https://www.bmc.org/navigator"
+    c = Capture(
+        query_id="PR-01",
+        product="chatgpt",
+        model_id="test",
+        generated_at="2026-08-07T00:00:00+00:00",
+        captured_at="2026-08-07T00:00:01+00:00",
+        answer_text="A claim [1][2][3].",
+        citations=[
+            Citation(marker="BMC", url=f"{base}?utm_source=chatgpt.com"),
+            Citation(marker="BMC +1", url=f"{base}?utm_source=chatgpt.com"),
+            Citation(marker="[pos:3]", url=base),
+        ],
+    )
+    assert c.cited_urls == [base]
+
+
+# ---------------------------------------------------------------- incomplete captures
+
+
+def test_a_capture_with_hidden_citations_says_so():
+    """Perplexity and ChatGPT hide extra sources behind a "+N" control.
+
+    A capture that is quietly short computes a support rate over a subset of the answer and looks entirely
+    normal doing it. This is the one thing about a capture that cannot be allowed to stay silent.
+    """
+    c = Capture(
+        query_id="PR-01",
+        product="perplexity",
+        model_id="test",
+        generated_at="2026-08-07T00:00:00+00:00",
+        captured_at="2026-08-07T00:00:01+00:00",
+        answer_text="A claim.",
+        citations=[Citation(marker="boston", url="https://boston.gov/a")],
+        citations_possibly_hidden=6,
+        expanders_seen=6,
+    )
+    assert c.capture_is_known_incomplete
+
+
+def test_a_complete_capture_does_not_claim_to_be_incomplete():
+    c = Capture(
+        query_id="PR-01",
+        product="claude",
+        model_id="test",
+        generated_at="2026-08-07T00:00:00+00:00",
+        captured_at="2026-08-07T00:00:01+00:00",
+        answer_text="A claim.",
+        citations=[Citation(marker="[1]", url="https://example.org/a")],
+    )
+    assert not c.capture_is_known_incomplete
