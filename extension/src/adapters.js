@@ -1,30 +1,48 @@
 /**
  * Per-product DOM adapters.
  *
- * Every adapter carries `verified: false` until it has been run against the real logged-in page and the
- * capture it produced has been checked by eye against the answer on screen. That flag is written into every
- * capture this extension emits, so a capture made with an unverified adapter is labelled as such rather than
- * silently trusted.
+ * Every adapter carries `verified` until it has been run against the real logged-in page and the capture it
+ * produced has been checked by eye against the answer on screen. That flag is written into every capture this
+ * extension emits, so a capture made with an unverified adapter is labelled as such rather than silently
+ * trusted.
  *
  * This matters more than it looks. If a selector misses the citation markers, the pipeline sees an answer
  * with fewer citations than it had, G0 may even pass, and the support rate is computed over a subset of the
  * answer while looking completely normal. A capture bug does not announce itself downstream. It just makes
  * the number wrong.
- *
- * Selectors are lists tried in order, so fixing a product means editing a list rather than the logic.
  */
+
+/** Links that are page furniture rather than citations. Excluded, and counted so the exclusion is visible. */
+const SAYSWHO_CHROME_HOSTS = [
+  "support.anthropic.com",
+  "claude.ai",
+  "chatgpt.com",
+  "chat.openai.com",
+  "help.openai.com",
+  "www.perplexity.ai",
+  "perplexity.ai",
+  "policies.google.com",
+  "support.google.com",
+  "accounts.google.com",
+];
 
 const SAYSWHO_ADAPTERS = [
   {
     id: "claude",
+    // Selectors confirmed against a real logged-in claude.ai page on 2026-08-07. The capture those
+    // selectors produced has not yet been compared field by field against the screen, so this stays false.
     verified: false,
     hosts: ["claude.ai"],
     answerSelectors: [
-      '[data-testid="assistant-message"]',
-      ".font-claude-message",
-      '[data-message-author-role="assistant"]',
+      // The artifact panel, where a Research report lives. Listed first because when it is open it holds
+      // the cited content and the chat message beside it holds only a summary.
+      ".bg-surface-3 .standard-markdown",
+      // An ordinary assistant turn in the chat column.
+      ".font-claude-response",
+      "[data-testid='chat-stale-nav-inert'] .standard-markdown",
     ],
     citationSelectors: ['a[href^="http"]'],
+    excludeHosts: SAYSWHO_CHROME_HOSTS,
   },
   {
     id: "chatgpt",
@@ -35,6 +53,7 @@ const SAYSWHO_ADAPTERS = [
       "div.markdown.prose",
     ],
     citationSelectors: ['a[href^="http"]'],
+    excludeHosts: SAYSWHO_CHROME_HOSTS,
   },
   {
     id: "perplexity",
@@ -42,6 +61,7 @@ const SAYSWHO_ADAPTERS = [
     hosts: ["www.perplexity.ai", "perplexity.ai"],
     answerSelectors: [".prose", '[class*="answer"]'],
     citationSelectors: ['a[href^="http"]'],
+    excludeHosts: SAYSWHO_CHROME_HOSTS,
   },
   {
     id: "google-ai-overviews",
@@ -49,16 +69,18 @@ const SAYSWHO_ADAPTERS = [
     hosts: ["www.google.com"],
     answerSelectors: ['[data-attrid*="AIOverview"]', "#rcnt div[data-async-type]"],
     citationSelectors: ['a[href^="http"]'],
+    excludeHosts: SAYSWHO_CHROME_HOSTS,
   },
 ];
 
-/** The generic fallback. Used when no product adapter matches, and always marked unverified. */
+/** The generic fallback. Used when no product adapter matches, and always unverified. */
 const SAYSWHO_GENERIC_ADAPTER = {
   id: "generic",
   verified: false,
   hosts: [],
   answerSelectors: ["article", "main", "body"],
   citationSelectors: ['a[href^="http"]'],
+  excludeHosts: SAYSWHO_CHROME_HOSTS,
 };
 
 function saysWhoAdapterFor(hostname) {
@@ -71,13 +93,45 @@ function saysWhoAdapterFor(hostname) {
   return SAYSWHO_GENERIC_ADAPTER;
 }
 
+function saysWhoIsChrome(url, excludeHosts) {
+  try {
+    return (excludeHosts || []).includes(new URL(url).hostname.toLowerCase());
+  } catch {
+    return true;
+  }
+}
+
+function saysWhoCountCitations(element, adapter) {
+  let count = 0;
+  for (const selector of adapter.citationSelectors) {
+    let anchors;
+    try {
+      anchors = element.querySelectorAll(selector);
+    } catch {
+      continue;
+    }
+    for (const a of anchors) {
+      if (a.href && !saysWhoIsChrome(a.href, adapter.excludeHosts)) count += 1;
+    }
+    if (count) break;
+  }
+  return count;
+}
+
 /**
- * The last answer element on the page, plus which selector found it.
+ * The answer element, chosen by how many citations it contains rather than by selector order.
  *
- * Returns null rather than guessing when nothing matches. A wrong container is worse than no container,
- * because it produces a capture that looks fine.
+ * Order alone was wrong on Claude: with the artifact panel open, both the chat summary and the report match
+ * a selector, and only one of them holds the citations. Picking by citation count gets the container that
+ * actually has something to audit, and falls back to the longest text when nothing is cited, so an
+ * uncited answer still reaches G0 and gets refused there rather than here.
+ *
+ * Returns null when nothing matches. A wrong container is worse than no container, because it produces a
+ * capture that looks fine.
  */
 function saysWhoFindAnswer(adapter, root = document) {
+  const candidates = [];
+
   for (const selector of adapter.answerSelectors) {
     let nodes;
     try {
@@ -85,9 +139,22 @@ function saysWhoFindAnswer(adapter, root = document) {
     } catch {
       continue;
     }
-    if (nodes && nodes.length) {
-      return { element: nodes[nodes.length - 1], selector, index: nodes.length - 1 };
+    for (let i = 0; i < nodes.length; i++) {
+      const element = nodes[i];
+      const text = (element.innerText || "").trim();
+      if (!text) continue;
+      candidates.push({
+        element,
+        selector,
+        index: i,
+        citations: saysWhoCountCitations(element, adapter),
+        length: text.length,
+      });
     }
   }
-  return null;
+
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => b.citations - a.citations || b.length - a.length);
+  return candidates[0];
 }

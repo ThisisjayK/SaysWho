@@ -73,9 +73,16 @@ Python side done, browser side not started.
 - [x] Capture-side sha256 matches Python's, so both sides agree on what the input was. The beginning of the
       §9 parity check, not the whole of it
 - [x] Adapter provenance travels with every capture, including whether the adapter has been verified
-- [ ] **Verify the selectors against the real logged-in pages.** Every adapter is `verified: false`. A
-      selector that misses citation markers produces a capture that looks fine and makes the support rate
-      quietly wrong, because a capture bug does not announce itself downstream
+- [x] Claude selectors corrected against the real page. `.font-claude-message` never existed; it is
+      `.font-claude-response`, and a Research report lives in `.bg-surface-3 .standard-markdown` rather than
+      in the chat column at all
+- [x] Container chosen by citation count rather than selector order. With the artifact panel open, both the
+      chat summary and the report match, and only one has anything to audit
+- [x] Page furniture excluded from citations, and the exclusion counted into the capture. A large
+      `chrome_links_excluded` means the exclusion list is eating real citations
+- [ ] **Compare a capture field by field against the screen, then flip `verified`.** Selectors now match, but
+      matching is not the same as capturing the right thing. Still `verified: false` for every product
+- [ ] ChatGPT and Perplexity selectors checked against their real pages. Only Claude has been looked at
 - [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk
 - [ ] Marking UI. Deliberately not built yet: there are no verdicts until day 3, and marking claims before
       there is anything behind it would be finding-shaped output

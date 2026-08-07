@@ -78,6 +78,10 @@ class Capture:
     adapter: str = ""
     adapter_verified: bool = False
 
+    #: Links in the answer container dropped as page furniture (product help links, same-origin nav).
+    #: Recorded rather than hidden: a large value means the exclusion list is eating real citations.
+    chrome_links_excluded: int = 0
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)
