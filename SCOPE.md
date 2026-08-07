@@ -365,6 +365,21 @@ rest test how good the judge is, which matters less than whether the guard rails
   falsehood passes. This is the largest limitation and it is not fixable within this design.
 - **Whether an uncited sentence needed a citation.** Omission is invisible to a citation auditor. An answer
   can score perfectly by citing only its safe claims.
+
+- **Whether a source named in prose says what the answer claims.** Found on day 2 rather than anticipated
+  here, in a real Claude Research report: 20,288 characters, at least fifteen sources named in the text, and
+  exactly one hyperlink. The rest read "LeClair et al., *Supportive Care in Cancer*, 2022", attached to
+  numbers a reader would act on.
+
+  This is not the omission case above. The sentence *is* cited, in a form a person can follow and a script
+  cannot. A named citation does more rhetorical work than a footnote, since it carries an author and a
+  journal and a year, and less of it is checkable, since there is nothing to fetch. Left undetected it is
+  worse than useless: the pipeline passes G0 on the single link, audits n=1, and produces output that looks
+  like an audit of the whole report.
+
+  `CITATION_NOT_LINKED` counts these separately. They are not unsupported, not unauditable, and they enter no
+  denominator. Resolving them to real papers would mean *choosing* a paper nobody pointed at, so the tool
+  does not, and the count it reports is a floor rather than a total.
 - **Whether a source is authoritative** for the claim it supports. A blog post and a peer-reviewed paper are
   the same object to this tool.
 - **Whether the answer is complete or fairly framed.** Selection bias in what was cited is beyond reach.
