@@ -27,6 +27,7 @@ async function saysWhoSha256Hex(text) {
  */
 function saysWhoExtractCitations(adapter, element) {
   const citations = [];
+  const excluded = [];
   const seen = new Set();
 
   for (const selector of adapter.citationSelectors) {
@@ -40,6 +41,13 @@ function saysWhoExtractCitations(adapter, element) {
       const url = anchor.href;
       if (!url || !/^https?:/i.test(url)) continue;
 
+      // Page furniture: the "Claude is AI and can make mistakes" link, product help pages, same-origin
+      // navigation. Excluded, and counted, so the exclusion is visible rather than silent.
+      if (saysWhoIsChrome(url, adapter.excludeHosts)) {
+        excluded.push(url);
+        continue;
+      }
+
       const label = (anchor.innerText || "").trim();
       const marker = label.length > 0 && label.length <= 40 ? label : `[pos:${citations.length + 1}]`;
       const key = `${marker}|${url}`;
@@ -51,7 +59,7 @@ function saysWhoExtractCitations(adapter, element) {
     if (citations.length) break;
   }
 
-  return citations;
+  return { citations, excluded };
 }
 
 /**
@@ -67,7 +75,7 @@ function saysWhoAnswerText(element) {
 
 async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }) {
   const answerText = saysWhoAnswerText(found.element);
-  const citations = saysWhoExtractCitations(adapter, found.element);
+  const { citations, excluded } = saysWhoExtractCitations(adapter, found.element);
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
 
   return {
@@ -81,6 +89,9 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     source: "dom",
     adapter: `${adapter.id}:${found.selector}`,
     adapter_verified: adapter.verified === true,
+    // How many links in the answer were dropped as page furniture. Published rather than hidden: if this
+    // number is large, the exclusion list is eating real citations.
+    chrome_links_excluded: excluded.length,
     answer_text: answerText,
     answer_sha256: await saysWhoSha256Hex(answerText),
     citations,

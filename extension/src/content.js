@@ -83,6 +83,7 @@
         `Captured.\n\n` +
           `citations: ${record.citations.length}\n` +
           `chars: ${record.answer_text.length}\n` +
+          `chrome links dropped: ${record.chrome_links_excluded}\n` +
           `sha256: ${record.answer_sha256.slice(0, 16)}...\n` +
           `adapter: ${record.adapter}\n` +
           `verified: ${record.adapter_verified}` +
