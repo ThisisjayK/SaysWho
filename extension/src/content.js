@@ -55,7 +55,7 @@
     toast.style.display = "block";
   }
 
-  button.addEventListener("click", async () => {
+  async function capture() {
     const found = saysWhoFindAnswer(adapter);
 
     if (!found) {
@@ -69,31 +69,38 @@
       return;
     }
 
-    const capture = await saysWhoBuildCapture({ adapter, found, product: adapter.id });
+    const record = await saysWhoBuildCapture({ adapter, found, product: adapter.id });
 
-    if (capture.citations.length === 0) {
+    if (record.citations.length === 0) {
       say(
         `Captured, but this answer has no citations.\n\n` +
           `G0 will return NO_CITATIONS and refuse to score it.\n` +
           `An uncited answer is not a zero percent answer, it is a different object.\n\n` +
-          `adapter: ${capture.adapter}\nverified: ${capture.adapter_verified}`
+          `adapter: ${record.adapter}\nverified: ${record.adapter_verified}`
       );
     } else {
       say(
         `Captured.\n\n` +
-          `citations: ${capture.citations.length}\n` +
-          `chars: ${capture.answer_text.length}\n` +
-          `sha256: ${capture.answer_sha256.slice(0, 16)}...\n` +
-          `adapter: ${capture.adapter}\n` +
-          `verified: ${capture.adapter_verified}` +
-          (capture.adapter_verified
+          `citations: ${record.citations.length}\n` +
+          `chars: ${record.answer_text.length}\n` +
+          `sha256: ${record.answer_sha256.slice(0, 16)}...\n` +
+          `adapter: ${record.adapter}\n` +
+          `verified: ${record.adapter_verified}` +
+          (record.adapter_verified
             ? ""
             : `\n\nThis adapter has not been checked against the real page. Compare the capture against\n` +
               `what is on screen before trusting anything computed from it.`)
       );
     }
 
-    chrome.runtime.sendMessage({ type: "sayswho:capture", capture });
+    chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record });
+  }
+
+  button.addEventListener("click", capture);
+
+  // The toolbar icon routes here too, so the icon and the in-page button do the same thing.
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type === "sayswho:capture-now") capture();
   });
 
   document.documentElement.appendChild(toast);

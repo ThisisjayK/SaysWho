@@ -7,6 +7,23 @@
  * reason this is an extension and not a web page.
  */
 
+/**
+ * Clicking the toolbar icon does the same thing as the in-page button.
+ *
+ * Without this the icon is inert, which reads as the extension being broken rather than as the button being
+ * somewhere else on screen. An inert control is worse than no control.
+ */
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab?.id) return;
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: "sayswho:capture-now" });
+  } catch {
+    // No content script on this page. The most common reason by far is that this is not one of the four
+    // products, or it is a surface an extension cannot reach at all.
+    console.warn("SaysWho: no content script on this tab. The extension only runs on claude.ai, chatgpt.com, perplexity.ai and Google search, in Chrome. It cannot run inside the Claude desktop app.");
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type !== "sayswho:capture") return;
 

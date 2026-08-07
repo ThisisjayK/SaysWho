@@ -3,7 +3,7 @@
   "name": "SaysWho",
   "version": "0.1.0",
   "description": "Checks whether the sources an AI answer cites actually say what it claims they say.",
-  "permissions": ["storage", "downloads"],
+  "permissions": ["storage", "downloads", "activeTab"],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
