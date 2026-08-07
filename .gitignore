@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# local tooling config, not part of the project
+.claude/
+
+# python
+__pycache__/
+*.py[cod]
+
+# correspondence with the professor and the TA. Kept locally, not published.
+email-to-professor.md
+reply-to-professor.md

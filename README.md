@@ -13,11 +13,23 @@ claim where it sits as one of three things:
 
 ## Status
 
-Day 1 of a ten day build. Nothing works yet.
+Day 1 of a ten day build. Nothing works yet. The extension is not started.
 
-Written so far, though not all of it is pushed here: a scoping document with the phase gates and the data
-contract, a frozen consumer query set, and the tooling that fails a run if the query set changed after it was
-frozen. The extension is not started.
+What is here:
+
+- `SCOPE.md`, the scoping document. Phase gates, the boundary table separating recorded fields from
+  model inferences, the break attempts, and the day by day schedule.
+- `queries/consumer.toml`, the consumer stratum. 24 questions in health, personal finance, immigration and
+  local services, each carrying a written statement of what acting on a wrong answer costs the asker. Frozen.
+- `queries/professional.toml`, the primary stratum, currently a schema and an intake procedure with no
+  queries in it. Those have to come out of my own research history rather than be written, so the file stays
+  empty until they do.
+- `tools/`, which validates the query set and fails any run where a query was added, removed or edited after
+  the freeze. The freeze is a hash manifest, so this is checkable by someone who does not trust me.
+
+Both strata get frozen before either one runs. If the consumer set were written later it would be written by
+someone who had already seen what the professional set produced, and there would be no way to prove it
+wasn't shaped by that.
 
 No number this project produces is a measurement yet.
 

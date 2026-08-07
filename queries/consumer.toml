@@ -1,0 +1,357 @@
+# Consumer high-stakes stratum.
+#
+# Stretch item 7 in SCOPE.md §0a. Authored and frozen on day 1 alongside the professional stratum so that it
+# cannot have been shaped by professional-stratum results.
+#
+# These are synthetic. Nobody actually asked them. They are written to sample the shape of consumer questions
+# where acting on a wrong answer costs the asker something concrete: money, health, immigration status, or a
+# legal right they did not know they had.
+#
+# Selection criteria applied to every entry, before any capture:
+#   1. A wrong answer changes what the asker does, not just what they believe.
+#   2. The correct answer is jurisdiction-bound, year-bound, or recently changed, which is what makes source
+#      drift and dead links measurable rather than theoretical.
+#   3. It is the kind of question a person asks an AI tool instead of a professional, usually because the
+#      professional costs money or a three-week wait.
+
+[stratum]
+id = "consumer"
+id_prefix = "CO"
+label = "Consumer high-stakes"
+status = "ready"
+provenance_policy = "synthetic"
+domains = ["health", "personal_finance", "immigration", "local_services"]
+
+# ---------------------------------------------------------------------------
+# health
+# ---------------------------------------------------------------------------
+
+[[query]]
+id = "CO-01"
+domain = "health"
+text = """
+Is it safe to take ibuprofen regularly if I am on lisinopril for blood pressure?
+"""
+cost_of_error = """
+NSAIDs taken alongside an ACE inhibitor can blunt blood pressure control and stress the kidneys. Someone who
+reads a reassuring answer takes the ibuprofen daily for a bad back and finds out at their next lab draw.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-02"
+domain = "health"
+text = """
+At what age should someone whose parent had colon cancer start getting screening colonoscopies?
+"""
+cost_of_error = """
+Family history moves the recommended start age earlier than the standard one. An answer that quotes the
+general population age sends someone away for years during the window screening exists to catch.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-03"
+domain = "health"
+text = """
+What is the maximum daily dose of acetaminophen for an adult, and does it change for someone who drinks
+alcohol regularly?
+"""
+cost_of_error = """
+The ceiling is lower than the label implies once alcohol is involved, and the failure mode is liver damage
+from a dose the person believed was within range. This is one of the most common accidental overdoses there
+is.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-04"
+domain = "health"
+text = """
+Does St. Johns Wort reduce the effectiveness of hormonal birth control?
+"""
+cost_of_error = """
+It does, through enzyme induction, and it is sold over the counter as a mood supplement with no interaction
+warning most buyers will read. A wrong answer here results in an unintended pregnancy.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-05"
+domain = "health"
+text = """
+What blood pressure reading is high enough that I should go to an emergency room rather than call my doctor?
+"""
+cost_of_error = """
+This is a triage question with two expensive failure directions. Too high a threshold and someone waits out a
+hypertensive emergency at home. Too low and they spend a night and several thousand dollars in an ER.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-06"
+domain = "health"
+text = """
+Can I get the shingles vaccine before age 50 if I am immunocompromised, and is it covered by insurance at
+that age?
+"""
+cost_of_error = """
+Eligibility guidance for immunocompromised adults differs from the age-based default, and coverage follows
+the recommendation. A wrong answer means either an unnecessary out-of-pocket charge or a preventable case of
+shingles in someone at elevated risk.
+"""
+provenance = "synthetic"
+
+# ---------------------------------------------------------------------------
+# personal_finance
+# ---------------------------------------------------------------------------
+
+[[query]]
+id = "CO-07"
+domain = "personal_finance"
+text = """
+What is the Roth IRA contribution limit this year, and at what income does eligibility start phasing out for
+a single filer?
+"""
+cost_of_error = """
+Contributing over the limit or while ineligible triggers a 6 percent excise tax that repeats every year the
+excess stays in the account. The number changes annually, which is exactly the kind of fact a stale cited
+page gets wrong.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-08"
+domain = "personal_finance"
+text = """
+If I leave my job with an outstanding 401k loan, how long do I have to repay it before it is treated as a
+distribution?
+"""
+cost_of_error = """
+Miss the window and the outstanding balance becomes taxable income plus a 10 percent early withdrawal
+penalty. The deadline changed under the 2017 tax law, so older sources give a much shorter answer that is now
+wrong in the costly direction.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-09"
+domain = "personal_finance"
+text = """
+How much of my money is FDIC insured if I have a checking account and a savings account at the same bank,
+plus a joint account with my spouse?
+"""
+cost_of_error = """
+Coverage is per depositor per ownership category, not per account, and people routinely believe they are
+covered for more than they are. The cost of being wrong only shows up when the bank fails, which is when it
+cannot be fixed.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-10"
+domain = "personal_finance"
+text = """
+What is the deadline to file a federal tax extension, and does an extension also extend the deadline to pay?
+"""
+cost_of_error = """
+It does not extend the deadline to pay, and this is one of the most widely held wrong beliefs in personal
+tax. Acting on the wrong answer means failure-to-pay penalties and interest on a balance the person thought
+was deferred.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-11"
+domain = "personal_finance"
+text = """
+Does closing an old credit card hurt my credit score, and how long does the closed account stay on my report?
+"""
+cost_of_error = """
+Someone tidying up their finances before a mortgage application can lower their own score at the worst
+possible moment, and the effect is not reversible by reopening the card. Days matter here in a way they do
+not for most finance questions.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-12"
+domain = "personal_finance"
+text = """
+Can I withdraw money from a Roth IRA before retirement age without a penalty, and does that include the
+investment earnings?
+"""
+cost_of_error = """
+Contributions and earnings are treated differently, and an answer that blurs them leads someone to withdraw
+earnings early and owe both income tax and a 10 percent penalty on money they were told was accessible.
+"""
+provenance = "synthetic"
+
+# ---------------------------------------------------------------------------
+# immigration
+# ---------------------------------------------------------------------------
+
+[[query]]
+id = "CO-13"
+domain = "immigration"
+text = """
+How long is the STEM OPT extension, and what happens to my work authorization if my employer is not enrolled
+in E-Verify?
+"""
+cost_of_error = """
+E-Verify enrollment is a hard eligibility requirement, not a preference. Someone who accepts an offer without
+checking discovers after starting that the extension was never available to them, and by then the standard
+OPT period is running out.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-14"
+domain = "immigration"
+text = """
+Can I travel outside the US while my change of status petition is pending, and what happens to the petition
+if I leave?
+"""
+cost_of_error = """
+Departing while a change of status is pending can be treated as abandoning it. The cost is a petition lost
+after months of waiting, plus being outside the country without the status the petition would have granted.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-15"
+domain = "immigration"
+text = """
+How many days is the grace period after an F-1 program end date before I have to leave the United States?
+"""
+cost_of_error = """
+Overstaying starts accruing unlawful presence, which carries multi-year reentry bars. Someone off by a few
+weeks because they read a page about a different visa category damages their ability to return for years.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-16"
+domain = "immigration"
+text = """
+Do I qualify for an interview waiver on an H-1B visa renewal, and how recently must my previous visa have
+expired?
+"""
+cost_of_error = """
+The eligibility window for interview waivers has been revised repeatedly and older pages describe rules that
+no longer apply. Getting it wrong means traveling abroad expecting a quick renewal and being stuck there
+waiting for an appointment.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-17"
+domain = "immigration"
+text = """
+How many hours per week can an F-1 student work on campus during the academic year, and is the limit
+different during summer break?
+"""
+cost_of_error = """
+Exceeding the limit is a status violation, and it is one that shows up later during a change of status or a
+green card application rather than at the time. The person does not find out they were wrong until it is
+expensive.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-18"
+domain = "immigration"
+text = """
+If my I-140 is approved and I change employers, do I keep my priority date?
+"""
+cost_of_error = """
+The priority date can represent several years of queue position, and whether it is retained depends on
+conditions people routinely misread. A wrong answer changes whether someone accepts a job offer.
+"""
+provenance = "synthetic"
+
+# ---------------------------------------------------------------------------
+# local_services
+# ---------------------------------------------------------------------------
+
+[[query]]
+id = "CO-19"
+domain = "local_services"
+text = """
+In Massachusetts, how much notice does a landlord have to give before entering a rented apartment, and are
+there exceptions?
+"""
+cost_of_error = """
+A tenant who believes they have no say allows entry they could have refused. A tenant who believes the rule
+is stricter than it is escalates a dispute they will lose. Both are decisions made in the moment on the
+strength of whatever the answer said.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-20"
+domain = "local_services"
+text = """
+Does replacing a residential electrical panel in Boston require a permit, and who is liable if the
+electrician does not pull one?
+"""
+cost_of_error = """
+Unpermitted electrical work surfaces at resale or at an insurance claim after a fire, and by then the
+homeowner is the one holding it. A confident wrong answer saves a few hundred dollars now and costs
+considerably more later.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-21"
+domain = "local_services"
+text = """
+How much notice does a Massachusetts landlord have to give before raising the rent on a tenant at will?
+"""
+cost_of_error = """
+A tenant who does not know the notice requirement pays an increase that was not yet enforceable, and does not
+find out that it wasn't. This is money lost quietly, which is the kind of loss nobody ever audits.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-22"
+domain = "local_services"
+text = """
+Can a utility company shut off heat for nonpayment during winter in Massachusetts, and what protections apply
+to households with children or elderly residents?
+"""
+cost_of_error = """
+There are seasonal shutoff protections and household-specific ones, and they must be claimed rather than
+applied automatically. Someone who believes they have no recourse loses heat in January while eligible for a
+protection they never filed for.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-23"
+domain = "local_services"
+text = """
+How do I check whether a home improvement contractor is registered in Massachusetts and whether complaints
+have been filed against them?
+"""
+cost_of_error = """
+Registration status determines access to the state guaranty fund if the contractor takes a deposit and
+disappears. A wrong answer about where to check means the homeowner verifies nothing and finds out afterward
+that they have no recovery route.
+"""
+provenance = "synthetic"
+
+[[query]]
+id = "CO-24"
+domain = "local_services"
+text = """
+What is the deadline for a Massachusetts landlord to return a security deposit after a tenant moves out, and
+what penalties apply if they miss it?
+"""
+cost_of_error = """
+The statutory penalties for late or improperly withheld deposits are substantial and time-bound. A tenant who
+believes they simply lost the deposit walks away from money the statute says is theirs, and the window to
+claim it closes.
+"""
+provenance = "synthetic"

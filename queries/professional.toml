@@ -1,0 +1,32 @@
+# Professional research stratum. THE PRIMARY STRATUM, and the only one that runs in the core (SCOPE.md §0a).
+#
+# STATUS: draft, awaiting intake. This file is deliberately empty of queries.
+#
+# Every entry in this file must be a real question I actually asked an AI tool during PM work, scrubbed per
+# the procedure in README.md. None of them can be written from scratch, and that constraint is not a
+# formality. §10 claims this stratum is "drawn from my own recent research rather than invented," and the
+# whole limitations argument in §7 depends on that claim being literally true. A plausible-looking invented
+# question would make the set easier to assemble and would make the sentence describing it false.
+#
+# So this file gets filled by transcription and scrubbing, not by authorship.
+#
+# Target: 20 to 30 queries, spread across the four domains below. If the real history does not cover a
+# domain, that domain runs light and the imbalance is reported. It does not get topped up with inventions.
+#
+# Intake procedure:
+#   1. Pull the raw questions out of Claude / ChatGPT / Perplexity history.
+#   2. Scrub each one per README.md, recording what was removed in scrub_notes.
+#   3. Drop anything that cannot survive the scrub, and log the drop in SCRUB_LOG.md with a reason.
+#   4. Write cost_of_error for each survivor. This is pre-registration, so it is written now, before any
+#      capture, and it enters the freeze hash.
+#   5. Flip status to "ready" and freeze.
+
+[stratum]
+id = "professional_research"
+id_prefix = "PR"
+label = "Professional research"
+status = "draft"
+provenance_policy = "real_scrubbed"
+domains = ["competitive", "market_sizing", "regulatory", "technical_background"]
+
+# No [[query]] entries yet. See README.md for the schema and a worked format example.
