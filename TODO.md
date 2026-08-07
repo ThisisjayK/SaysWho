@@ -1,4 +1,4 @@
-# SaysWho build checklist
+# SaysWho build checklist (TODO)
 
 Everything the project owes, in the order it has to happen. Derived from `SCOPE.md` §0a (the core and stretch
 split), §8 (the rubric), and §12 (the schedule).

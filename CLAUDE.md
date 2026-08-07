@@ -9,14 +9,14 @@ and what is stretch (days 8 to 10).
 
 ## Status tracking
 
-`CHECKLIST.md` is the single source of truth for what is done and what is not. There is no second task list.
+`TODO.md` is the single source of truth for what is done and what is not. There is no second task list.
 
 - Tick an item only when it is finished, not when it is started
 - A stretch item that does not happen gets marked not-done with a reason. It does not get deleted, because
   §0a promises the writeup reports it either way
-- Update `CHECKLIST.md` in the same commit as the work it describes
+- Update `TODO.md` in the same commit as the work it describes
 
-At the start of a session, read `CHECKLIST.md` to find the current state rather than asking.
+At the start of a session, read `TODO.md` to find the current state rather than asking.
 
 ## Invariants that are not up for negotiation
 
