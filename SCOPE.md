@@ -216,6 +216,12 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   | `SOURCE_EMPTY` | 200 but no extractable text (JS-only, unparsed PDF), which is not an error |
   | `SOURCE_PAYWALLED` | paywall or consent wall detected |
   | `SOURCE_DRIFTED` | content differs from the nearest Wayback snapshot to the generation timestamp |
+  | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
+
+  `SOURCE_ROBOTS_EXCLUDED` was added while writing `DATA_CONTRACT.md`, which is the kind of thing writing a
+  contract before writing code is for. Folding it into `SOURCE_UNREACHABLE` would have been tidier and
+  wrong: unreachable means we tried and could not, robots-excluded means we chose not to try. The arithmetic
+  is the same either way, since both are `UNAUDITABLE`, but the reason published beside the number is not.
 
   *Failure path:* anything other than `SOURCE_OK` marks the claim `UNAUDITABLE` with the reason code
   attached. `UNAUDITABLE` never contributes to the unsupported count and never enters the score denominator.
