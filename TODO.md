@@ -17,8 +17,8 @@ Day 1, partially done.
 - [x] Repo created, scope document and query set committed
 - [ ] Professional stratum assembled. Blocked on pulling real queries out of my own AI history
 - [ ] `SCRUB_LOG.md` filled in and the drop count recorded
-- [ ] `DATA_CONTRACT.md` written
-- [ ] Reply sent to Prof. Brown with `SCOPE.md` attached
+- [x] `DATA_CONTRACT.md` written, before any fetch has happened
+- [ ] Reply sent to Prof. Brown with `SCOPE.md` attached. Parked for now, deliberately
 
 ## Blocking the whole schedule
 
@@ -33,11 +33,15 @@ Day 1, partially done.
 
 ## Day 1: the data contract
 
-- [ ] `DATA_CONTRACT.md`: respect `robots.txt`, one request per second per domain, identifying User-Agent with
+- [x] `DATA_CONTRACT.md`: respect `robots.txt`, one request per second per domain, identifying User-Agent with
       a contact address, every fetch cached to disk so reruns audit the same bytes
-- [ ] No authenticated fetches and no paywall circumvention. A paywall is a legitimate `UNAUDITABLE` outcome
+- [x] No authenticated fetches and no paywall circumvention. A paywall is a legitimate `UNAUDITABLE` outcome
       and routing around it would corrupt the measurement
-- [ ] Write down the model call metering and logging policy before any calls are made
+- [x] Write down the model call metering and logging policy before any calls are made
+- [x] `SOURCE_ROBOTS_EXCLUDED` added to the G2 outcome table in `SCOPE.md` §3. Writing the contract surfaced
+      it: unreachable means we tried and could not, robots-excluded means we chose not to try
+- [ ] Implement the contract in the fetch layer on day 2, and write the tests that prove the enforced half of
+      §10 is actually enforced rather than merely written down
 
 ## Day 2: capture and fetch
 
