@@ -159,3 +159,31 @@ def test_body_is_written_to_cache_before_it_is_classified(server, cache):
     meta, body = cache.latest(url)
     assert meta["content_sha256"] == record.content_sha256
     assert body
+
+
+# ---------------------------------------------------------------- content encoding
+
+
+def test_gzipped_body_is_decoded_before_extraction(server, cache):
+    """Regression test for a bug that would have faked an entire finding.
+
+    Wayback's id_ endpoint replays the original crawled bytes with their original Content-Encoding, so
+    archived pages arrive gzipped even though we never send Accept-Encoding. Undecoded, the extractor turns
+    compressed bytes into thousands of characters of binary noise. That passes the length threshold as
+    SOURCE_OK, then shares zero shingles with the live page, so every archived comparison reports drift and
+    every source becomes unauditable. A clean, consistent, entirely artefactual result.
+    """
+    record = fetcher(cache).fetch(server.url("/gzipped.html"))
+
+    assert record.code == SOURCE_OK
+    assert "musculoskeletal adverse events" in record.text
+    assert "\x00" not in record.text
+
+
+def test_an_encoding_we_cannot_decode_is_refused_rather_than_passed_through(server, cache):
+    """Brotli needs a dependency. Letting the raw bytes through would look like a readable article."""
+    record = fetcher(cache).fetch(server.url("/brotli.html"))
+
+    assert record.code == SOURCE_EMPTY
+    assert "unsupported content-encoding: br" in record.detail
+    assert record.text_length == 0

@@ -41,6 +41,46 @@ def user_agent(contact: str = DEFAULT_CONTACT) -> str:
     return f"SaysWho/0.1 (citation audit research; +{PROJECT_URL}; {contact})"
 
 
+def decode_body(body: bytes, headers: dict) -> tuple[bytes | None, str]:
+    """Undo Content-Encoding. Returns (decoded, note), or (None, reason) if we cannot.
+
+    We never send `Accept-Encoding`, so an ordinary server has no reason to compress. The Wayback Machine
+    does anyway: its `id_` endpoint replays the original crawled bytes along with the original
+    `Content-Encoding` header, so an archived page arrives gzipped whether we asked or not.
+
+    This is worth a comment because of how it failed. Without decoding, the extractor turns compressed bytes
+    into thousands of characters of binary noise, which passes the length threshold as SOURCE_OK and then
+    shares zero shingles with the live page. Every archived comparison reports drift, every source becomes
+    unauditable, and the run produces a clean consistent result that is entirely an artefact. It looks
+    exactly like a finding.
+    """
+    encoding = str(headers.get("content-encoding", headers.get("Content-Encoding", ""))).lower().strip()
+
+    if not encoding or encoding == "identity":
+        return body, ""
+    if encoding == "gzip":
+        import gzip
+
+        try:
+            return gzip.decompress(body), "gzip decoded"
+        except Exception as exc:
+            return None, f"gzip body could not be decoded: {exc}"
+    if encoding in ("deflate", "zlib"):
+        import zlib
+
+        try:
+            return zlib.decompress(body), "deflate decoded"
+        except zlib.error:
+            try:
+                return zlib.decompress(body, -zlib.MAX_WBITS), "raw deflate decoded"
+            except Exception as exc:
+                return None, f"deflate body could not be decoded: {exc}"
+
+    # brotli and zstd need a dependency. Returning the raw bytes would let binary noise through the length
+    # threshold as though it were an article, so this is an explicit refusal instead.
+    return None, f"unsupported content-encoding: {encoding}"
+
+
 class Fetcher:
     """Politeness, retries, caching and G2 assignment.
 
@@ -151,7 +191,15 @@ class Fetcher:
             cached = self.cache.latest(url)
             if cached is not None:
                 meta, body = cached
-                return self._classify(url, meta["status"], body, meta["fetched_at"], attempts=0, cached=True)
+                return self._classify(
+                    url,
+                    meta["status"],
+                    body,
+                    meta["fetched_at"],
+                    attempts=0,
+                    cached=True,
+                    headers=meta.get("headers", {}),
+                )
 
         if not self.allowed(url):
             return FetchRecord(
@@ -192,10 +240,19 @@ class Fetcher:
             )
 
         meta = self.cache.put(url, status, headers, body)
-        return self._classify(url, status, body, meta["fetched_at"], attempts=attempts, cached=False)
+        return self._classify(
+            url, status, body, meta["fetched_at"], attempts=attempts, cached=False, headers=headers
+        )
 
     def _classify(
-        self, url: str, status: int, body: bytes, fetched_at: str, attempts: int, cached: bool
+        self,
+        url: str,
+        status: int,
+        body: bytes,
+        fetched_at: str,
+        attempts: int,
+        cached: bool,
+        headers: dict | None = None,
     ) -> FetchRecord:
         """Assign the G2 code. Deterministic, and the only place a code is chosen."""
         base = dict(
@@ -210,7 +267,12 @@ class Fetcher:
         if status != 200:
             return FetchRecord(code=SOURCE_UNREACHABLE, text_length=0, **base)
 
-        text = extract_text(body.decode("utf-8", errors="replace"))
+        decoded, note = decode_body(body, headers or {})
+        if decoded is None:
+            # We hold the bytes but cannot read them. That is not evidence about the claim.
+            return FetchRecord(code=SOURCE_EMPTY, text_length=0, **{**base, "detail": note})
+
+        text = extract_text(decoded.decode("utf-8", errors="replace"))
 
         # Wall detection runs before the length threshold. A paywalled page usually is short, and reporting
         # it as SOURCE_EMPTY would lose the reason it was empty.

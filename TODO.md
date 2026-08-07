@@ -59,7 +59,15 @@ Python side done, browser side not started.
 - [x] 31 tests, run against a real local HTTP server rather than a mocked `urlopen`, because the politeness
       rules are about what actually goes over the wire
 - [x] End to end run over a fixture capture, three cited URLs, three different G2 codes
-- [ ] `SOURCE_DRIFTED` and the Wayback CDX lookup. The only G2 code not yet implemented
+- [x] `SOURCE_DRIFTED` and the Wayback lookup. Containment rather than Jaccard, so a page that only grew is
+      not called drift. Both similarity numbers are recorded, so the 0.80 threshold is inspectable rather
+      than load bearing on its own
+- [x] No snapshot reports drift as unknown, never as unchanged. Tested, because converting missing data into
+      a clean result is the exact move this project refuses
+- [x] Content-Encoding decoding. Wayback replays archived pages gzipped, and undecoded they extracted as
+      binary noise that passed the length threshold as `SOURCE_OK` and then matched nothing. Every archived
+      comparison reported drift and every source became unauditable: a clean consistent result that was
+      entirely an artefact. Regression test added
 - [ ] DOM capture on claude.ai, chatgpt.com, perplexity.ai. Answer text and citation markers stored verbatim
       and hashed. Needs the extension, which is not started
 - [ ] Google AI Overviews through the same code path, no separate asterisk

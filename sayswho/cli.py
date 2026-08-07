@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 from .cache import FetchCache
+from .drift import DRIFT_NO_SNAPSHOT, DRIFT_NOT_CHECKED, DriftChecker, DriftRecord, apply_drift
 from .fetch import Fetcher, user_agent
 from .gates import auditable_denominator, g0_has_citations
 from .records import Capture
@@ -27,6 +28,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("capture", type=Path, help="path to a capture JSON file")
     parser.add_argument("--cache", type=Path, default=Path(".cache/fetch"))
     parser.add_argument("--no-cache", action="store_true", help="refetch even if cached")
+    parser.add_argument(
+        "--no-drift",
+        action="store_true",
+        help="skip the Wayback comparison. Drift is on by default, because a run with it off measures "
+        "something different and the difference would not be visible in the output",
+    )
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
     args = parser.parse_args(argv)
 
@@ -50,20 +57,38 @@ def main(argv: list[str] | None = None) -> int:
     print()
 
     fetcher = Fetcher(FetchCache(args.cache))
+    checker = None if args.no_drift else DriftChecker(fetcher)
+
     records = []
+    drifts = []
     for url in capture.cited_urls:
         record = fetcher.fetch(url, use_cache=not args.no_cache)
+
+        if checker is not None:
+            drift = checker.check(record, capture.generated_at)
+            drifts.append(drift)
+            apply_drift(record, drift)
+        else:
+            drifts.append(DriftRecord(url=url, status=DRIFT_NOT_CHECKED, detail="--no-drift"))
+
         records.append(record)
         detail = f"  ({record.detail})" if record.detail else ""
         status = record.http_status if record.http_status is not None else "  -"
         print(f"  {record.code:<24} {str(status):>4}  {record.text_length:>6} chars  {url}{detail}")
+        print(f"    drift  {drifts[-1].status:<20} {drifts[-1].detail}")
 
     auditable = auditable_denominator(records)
     unauditable = len(records) - auditable
+    drift_unknown = sum(1 for d in drifts if d.status == DRIFT_NO_SNAPSHOT)
 
     print()
     print(f"auditable    {auditable} of {len(records)} sources")
     print(f"unauditable  {unauditable}, excluded from every denominator")
+    if drift_unknown:
+        print(
+            f"drift unknown {drift_unknown}, reported as unknown rather than as unchanged. "
+            "Those sources are still auditable, but nothing here shows they match what the model read."
+        )
 
     if auditable == 0:
         print()
@@ -76,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "capture": capture.to_dict(),
                     "fetches": [r.to_dict() for r in records],
+                    "drift": [d.to_dict() for d in drifts],
                     "auditable": auditable,
                     "unauditable": unauditable,
                 },
