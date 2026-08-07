@@ -158,6 +158,20 @@ Done means pytest with each gate failing on its target bug, not merely present.
 - [ ] Break attempt 4, shared-vocabulary contradiction
 - [ ] Per-domain reporting
 - [ ] Gold set expansion beyond 40
+- [ ] **Existence check for named citations, via Crossref.** Does "LeClair et al., Supportive Care in Cancer,
+      2022" correspond to a real paper? Free API, no key, so it fits the budget. Catches fabricated
+      references, which is a real and well-documented failure mode
+
+      The line that makes this safe, and it is not negotiable if it gets built: **check existence, never
+      check support.** Judging a claim against a paper we selected ourselves would be inventing the evidence,
+      which is the exact failure this project exists to catch. Three outcomes, no scores:
+      `CITATION_RESOLVED`, `CITATION_NOT_FOUND`, `CITATION_AMBIGUOUS`. A resolved citation still never enters
+      a support-rate denominator, because "this paper exists" and "this paper backs this sentence" are
+      different facts and collapsing them would repeat the mistake this whole project is about
+
+      Roughly half a day. Build only if the core lands on time
+- [ ] Widen the `CITATION_NOT_LINKED` patterns and measure their recall against a hand-marked answer. The
+      current count is a floor and the writeup has to keep saying so until that is measured
 
 ## Deliverables, by rubric row
 

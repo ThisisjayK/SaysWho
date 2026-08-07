@@ -20,6 +20,7 @@ from .cache import FetchCache
 from .drift import DRIFT_NO_SNAPSHOT, DRIFT_NOT_CHECKED, DriftChecker, DriftRecord, apply_drift
 from .fetch import Fetcher, user_agent
 from .gates import auditable_denominator, g0_has_citations
+from .named_citations import analyse as analyse_named
 from .records import Capture
 
 
@@ -45,6 +46,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"answer sha   {capture.answer_sha256}")
     print(f"user-agent   {user_agent()}")
     print()
+
+    named = analyse_named(capture)
+    if named.named_count:
+        print(
+            f"named, unlinked  {named.named_count} sources named in prose with no URL "
+            f"{named.by_kind}"
+        )
+        print("                 A floor, not a total. These are not unsupported and not unauditable.")
+        print("                 They are uncheckable, and they enter no denominator.")
+        print()
 
     gate0 = g0_has_citations(capture)
     if not gate0.passed:
@@ -102,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
                     "capture": capture.to_dict(),
                     "fetches": [r.to_dict() for r in records],
                     "drift": [d.to_dict() for d in drifts],
+                    "named_citations": named.to_dict(),
                     "auditable": auditable,
                     "unauditable": unauditable,
                 },

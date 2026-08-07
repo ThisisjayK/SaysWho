@@ -15,6 +15,10 @@ from typing import Any
 # Phase 0, gate G0
 NO_CITATIONS = "NO_CITATIONS"
 
+#: A source named in prose with no resolvable URL. Discovered on day 2 in a real Claude Research report that
+#: named at least fifteen sources and linked one. See sayswho/named_citations.py.
+CITATION_NOT_LINKED = "CITATION_NOT_LINKED"
+
 # Phase 2, gate G2. See DATA_CONTRACT.md §4.
 SOURCE_OK = "SOURCE_OK"
 SOURCE_UNREACHABLE = "SOURCE_UNREACHABLE"
