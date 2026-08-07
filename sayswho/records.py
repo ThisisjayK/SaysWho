@@ -71,6 +71,13 @@ class Capture:
     citations: list[Citation] = field(default_factory=list)
     source: str = "dom"
 
+    #: Which DOM adapter produced this capture, and whether that adapter has been checked against the real
+    #: page. An unverified adapter can miss citation markers, which makes the support rate come out over a
+    #: subset of the answer while everything downstream looks perfectly normal. A capture bug does not
+    #: announce itself, so the provenance travels with the record.
+    adapter: str = ""
+    adapter_verified: bool = False
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)
