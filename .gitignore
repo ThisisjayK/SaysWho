@@ -7,6 +7,12 @@
 # python
 __pycache__/
 *.py[cod]
+.venv/
+.pytest_cache/
+
+# fetched pages. DATA_CONTRACT.md §9: the repo publishes verdicts and quoted spans, not copies of the
+# pages it fetched.
+.cache/
 
 # correspondence with the professor and the TA. Kept locally, not published.
 email-to-professor.md

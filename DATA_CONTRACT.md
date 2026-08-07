@@ -17,8 +17,7 @@ domain's other pages to get better context. One cited URL, one request.
 |---|---|
 | `robots.txt` | Fetched once per domain per run, cached, honoured |
 | Rate limit | One request per second per domain, including the `robots.txt` request itself |
-| Connect timeout | 10 seconds |
-| Read timeout | 20 seconds |
+| Timeout | 20 seconds total. `urllib` does not separate connect from read, and splitting them would need a dependency, so the contract records what the code does rather than an intention it cannot keep |
 | Retries | Two, on timeout and 5xx only, with 2s then 8s backoff |
 | Retry on 4xx | Never. A 404 is an answer, not a failure to get one |
 | Concurrency | Unlimited across domains, one at a time within a domain |

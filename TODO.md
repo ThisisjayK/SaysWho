@@ -45,17 +45,27 @@ Day 1, partially done.
 
 ## Day 2: capture and fetch
 
-- [ ] DOM capture on claude.ai, chatgpt.com, perplexity.ai. Answer text and citation markers stored verbatim
-      and hashed
-- [ ] Google AI Overviews through the same code path, no separate asterisk
-- [ ] Fetch layer implementing the data contract
-- [ ] Phase 0 gate G0: zero inline citations returns `NO_CITATIONS` and halts. An uncited answer is a
-      different object, not a zero percent answer
-- [ ] Phase 2 gate G2 returning all five outcomes: `SOURCE_OK`, `SOURCE_UNREACHABLE`, `SOURCE_EMPTY`,
-      `SOURCE_PAYWALLED`, `SOURCE_DRIFTED`
-- [ ] Wayback CDX lookup for drift detection against the generation timestamp
+Python side done, browser side not started.
 
-Done means an answer captured, hashed, and every cited URL fetched with a G2 code attached.
+- [x] Fetch layer implementing the data contract. `sayswho/fetch.py`, stdlib only
+- [x] Phase 0 gate G0: zero inline citations returns `NO_CITATIONS` and halts. An uncited answer is a
+      different object, not a zero percent answer
+- [x] Phase 2 gate G2 returning `SOURCE_OK`, `SOURCE_UNREACHABLE`, `SOURCE_EMPTY`, `SOURCE_PAYWALLED` and
+      `SOURCE_ROBOTS_EXCLUDED`
+- [x] Capture record with a verbatim answer hash. A capture edited after the fact is rejected on load
+- [x] Append-only fetch cache, so a rerun audits the same bytes
+- [x] The denominator contract, and the test that forces the violation and confirms it raises
+- [x] The no-confidence-number check, and the tests that confirm it rejects nested confidence fields
+- [x] 31 tests, run against a real local HTTP server rather than a mocked `urlopen`, because the politeness
+      rules are about what actually goes over the wire
+- [x] End to end run over a fixture capture, three cited URLs, three different G2 codes
+- [ ] `SOURCE_DRIFTED` and the Wayback CDX lookup. The only G2 code not yet implemented
+- [ ] DOM capture on claude.ai, chatgpt.com, perplexity.ai. Answer text and citation markers stored verbatim
+      and hashed. Needs the extension, which is not started
+- [ ] Google AI Overviews through the same code path, no separate asterisk
+
+Done means an answer captured, hashed, and every cited URL fetched with a G2 code attached. That works today
+against a handwritten fixture. It does not yet work against a real answer, because nothing captures one.
 
 ## Day 3: claim splitting and the judge
 
