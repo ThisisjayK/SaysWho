@@ -73,6 +73,24 @@ class _Handler(BaseHTTPRequestHandler):
             return self._send(200, SHORT)
         if self.path == "/paywall.html":
             return self._send(200, PAYWALLED)
+        if self.path == "/gzipped.html":
+            import gzip
+
+            payload = gzip.compress(ARTICLE.encode("utf-8"))
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
+        if self.path == "/brotli.html":
+            payload = b"\x1b\x0e\x00\xf8\x25 not really brotli, but labelled as it"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Encoding", "br")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
         if self.path == "/flaky":
             type(self).flaky_hits += 1
             if type(self).flaky_hits <= 2:
