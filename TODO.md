@@ -68,9 +68,17 @@ Python side done, browser side not started.
       binary noise that passed the length threshold as `SOURCE_OK` and then matched nothing. Every archived
       comparison reported drift and every source became unauditable: a clean consistent result that was
       entirely an artefact. Regression test added
-- [ ] DOM capture on claude.ai, chatgpt.com, perplexity.ai. Answer text and citation markers stored verbatim
-      and hashed. Needs the extension, which is not started
-- [ ] Google AI Overviews through the same code path, no separate asterisk
+- [x] MV3 extension skeleton: manifest, per-product adapters, capture builder, content script, service
+      worker. Captures the last answer, hashes it, downloads JSON the harness reads
+- [x] Capture-side sha256 matches Python's, so both sides agree on what the input was. The beginning of the
+      §9 parity check, not the whole of it
+- [x] Adapter provenance travels with every capture, including whether the adapter has been verified
+- [ ] **Verify the selectors against the real logged-in pages.** Every adapter is `verified: false`. A
+      selector that misses citation markers produces a capture that looks fine and makes the support rate
+      quietly wrong, because a capture bug does not announce itself downstream
+- [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk
+- [ ] Marking UI. Deliberately not built yet: there are no verdicts until day 3, and marking claims before
+      there is anything behind it would be finding-shaped output
 
 Done means an answer captured, hashed, and every cited URL fetched with a G2 code attached. That works today
 against a handwritten fixture. It does not yet work against a real answer, because nothing captures one.

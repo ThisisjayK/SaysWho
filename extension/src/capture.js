@@ -1,0 +1,88 @@
+/**
+ * Building a capture record.
+ *
+ * The output of this file has to deserialise into `sayswho.records.Capture` unchanged, and the hash it
+ * computes has to equal the one Python computes over the same text. That is not a nicety: `SCOPE.md` §9
+ * requires the extension and the harness to produce identical verdicts on identical inputs, and they cannot
+ * do that if they disagree about what the input was.
+ *
+ * So the hash is sha256 over the UTF-8 bytes of `answer_text`, exactly as `records.sha256` does it, and the
+ * Python loader recomputes it on load and rejects any capture whose recorded hash does not match.
+ */
+
+async function saysWhoSha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Citation markers and their URLs, in document order.
+ *
+ * `marker` is the visible text of the link where there is any, because that is what the reader sees next to
+ * the sentence. Where a citation is an icon with no text, the marker falls back to its position, which is
+ * recorded honestly as a positional marker rather than dressed up as a footnote number.
+ */
+function saysWhoExtractCitations(adapter, element) {
+  const citations = [];
+  const seen = new Set();
+
+  for (const selector of adapter.citationSelectors) {
+    let anchors;
+    try {
+      anchors = element.querySelectorAll(selector);
+    } catch {
+      continue;
+    }
+    for (const anchor of anchors) {
+      const url = anchor.href;
+      if (!url || !/^https?:/i.test(url)) continue;
+
+      const label = (anchor.innerText || "").trim();
+      const marker = label.length > 0 && label.length <= 40 ? label : `[pos:${citations.length + 1}]`;
+      const key = `${marker}|${url}`;
+      if (seen.has(key)) continue;
+
+      seen.add(key);
+      citations.push({ marker, url });
+    }
+    if (citations.length) break;
+  }
+
+  return citations;
+}
+
+/**
+ * Answer text as rendered.
+ *
+ * `innerText` rather than `textContent`, because textContent includes text from hidden elements and drops
+ * the line breaks a reader actually sees. The captured text is what was on screen, since that is the thing
+ * the reader trusted.
+ */
+function saysWhoAnswerText(element) {
+  return (element.innerText || "").replace(/\r\n/g, "\n").trim();
+}
+
+async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }) {
+  const answerText = saysWhoAnswerText(found.element);
+  const citations = saysWhoExtractCitations(adapter, found.element);
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+
+  return {
+    query_id: queryId || "UNASSIGNED",
+    product: product || adapter.id,
+    model_id: modelId || "unknown",
+    // The page does not tell us when the answer was generated. Capture time is the closest honest proxy and
+    // it is labelled as capture time, not as generation time, everywhere it is used.
+    generated_at: now,
+    captured_at: now,
+    source: "dom",
+    adapter: `${adapter.id}:${found.selector}`,
+    adapter_verified: adapter.verified === true,
+    answer_text: answerText,
+    answer_sha256: await saysWhoSha256Hex(answerText),
+    citations,
+  };
+}

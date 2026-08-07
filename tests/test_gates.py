@@ -158,3 +158,21 @@ def test_fetch_record_does_not_serialise_page_text():
         text="the entire body of someone else's article",
     )
     assert "text" not in r.to_dict()
+
+
+def test_capture_carries_its_adapter_provenance():
+    """An unverified adapter can miss citations, and a short capture looks exactly like a short answer."""
+    c = Capture(
+        query_id="PR-01",
+        product="claude",
+        model_id="test",
+        generated_at="2026-08-07T00:00:00+00:00",
+        captured_at="2026-08-07T00:00:01+00:00",
+        answer_text="A claim [1].",
+        citations=[Citation(marker="[1]", url="https://example.org/a")],
+        adapter="claude:[data-testid=assistant-message]",
+        adapter_verified=False,
+    )
+    d = c.to_dict()
+    assert d["adapter_verified"] is False
+    assert Capture.from_dict(d).adapter == c.adapter
