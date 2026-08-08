@@ -35,7 +35,7 @@ import time
 from .model import Meter, ModelCall, ModelRefused, now_iso
 
 #: Free-tier model. Configurable, because which models carry a free tier changes and this default will age.
-DEFAULT_GEMINI_MODEL = os.environ.get("SAYSWHO_GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_GEMINI_MODEL = os.environ.get("SAYSWHO_GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 #: Finish reasons that mean the model declined rather than answered. Recorded, never scored.
 REFUSAL_REASONS = {"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION"}
