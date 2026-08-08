@@ -36,6 +36,13 @@ fails on additions, removals and edits, including edits to `cost_of_error`. Brea
 unreachable source makes a claim `UNAUDITABLE`, and unauditable claims never enter the denominator of any
 published rate.
 
+**The judge is swappable; the gates are not.** A new provider means a new `JudgeClient`, never a change to
+`judge.py` or `gates.py`. If a provider needs the span guard relaxed to pass, the provider is wrong.
+
+**Gate G4 ties the gold set to the judge and the prompt version together.** Changing either after day 5
+means relabelling before any aggregate rate may be printed again. Do not change `JUDGE_PROMPT_VERSION` or the
+default provider casually.
+
 **No verdict without a verbatim span.** `SUPPORTED` requires a quoted span that a script confirms is present
 in the fetched document. Failures log `JUDGE_FABRICATED_SPAN` and the rate gets published rather than fixed
 quietly.
@@ -51,7 +58,8 @@ measured, and incumbent behaviour is attributed to their marketing copy.
   project name. It said RECEIPTS because that is what went out
 - Prose in this project contains no em dashes. Check before committing anything written
 - The fetch, extraction, re-extraction and gate layers are stdlib only. Python 3.11 or newer for `tomllib`
-- One dependency: `anthropic`, the official SDK, used only by `sayswho/model.py`. Added on day 3 because the
-  judge needs a model and hand-rolling HTTP against an API with structured outputs, prompt caching and
-  refusal handling would be reimplementing the SDK badly. Nothing else imports it
+- Two dependencies, both judge-only: `google-genai` (`sayswho/gemini.py`, the default judge, chosen for its
+  free tier) and `anthropic` (`sayswho/model.py`, the alternative). Nothing else in the package imports
+  either. Both satisfy the same `JudgeClient` protocol, so the pipeline and the gates never know which is
+  running
 - Do not add further dependencies without asking

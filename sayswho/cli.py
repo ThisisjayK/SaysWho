@@ -42,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
         "fetch pass can be run freely",
     )
     parser.add_argument("--budget", type=int, default=2_000_000, help="token budget; the run halts at it")
+    parser.add_argument(
+        "--judge-provider", choices=["gemini", "anthropic"], default=None,
+        help="which judge. Defaults to SAYSWHO_JUDGE, then gemini. Gate G4 ties the gold set to the judge, "
+        "so changing this after labelling means relabelling",
+    )
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
     args = parser.parse_args(argv)
 
@@ -131,11 +136,14 @@ def main(argv: list[str] | None = None) -> int:
     report = None
     if args.judge and auditable:
         from .claims import split_claims
+        from .gemini import build_judge
         from .judge import JudgeReport, judge_claim
-        from .model import AnthropicJudge, BudgetExceeded, Meter
+        from .model import BudgetExceeded, Meter
 
         meter = Meter(budget_tokens=args.budget)
-        client = AnthropicJudge(meter=meter)
+        client = build_judge(args.judge_provider, meter=meter)
+        print()
+        print(f"judge        {type(client).__name__}  model={client.model}")
         by_url = {r.url: r for r in records}
 
         print()
