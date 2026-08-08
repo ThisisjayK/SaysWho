@@ -107,15 +107,20 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 
 ## Day 3: claim splitting and the judge
 
-- [ ] Phase 1 claim extraction, bound to citation markers, labelled model-inference in every output surface
-- [ ] Gate G1: opinions, hedges, instructions and transitions return `NOT_A_FACTUAL_CLAIM` and are skipped.
-      The skip count is published, never silently dropped
-- [ ] Phase 3 judge returning `SUPPORTED`, `PARTIALLY_SUPPORTED`, `NOT_FOUND_IN_SOURCE`, `CONTRADICTED`
-- [ ] Gate G3, the span guard. Normalised substring check against the fetched document. Absent or fabricated
-      span voids the verdict and logs `JUDGE_FABRICATED_SPAN`
-- [ ] Judge running on a free tier with a user-supplied key, calls metered per run
-
-Done means a run producing per-claim verdicts with the fabricated-span rate counted.
+- [x] Phase 1 claim extraction, bound to citation markers by matching marker text to normalised URLs,
+      labelled model-inference in every output surface
+- [x] Gate G1: skipped lines carry a reason and are counted. `skipped_count` and `uncited_claim_count` are
+      both published
+- [x] Phase 3 judge returning `SUPPORTED`, `PARTIALLY_SUPPORTED`, `NOT_FOUND_IN_SOURCE`, `CONTRADICTED`,
+      via structured outputs so a malformed verdict is not a parse failure
+- [x] Gate G3, the span guard, with the test that hands it a fabricated span and asserts the void
+- [x] The judge is never called on a source that is not `SOURCE_OK`, asserted by a test that checks the
+      model was not called at all
+- [x] Break attempt 5 built and tested, and it revised §6: an injection that dictates its own span defeats
+      the guard, because dictating the span puts it on the page. Kept as a passing test of the failure
+- [x] Metering per call, budget cap that halts and records the halt, cost estimated only for known models
+- [x] Source document sent as a cached prefix, so several claims citing one page pay for it once
+- [ ] Run it against a real answer with a real key. Needs `ANTHROPIC_API_KEY` and costs money
 
 ## Day 4: gates and the contract check
 
