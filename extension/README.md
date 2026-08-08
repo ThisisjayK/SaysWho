@@ -1,22 +1,41 @@
 # The extension
 
-Manifest V3. Day 2 scope is capture only.
+Manifest V3. It captures an answer, and it renders a finished audit. It does not produce the audit.
 
 ## What it does today
 
-Adds a button to claude.ai, chatgpt.com, perplexity.ai and Google search pages. Clicking it reads the last
-answer out of the DOM, extracts the citation markers and their URLs, hashes the answer text, and downloads a
-capture JSON that the harness can read:
+**Capture.** Adds a button to claude.ai, chatgpt.com, perplexity.ai and Google search pages. Clicking it
+reads the last answer out of the DOM, extracts the citation markers and their URLs, hashes the answer text,
+and downloads a capture JSON.
+
+**Render.** `src/report.html` opens a report JSON and shows the answer with every claim marked. Hovering a
+marked sentence gives the cited page's own words, the ones the span guard confirmed are really on that page.
+
+The three steps in between are the harness:
 
 ```bash
-python3 -m sayswho.cli ~/Downloads/sayswho/capture-claude-20260807T120000.json
+python3 -m sayswho.cli ~/Downloads/sayswho/capture-chatgpt-20260808T001618.json \
+  --judge --report report.html --report-json report.json
 ```
+
+`report.html` opens in any browser with no extension at all. `report.json` is what the extension's viewer
+loads. Both go through `src/render.js`, so the two views cannot disagree.
 
 ## What it does not do
 
-No marking, no verdicts, nothing on screen that claims a citation holds up. Phase 1 and Phase 3 arrive on
-day 3, and a marking UI built before there is anything behind it would be exactly the finding-shaped output
-this project exists to refuse.
+**It does not mark claims on claude.ai itself**, and it does not produce verdicts on its own. Producing a
+verdict needs the fetch layer, the gates and the span guard, which are Python. Reimplementing them here
+would create a second implementation of exactly what the §9 parity check exists to compare, and the two
+would drift apart under maintenance.
+
+So the honest description is capture and render, with a local run in between. `SCOPE.md` §1a used to promise
+one click and has been corrected. Closing the gap means a local server the extension can talk to. That is a
+real build and it is not done.
+
+## Opening the report viewer
+
+Load the extension, then open `chrome-extension://<id>/src/report.html` and pick a `report.json`. The file
+is read in the tab and nothing is uploaded.
 
 ## Loading it
 

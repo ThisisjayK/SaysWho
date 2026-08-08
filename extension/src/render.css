@@ -1,0 +1,175 @@
+/* The marking view.
+ *
+ * Colour is not the carrier. Every state also has a word and a border treatment, because a reader with a
+ * colour vision deficiency, or a printed page, must still be able to tell "could not verify" from
+ * "not supported" and those two must never blur together.
+ *
+ * The refusal states are as loud as the positive ones on purpose. Greying out an unverifiable claim would
+ * make the tool look more decisive than it is, which is the failure this project exists to catch.
+ */
+
+.sw {
+  --sw-ink: #14140f;
+  --sw-paper: #faf9f5;
+  --sw-line: #d8d4c8;
+  --sw-dim: #6b6759;
+
+  --sw-supported: #1f6f43;
+  --sw-supported-bg: #e6f2ea;
+  --sw-not-supported: #a1341c;
+  --sw-not-supported-bg: #fbe9e4;
+  --sw-mixed: #8a5a00;
+  --sw-mixed-bg: #fdf1dc;
+  --sw-unverified: #3f4b8a;
+  --sw-unverified-bg: #e9ebf6;
+  --sw-unchecked: #6b6759;
+  --sw-unchecked-bg: #f0eee7;
+
+  color: var(--sw-ink);
+  background: var(--sw-paper);
+  font: 15px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 28px 24px 80px;
+}
+
+.sw * { box-sizing: border-box; }
+
+.sw h1 { font-size: 19px; margin: 0 0 4px; }
+.sw h2 { font-size: 14px; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sw-dim); }
+
+.sw-meta { color: var(--sw-dim); font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.sw-meta span { margin-right: 14px; white-space: nowrap; }
+
+.sw-banner {
+  border: 1px solid var(--sw-line);
+  border-left: 4px solid var(--sw-dim);
+  background: #fff;
+  padding: 10px 14px;
+  margin: 16px 0;
+  font-size: 13.5px;
+}
+.sw-banner strong { font-weight: 600; }
+.sw-banner.sw-warn { border-left-color: var(--sw-not-supported); }
+
+/* ---- the legend and counts ---- */
+
+.sw-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+.sw-chip {
+  border: 1px solid var(--sw-line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.sw-chip b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.sw-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+.sw-SUPPORTED .sw-dot, .sw-dot.sw-SUPPORTED { background: var(--sw-supported); }
+.sw-NOT_SUPPORTED .sw-dot, .sw-dot.sw-NOT_SUPPORTED { background: var(--sw-not-supported); }
+.sw-MIXED .sw-dot, .sw-dot.sw-MIXED { background: var(--sw-mixed); }
+.sw-COULD_NOT_VERIFY .sw-dot, .sw-dot.sw-COULD_NOT_VERIFY { background: var(--sw-unverified); }
+.sw-NOT_CHECKED .sw-dot, .sw-dot.sw-NOT_CHECKED { background: var(--sw-unchecked); }
+
+/* ---- the marked answer ---- */
+
+.sw-answer {
+  border: 1px solid var(--sw-line);
+  background: #fff;
+  padding: 22px 26px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.sw-mark {
+  border-bottom: 2px solid currentColor;
+  cursor: help;
+  padding: 1px 0;
+  position: relative;
+}
+.sw-mark:focus { outline: 2px solid var(--sw-ink); outline-offset: 2px; }
+
+.sw-mark.sw-SUPPORTED { color: var(--sw-supported); background: var(--sw-supported-bg); }
+.sw-mark.sw-NOT_SUPPORTED { color: var(--sw-not-supported); background: var(--sw-not-supported-bg); }
+.sw-mark.sw-MIXED { color: var(--sw-mixed); background: var(--sw-mixed-bg); }
+.sw-mark.sw-COULD_NOT_VERIFY {
+  color: var(--sw-unverified);
+  background: var(--sw-unverified-bg);
+  /* Dashed, because the line under an unverified claim must not look like the line under a checked one. */
+  border-bottom-style: dashed;
+}
+.sw-mark.sw-NOT_CHECKED {
+  color: var(--sw-unchecked);
+  background: var(--sw-unchecked-bg);
+  border-bottom-style: dotted;
+}
+
+/* ---- the card ---- */
+
+.sw-card {
+  position: absolute;
+  z-index: 30;
+  width: min(560px, 92vw);
+  background: #fff;
+  color: var(--sw-ink);
+  border: 1px solid var(--sw-ink);
+  box-shadow: 0 10px 30px rgba(20, 20, 15, 0.16);
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: normal;
+}
+.sw-card h3 { margin: 0 0 2px; font-size: 13.5px; }
+.sw-card .sw-help { color: var(--sw-dim); margin: 0 0 10px; font-size: 12.5px; }
+
+.sw-source { border-top: 1px solid var(--sw-line); padding-top: 9px; margin-top: 9px; }
+.sw-source:first-of-type { border-top: 0; }
+.sw-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--sw-dim);
+  word-break: break-all;
+  display: block;
+  margin-bottom: 3px;
+}
+.sw-verdict { font-weight: 600; font-size: 12px; letter-spacing: 0.03em; }
+.sw-void { color: var(--sw-not-supported); font-weight: 600; }
+
+.sw-span {
+  border-left: 3px solid var(--sw-line);
+  padding: 5px 0 5px 10px;
+  margin: 7px 0 3px;
+  color: #33312a;
+  /* Judges quote generously, and our extraction interleaves page furniture with article text, so a span
+   * can run to hundreds of characters of "Like us on Facebook". Scroll rather than truncate: the span is
+   * the evidence, and evidence that has been shortened for tidiness is not evidence. */
+  max-height: 190px;
+  overflow-y: auto;
+}
+.sw-span::before { content: "\201C"; }
+.sw-span::after { content: "\201D"; }
+
+.sw-note { color: var(--sw-dim); font-size: 12px; margin-top: 5px; }
+
+/* ---- skipped lines and sources ---- */
+
+.sw-list { border: 1px solid var(--sw-line); background: #fff; }
+.sw-row { border-top: 1px solid var(--sw-line); padding: 8px 14px; font-size: 13px; display: flex; gap: 12px; }
+.sw-row:first-child { border-top: 0; }
+.sw-row code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--sw-dim); white-space: nowrap; }
+.sw-skipped { color: var(--sw-dim); }
+
+.sw details { margin-top: 8px; }
+.sw summary { cursor: pointer; color: var(--sw-dim); font-size: 13px; }
+
+.sw-foot { margin-top: 34px; color: var(--sw-dim); font-size: 12px; border-top: 1px solid var(--sw-line); padding-top: 12px; }
+
+@media (prefers-color-scheme: dark) {
+  .sw { --sw-ink: #eeece4; --sw-paper: #17171a; --sw-line: #3a3a40; --sw-dim: #a09c92; }
+  .sw-answer, .sw-card, .sw-list, .sw-banner { background: #1e1e22; }
+  .sw { --sw-supported-bg: #16281d; --sw-not-supported-bg: #2c1712; --sw-mixed-bg: #2a2110;
+        --sw-unverified-bg: #1a1d2e; --sw-unchecked-bg: #232326; }
+  .sw-span { color: #cfcbc1; }
+}

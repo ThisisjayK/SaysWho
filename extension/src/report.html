@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+  The extension's report viewer.
+
+  It loads a report JSON produced by the harness and hands it to the same render.js the harness embeds in
+  its standalone HTML. The extension computes no verdicts of its own: the gates, the fetch layer and the
+  span guard are Python, and reimplementing them here would create the second implementation the parity
+  check in SCOPE.md §9 exists to catch.
+
+  So this page is a viewer, and the run that produced the verdicts happened elsewhere. That is a real
+  limitation of the current build and SCOPE.md §1a says so rather than promising one click.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SaysWho report</title>
+<link rel="stylesheet" href="render.css">
+<style>
+  body { margin: 0; }
+  .sw-load { max-width: 1100px; margin: 0 auto; padding: 28px 24px; font: 15px/1.6 ui-sans-serif, system-ui, sans-serif; }
+  .sw-load h1 { font-size: 19px; margin: 0 0 6px; }
+  .sw-load p { color: #6b6759; font-size: 13.5px; max-width: 62ch; }
+  .sw-drop { border: 2px dashed #d8d4c8; padding: 26px; margin-top: 16px; text-align: center; border-radius: 8px; }
+  .sw-drop.sw-over { border-color: #14140f; }
+  .sw-err { color: #a1341c; font-size: 13.5px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="sayswho-loader" class="sw-load">
+  <h1>SaysWho report viewer</h1>
+  <p>
+    Open a report JSON written by the harness:
+    <code>python3 -m sayswho.cli &lt;capture&gt; --judge --report-json report.json</code>.
+    Nothing is uploaded; the file is read in this tab.
+  </p>
+  <div class="sw-drop" id="sw-drop">
+    <input type="file" id="sw-file" accept="application/json,.json">
+    <div>or drop the file here</div>
+  </div>
+  <div class="sw-err" id="sw-err" hidden></div>
+</div>
+<div id="sayswho-report"></div>
+<script src="render.js"></script>
+<script src="report-page.js"></script>
+</body>
+</html>

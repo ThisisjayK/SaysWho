@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SaysWho",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Checks whether the sources an AI answer cites actually say what it claims they say.",
   "permissions": [
     "storage",
