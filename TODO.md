@@ -99,6 +99,10 @@ Python side done, browser side not started.
 - [x] Stored pages gitignored. A full claude.ai page carries the sidebar and therefore the titles of every
       other conversation
 - [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk
+- [x] Remove the terminal step without running anything all day. `tools/install_watcher.sh` installs a
+      launchd agent using `WatchPaths`, so the job starts on a change to the capture directory and exits
+      when its queue is empty. No daemon, no polling, no port. The key is sourced from the shell profile
+      rather than written into the plist, per `DATA_CONTRACT.md` §8
 - [ ] Marking on the product page itself, rather than only in the report view. Needs a local server the
       extension can talk to, because the gates and the span guard are Python and a JavaScript
       reimplementation would be the second implementation §9's parity check exists to compare. `SCOPE.md`
@@ -227,7 +231,9 @@ than only on the test built to trip it. `FINDINGS.md` item 10.
       version. Per-claim verdicts still emit
 - [ ] Test asserting no confidence number appears anywhere in any output surface
 - [ ] Headless harness runnable end to end over the frozen query set
-- [ ] `freeze_queries.py check` wired to run before every capture, so a tuned set fails the run
+- [ ] `freeze_queries.py check` wired to run before every capture, so a tuned set fails the run. Partly
+      done: `tools/watch_captures.py` refuses to audit anything when the check fails, and records the
+      refusal. The interactive `sayswho.cli` path still does not run it
 
 Done means pytest with each gate failing on its target bug, not merely present.
 

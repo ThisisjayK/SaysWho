@@ -32,6 +32,27 @@ So the honest description is capture and render, with a local run in between. `S
 one click and has been corrected. Closing the gap means a local server the extension can talk to. That is a
 real build and it is not done.
 
+## Skipping the terminal step
+
+`tools/install_watcher.sh` installs a launchd agent that audits any new capture and writes its report:
+
+```bash
+tools/install_watcher.sh
+```
+
+It uses `WatchPaths`, so launchd starts the job when `~/Downloads/sayswho` changes and the job exits when
+its queue is empty. Nothing of this project runs between captures: no daemon, no polling loop, no port. A
+macOS notification says when a report is ready, and reports land in `~/Downloads/sayswho-reports`.
+
+Remove it with `tools/install_watcher.sh --uninstall`.
+
+Three things worth knowing about it. The key is read from `~/.zshrc` by `run_watcher.sh` rather than written
+into the launchd plist, because a plist is a file on disk and `DATA_CONTRACT.md` §8 says the key never goes
+into one. Reports are written to a *different* directory than the one being watched, since writing into the
+watched directory would retrigger the job forever. And a run that fails is recorded as failed and retried
+next time rather than skipped, because a missing report otherwise looks exactly like a capture you forgot to
+make.
+
 ## Opening the report viewer
 
 Load the extension, then open `chrome-extension://<id>/src/report.html` and pick a `report.json`. The file
