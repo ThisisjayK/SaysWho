@@ -97,10 +97,13 @@ The containment metric was chosen to tolerate a page that *grew* (§6 of `DATA_C
 opposite case: the page shrank, and what it shed was noise. Any site with a "related content" block will
 behave this way.
 
-Not yet fixed. The most promising repair is to stop asking whether the *page* changed and start asking
-whether the *span the judge quoted* is also present in the archived version. Drift only matters when it moved
-the sentence the claim actually rests on, the machinery for that check already exists in the span guard, and
-it costs no model calls.
+**Fixed the same day.** Page-level containment stopped being a gate. It now answers only "is this still the
+same document", at a threshold near zero rather than near one. Whether a change mattered became a per-claim
+question: after the span guard confirms the judge's span is on the live page, the span is checked against the
+archived copy too, and a span that postdates the answer voids the verdict as `SPAN_ADDED_AFTER_GENERATION`.
+The model cannot have read it, so it is not evidence about that answer.
+
+The reference-list case is now a regression test, with the real PubMed authors in it.
 
 ## 6. Most sources have no archived snapshot at all
 

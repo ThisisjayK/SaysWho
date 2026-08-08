@@ -118,10 +118,16 @@ def main(argv: list[str] | None = None) -> int:
     auditable = auditable_denominator(records)
     unauditable = len(records) - auditable
     drift_unknown = sum(1 for d in drifts if d.status == DRIFT_NO_SNAPSHOT)
+    drift_changed = sum(1 for d in drifts if d.status == "DRIFT_PAGE_CHANGED")
 
     print()
     print(f"auditable    {auditable} of {len(records)} sources")
     print(f"unauditable  {unauditable}, excluded from every denominator")
+    if drift_changed:
+        print(
+            f"page changed {drift_changed} source(s) differ from their archived copy but are still the same "
+            "document, so they stay auditable. Whether the change mattered is decided per claim."
+        )
     if drift_unknown:
         print(
             f"drift unknown {drift_unknown}, reported as unknown rather than as unchanged. "
@@ -145,6 +151,7 @@ def main(argv: list[str] | None = None) -> int:
         print()
         print(f"judge        {type(client).__name__}  model={client.model}")
         by_url = {r.url: r for r in records}
+        drift_by_url = {d.url: d for d in drifts}
 
         print()
         print("Phase 1   splitting the answer into claims   [model-inference]")
@@ -161,9 +168,11 @@ def main(argv: list[str] | None = None) -> int:
                     record = by_url.get(url)
                     if record is None or not record.auditable:
                         continue
-                    j = judge_claim(claim, record, client)
+                    j = judge_claim(claim, record, client, drift=drift_by_url.get(url))
                     judgements.append(j)
                     flag = "" if not j.voided else f"  VOID {j.void_reason}"
+                    if j.span_predates_generation is None and j.span:
+                        flag += "  (no snapshot: cannot tell if the span predates the answer)"
                     print(f"  {j.claim_id}  {j.verdict:<22}{flag}")
         except BudgetExceeded as exc:
             print(f"  HALTED  {exc}")

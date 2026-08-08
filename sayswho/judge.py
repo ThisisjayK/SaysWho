@@ -41,6 +41,11 @@ JUDGE_FABRICATED_SPAN = "JUDGE_FABRICATED_SPAN"
 #: The judge declined to answer. Recorded; the claim is not scored either way.
 JUDGE_REFUSED = "JUDGE_REFUSED"
 
+#: The span is on the live page but was not on the archived one. The verdict rests on text that arrived
+#: after the answer was written, so the model cannot have read it. Voided, same as a fabricated span: in
+#: both cases the evidence was not available to the thing being audited.
+SPAN_ADDED_AFTER_GENERATION = "SPAN_ADDED_AFTER_GENERATION"
+
 #: Verdicts that require a span. A claim the source does not mention has nothing to quote.
 SPAN_REQUIRED = frozenset({SUPPORTED, PARTIALLY_SUPPORTED, CONTRADICTED})
 
@@ -91,6 +96,9 @@ class Judgement:
     verdict: str
     span: str = ""
     span_verified: bool = False
+    #: True, False, or None when there was no archived snapshot to compare against. Unknown stays unknown;
+    #: on the first live run five of six sources had no snapshot at all, so None is the common case.
+    span_predates_generation: bool | None = None
     voided: bool = False
     void_reason: str = ""
     reasoning: str = ""
@@ -118,7 +126,7 @@ def span_is_present(span: str, document: str) -> bool:
     return normalise_for_span(span) in normalise_for_span(document)
 
 
-def judge_claim(claim, record: FetchRecord, client: JudgeClient) -> Judgement:
+def judge_claim(claim, record: FetchRecord, client: JudgeClient, drift=None) -> Judgement:
     """Judge one claim against one fetched source.
 
     Refuses to run at all on a source that is not `SOURCE_OK`. Judging a claim against a page we could not
@@ -178,6 +186,18 @@ def judge_claim(claim, record: FetchRecord, client: JudgeClient) -> Judgement:
     if not judgement.span_verified:
         judgement.voided = True
         judgement.void_reason = JUDGE_FABRICATED_SPAN
+        return judgement
+
+    # Drift, asked at the level where it matters. Not "did the page change" but "was the sentence this
+    # verdict rests on already there when the answer was written". A page whose reference list churned is
+    # still the page that was cited; a span that did not exist yet is not evidence the model could have used.
+    if drift is not None:
+        from .drift import span_predates_generation as _predates
+
+        judgement.span_predates_generation = _predates(span, drift)
+        if judgement.span_predates_generation is False:
+            judgement.voided = True
+            judgement.void_reason = SPAN_ADDED_AFTER_GENERATION
 
     return judgement
 
