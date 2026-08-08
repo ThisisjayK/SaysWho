@@ -63,6 +63,7 @@ Extends the G2 table in `SCOPE.md` §3 with one code that writing this document 
 | `SOURCE_PAYWALLED` | Paywall or consent wall detected per §5 |
 | `SOURCE_DRIFTED` | Content differs from the nearest snapshot per §6 |
 | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
+| `SOURCE_NOT_HTML` | 200, but the response is not markup this pipeline can parse (PDF, image, office document) |
 
 `SOURCE_ROBOTS_EXCLUDED` is new. It is tempting to fold it into `SOURCE_UNREACHABLE`, and that would be
 wrong: unreachable means we tried and could not, robots-excluded means we chose not to try. Both leave the
@@ -75,7 +76,19 @@ made. Judging a claim against a page we do not have would be inventing evidence.
 
 ## 5. Extraction
 
-- Readability for HTML. PDFs parsed if a text layer exists, otherwise `SOURCE_EMPTY`. No OCR
+This section previously said "Readability for HTML, PDFs parsed if a text layer exists". Neither was true of
+the code: extraction is a stdlib `HTMLParser`, and there was no content-type check at all, so a cited PDF was
+run through the HTML parser. Corrected here rather than quietly, because a contract that overstates what the
+code does is the same failure this project audits other people for.
+
+- A stdlib `HTMLParser`, not Readability. `sayswho/extract.py` is behind a function boundary so a real
+  extractor can be swapped in, and that dependency decision has not been made
+- Non-markup responses are `SOURCE_NOT_HTML`, decided by the `Content-Type` header and by a `%PDF-` magic
+  number sniff that runs even when the header claims otherwise. **No PDF parsing and no OCR.** A cited PDF is
+  unauditable, which is a real limitation and a common one, since government reports and papers are the
+  citations most likely to be PDFs
+- `img alt` text and SVG text nodes are extracted. A claim resting on a chart has nowhere else to be found,
+  and dropping them made those claims read as absent from the source
 - `SOURCE_EMPTY` threshold: fewer than 200 characters of extracted text
 - Paywall and consent walls detected by heuristic: known interstitial markers, a `paywall` or `consent`
   container with the article body absent, or a body that is almost entirely boilerplate
@@ -84,6 +97,21 @@ made. Judging a claim against a page we do not have would be inventing evidence.
 serve a stub to automated clients will read as `SOURCE_OK` with useless text. The false positive and false
 negative rates for paywall detection are not measured, and the writeup says so rather than presenting the
 paywall count as exact.
+
+**Partial extraction failure is the dangerous case.** The 200 character threshold catches a page that
+yielded nothing. It does not catch a page that yielded enough boilerplate to pass while missing the part that
+mattered, and that failure produces a page-full of `NOT_FOUND_IN_SOURCE`: a clean, consistent, entirely
+artefactual result, the same shape as the gzip bug in `FINDINGS.md` item 7. Two mitigations, both stdlib and
+neither measured:
+
+- **Thin-page flag.** Extracted characters against markup bytes. Above 50KB of markup, under 0.002 of it as
+  text, the run says so. A flag only: it never changes a G2 code, because excluding a source on a guess is
+  the same error pointing the other way
+- **The extraction check on `NOT_FOUND_IN_SOURCE`.** Before that verdict is published, the claim's own
+  numbers and proper nouns are looked for in the page markup. If they are in the markup and missing from the
+  extracted text, the verdict is voided as `EXTRACTION_SUSPECT` and the claim becomes unauditable. This is
+  deliberately biased: a false positive costs coverage, a false negative publishes "the cited source does
+  not support this" when the truth is "we could not read the part that does"
 
 ## 6. Drift
 

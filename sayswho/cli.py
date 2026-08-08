@@ -119,6 +119,12 @@ def main(argv: list[str] | None = None) -> int:
         detail = f"  ({record.detail})" if record.detail else ""
         status = record.http_status if record.http_status is not None else "  -"
         print(f"  {record.code:<24} {str(status):>4}  {record.text_length:>6} chars  {url}{detail}")
+        if record.extraction_thin:
+            print(
+                f"    THIN   {record.text_length} chars extracted from {record.html_bytes} bytes of markup. "
+                "Probably a rendering failure rather than a short page, which would make every claim "
+                "against it read as NOT_FOUND_IN_SOURCE"
+            )
         print(f"    drift  {drifts[-1].status:<20} {drifts[-1].detail}")
 
     auditable = auditable_denominator(records)
@@ -149,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.judge and auditable:
         from .claims import split_claims
         from .gemini import build_judge
-        from .judge import JudgeReport, judge_claim
+        from .judge import EXTRACTION_SUSPECT, JudgeReport, judge_claim
         from .model import BudgetExceeded, Meter
 
         meter = Meter(budget_tokens=args.budget)
@@ -203,6 +209,13 @@ def main(argv: list[str] | None = None) -> int:
                 else "no verdict required a span, so there is no rate"
             )
         )
+        suspect = sum(1 for j in judgements if j.void_reason == EXTRACTION_SUSPECT)
+        if suspect:
+            print(
+                f"extraction   {suspect} NOT_FOUND_IN_SOURCE verdict(s) voided: the claim's own numbers or "
+                "names are in the page markup and missing from what we extracted, so the extractor is the "
+                "likelier explanation. Voided rather than published as a citation failure"
+            )
         print(f"metering     {meter.to_dict()}")
         print()
         print("No aggregate support rate is printed. G4: there is no gold set for this judge and prompt")

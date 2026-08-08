@@ -18,6 +18,7 @@ an injected page can supply a real span, so the guard bounds the damage rather t
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 
 from .extract import normalise_for_span
@@ -40,6 +41,16 @@ JUDGE_FABRICATED_SPAN = "JUDGE_FABRICATED_SPAN"
 
 #: The judge declined to answer. Recorded; the claim is not scored either way.
 JUDGE_REFUSED = "JUDGE_REFUSED"
+
+#: The judge said the source does not contain the claim, but the claim's distinctive tokens are present in
+#: the page's markup and absent from what the extractor produced. That makes the verdict a fact about our
+#: extractor rather than about the source, so it is voided and the claim becomes unauditable.
+#:
+#: This guard is deliberately biased. A false positive costs coverage; a false negative publishes
+#: "the cited source does not support this" when the truth is "we could not read the part that does".
+#: NOT_FOUND_IN_SOURCE is the verdict that accuses the product and the only one carrying no span, so it is
+#: the one place in the pipeline where an unverifiable claim would otherwise be published as a finding.
+EXTRACTION_SUSPECT = "EXTRACTION_SUSPECT"
 
 #: The span is on the live page but was not on the archived one. The verdict rests on text that arrived
 #: after the answer was written, so the model cannot have read it. Voided, same as a fabricated span: in
@@ -126,6 +137,46 @@ def span_is_present(span: str, document: str) -> bool:
     return normalise_for_span(span) in normalise_for_span(document)
 
 
+#: Numbers of two digits or more, percentages and decimals. A "3" is not evidence of anything; a "78%" or a
+#: "2022" appearing in the markup and not in the extraction is.
+_NUMBER = re.compile(r"\d[\d,.]*%?")
+
+#: Capitalised words of four characters or more. Crude proper-noun detection, and it will pick up the first
+#: word of a sentence, which is why one word alone is never enough to fire the guard.
+_PROPER = re.compile(r"\b[A-Z][A-Za-z\-']{3,}\b")
+
+
+def extraction_dropped_evidence(claim_text: str, extracted: str, raw: str) -> tuple[str, ...]:
+    """Tokens from the claim that the markup contains and the extraction does not.
+
+    Empty tuple means the extraction is not the explanation, so a NOT_FOUND_IN_SOURCE stands.
+
+    One missing number is enough, because a number surviving in the markup and not in the text is hard to
+    explain any other way. Proper nouns need two, since navigation and page furniture are full of single
+    capitalised words and the raw pass keeps furniture on purpose.
+    """
+    if not raw:
+        return ()
+
+    have = normalise_for_span(extracted)
+    could_have = normalise_for_span(raw)
+
+    def missing(tokens):
+        return [t for t in tokens if t.casefold() not in have and t.casefold() in could_have]
+
+    numbers = {t for t in _NUMBER.findall(claim_text) if len(re.sub(r"\D", "", t)) >= 2}
+    propers = set(_PROPER.findall(claim_text))
+
+    missing_numbers = missing(numbers)
+    missing_propers = missing(propers)
+
+    if missing_numbers:
+        return tuple(sorted(missing_numbers) + sorted(missing_propers))
+    if len(missing_propers) >= 2:
+        return tuple(sorted(missing_propers))
+    return ()
+
+
 def judge_claim(claim, record: FetchRecord, client: JudgeClient, drift=None) -> Judgement:
     """Judge one claim against one fetched source.
 
@@ -178,8 +229,20 @@ def judge_claim(claim, record: FetchRecord, client: JudgeClient, drift=None) -> 
         return judgement
 
     if verdict not in SPAN_REQUIRED:
-        # NOT_FOUND_IN_SOURCE has nothing to quote, so there is nothing to verify.
-        judgement.span_verified = True
+        # NOT_FOUND_IN_SOURCE has nothing to quote, so `span_verified` stays False: nothing was verified.
+        # It used to be set True here, meaning "nothing to check", which reads as "checked and fine" to
+        # anything downstream that displays it.
+        dropped = extraction_dropped_evidence(claim.text, record.text, record.html)
+        if dropped:
+            judgement.voided = True
+            judgement.void_reason = EXTRACTION_SUSPECT
+            judgement.notes = (
+                (judgement.notes + "\n\n" if judgement.notes else "")
+                + "Present in the page markup and missing from the extracted text: "
+                + ", ".join(dropped)
+                + ". The extractor is a likelier explanation than the source, so this verdict is voided "
+                "rather than published as a citation failure."
+            )
         return judgement
 
     judgement.span_verified = span_is_present(span, record.text)

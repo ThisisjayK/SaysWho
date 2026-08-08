@@ -213,15 +213,23 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   |---|---|
   | `SOURCE_OK` | 200, non-trivial extractable text |
   | `SOURCE_UNREACHABLE` | 4xx / 5xx / timeout / DNS failure (an ERROR) |
-  | `SOURCE_EMPTY` | 200 but no extractable text (JS-only, unparsed PDF), which is not an error |
+  | `SOURCE_EMPTY` | 200 but no extractable text (JS-only), which is not an error |
   | `SOURCE_PAYWALLED` | paywall or consent wall detected |
   | `SOURCE_DRIFTED` | the URL now serves a *different document* than the archived one (containment below 0.10) |
   | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
+  | `SOURCE_NOT_HTML` | 200, but not markup this pipeline can parse: PDF, image, office document |
 
   `SOURCE_ROBOTS_EXCLUDED` was added while writing `DATA_CONTRACT.md`, which is the kind of thing writing a
   contract before writing code is for. Folding it into `SOURCE_UNREACHABLE` would have been tidier and
   wrong: unreachable means we tried and could not, robots-excluded means we chose not to try. The arithmetic
   is the same either way, since both are `UNAUDITABLE`, but the reason published beside the number is not.
+
+  `SOURCE_NOT_HTML` was added on day 3 for the same reason and was found the same way, by looking rather than
+  by planning: there was no content-type check anywhere in the fetch layer, so a cited PDF went through the
+  HTML parser and came out as whatever fell out. This row previously lived inside `SOURCE_EMPTY` as
+  "unparsed PDF", which collapsed "we parsed it and it was blank" into "we never had a parser for it". The
+  count is likely to be non-trivial: government reports and papers are exactly the citations most likely to
+  be PDFs, and the writeup reports how many citations the tool could not read at all for this reason.
 
   *Failure path:* anything other than `SOURCE_OK` marks the claim `UNAUDITABLE` with the reason code
   attached. `UNAUDITABLE` never contributes to the unsupported count and never enters the score denominator.
@@ -235,6 +243,16 @@ Asks whether the retrieved text supports the claim. Verdicts: `SUPPORTED`, `PART
   substring check confirms it. Absent or fabricated → verdict voided, logged `JUDGE_FABRICATED_SPAN`.
   *Failure path:* voided verdicts are counted and published as their own rate. This number is a finding
   about the judge, not a bug to hide.
+- **The extraction check on `NOT_FOUND_IN_SOURCE`.** G3 only guards verdicts that carry a span, and
+  `NOT_FOUND_IN_SOURCE` carries none by definition, so the verdict that accuses the product being audited is
+  the one verdict with no deterministic check behind it. Every way this tool can fail to read a page (a PDF,
+  a JavaScript shell, a chart, a table) produces exactly that verdict.
+
+  So before it is published, the claim's own numbers and proper nouns are looked for in the page markup. If
+  they are present there and missing from the extracted text, the verdict is voided as `EXTRACTION_SUSPECT`
+  and the claim becomes `UNAUDITABLE`. The check is deliberately biased: a false positive costs coverage, a
+  false negative publishes "the cited source does not support this" when the truth is "we could not read the
+  part that does". It is a mitigation and not a solution, and §7 says so.
 
 ### Phase 4: Calibration against a human gold set
 A hand-labeled sample (core target: 30–40 claims, labeled by me before seeing judge output) measures the

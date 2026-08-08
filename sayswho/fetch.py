@@ -15,9 +15,10 @@ from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
 from .cache import FetchCache, now_iso
-from .extract import EMPTY_THRESHOLD, detect_wall, extract_text
+from .extract import EMPTY_THRESHOLD, detect_wall, extract_text, extraction_looks_thin
 from .records import (
     SOURCE_EMPTY,
+    SOURCE_NOT_HTML,
     SOURCE_OK,
     SOURCE_PAYWALLED,
     SOURCE_ROBOTS_EXCLUDED,
@@ -37,8 +38,41 @@ MAX_RETRIES = 2
 BACKOFF_SECONDS = (2.0, 8.0)
 
 
+#: Media types this pipeline has a parser for. Everything else is SOURCE_NOT_HTML rather than being run
+#: through an HTML parser to see what falls out. `text/plain` is included because a plain text response
+#: parses to itself.
+_PARSEABLE_TYPES = frozenset(
+    {"text/html", "application/xhtml+xml", "application/xml", "text/xml", "text/plain"}
+)
+
+
 def user_agent(contact: str = DEFAULT_CONTACT) -> str:
     return f"SaysWho/0.1 (citation audit research; +{PROJECT_URL}; {contact})"
+
+
+def content_type_of(headers: dict) -> str:
+    """The media type alone, lowercased, parameters dropped. Empty string when the server did not say."""
+    for key in ("content-type", "Content-Type"):
+        value = headers.get(key)
+        if value:
+            return str(value).split(";")[0].strip().lower()
+    return ""
+
+
+def is_parseable(content_type: str, body: bytes) -> tuple[bool, str]:
+    """Can this pipeline read this response? Returns (parseable, reason when not).
+
+    The magic-number sniff runs even when the header looks fine, because a server that labels a PDF
+    `text/html` would otherwise put binary through the extractor. A missing Content-Type is treated as
+    markup, which is the conventional reading and is recorded here rather than left implicit.
+    """
+    if body[:1024].lstrip()[:5] == b"%PDF-":
+        return False, "response body is a PDF regardless of what the Content-Type header said"
+    if not content_type:
+        return True, ""
+    if content_type in _PARSEABLE_TYPES:
+        return True, ""
+    return False, f"Content-Type {content_type} is not markup this pipeline can parse"
 
 
 def decode_body(body: bytes, headers: dict) -> tuple[bytes | None, str]:
@@ -272,7 +306,22 @@ class Fetcher:
             # We hold the bytes but cannot read them. That is not evidence about the claim.
             return FetchRecord(code=SOURCE_EMPTY, text_length=0, **{**base, "detail": note})
 
-        text = extract_text(decoded.decode("utf-8", errors="replace"))
+        content_type = content_type_of(headers or {})
+        base["content_type"] = content_type
+        base["html_bytes"] = len(decoded)
+
+        parseable, why_not = is_parseable(content_type, decoded)
+        if not parseable:
+            # We have the bytes and they are intact. We simply have no parser, which is a different fact
+            # from an empty page and is published as one.
+            return FetchRecord(
+                code=SOURCE_NOT_HTML, text_length=0, **{**base, "detail": why_not}
+            )
+
+        html = decoded.decode("utf-8", errors="replace")
+        text = extract_text(html)
+        base["html"] = html
+        base["extraction_thin"] = extraction_looks_thin(len(text), len(decoded))
 
         # Wall detection runs before the length threshold. A paywalled page usually is short, and reporting
         # it as SOURCE_EMPTY would lose the reason it was empty.

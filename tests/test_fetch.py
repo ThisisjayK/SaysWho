@@ -12,6 +12,7 @@ import pytest
 from sayswho.fetch import Fetcher, user_agent
 from sayswho.records import (
     SOURCE_EMPTY,
+    SOURCE_NOT_HTML,
     SOURCE_OK,
     SOURCE_PAYWALLED,
     SOURCE_ROBOTS_EXCLUDED,
@@ -34,6 +35,26 @@ def test_readable_page_is_source_ok(server, cache):
     assert record.text_length > 200
     assert "musculoskeletal adverse events" in record.text
     assert record.auditable
+
+
+def test_a_pdf_is_source_not_html_over_real_http(server, cache):
+    """The whole point is what arrives over the wire, so this asserts against a real response.
+
+    Before the content-type gate this was fed to an HTML parser and whatever fell out was judged.
+    """
+    record = fetcher(cache).fetch(server.url("/report.pdf"))
+    assert record.code == SOURCE_NOT_HTML
+    assert record.http_status == 200
+    assert record.content_type == "application/pdf"
+    assert not record.auditable
+    assert record.text == "", "a document we cannot parse must not carry text into the judge"
+
+
+def test_a_pdf_served_as_html_is_still_source_not_html(server, cache):
+    record = fetcher(cache).fetch(server.url("/liar.html"))
+    assert record.code == SOURCE_NOT_HTML
+    assert "regardless" in record.detail
+    assert not record.auditable
 
 
 def test_short_page_is_source_empty_not_unreachable(server, cache):

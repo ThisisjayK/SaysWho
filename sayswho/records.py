@@ -28,6 +28,17 @@ SOURCE_PAYWALLED = "SOURCE_PAYWALLED"
 SOURCE_DRIFTED = "SOURCE_DRIFTED"
 SOURCE_ROBOTS_EXCLUDED = "SOURCE_ROBOTS_EXCLUDED"
 
+#: The response was not markup this pipeline can read: a PDF, an image, an office document. Distinct from
+#: SOURCE_EMPTY on the same grounds SOURCE_ROBOTS_EXCLUDED is distinct from SOURCE_UNREACHABLE. Empty means
+#: we parsed it and there was nothing there; not-html means we never had a parser for it. Both leave the
+#: claim UNAUDITABLE, and the arithmetic is identical, but "the citation is a PDF we cannot read" and "the
+#: citation is a blank page" are different sentences to publish next to a number.
+#:
+#: Before this code existed a cited PDF went through the HTML parser, which is the same shape as the gzip
+#: bug in FINDINGS.md item 7: it parses without error, produces plausible-looking output, and matches
+#: nothing. Government reports and papers are exactly the citations most likely to be PDFs.
+SOURCE_NOT_HTML = "SOURCE_NOT_HTML"
+
 #: Every G2 code other than SOURCE_OK makes its claim UNAUDITABLE and stops the pipeline for that claim.
 #: No judge call is made against a source we do not have. Judging a claim against a page we could not read
 #: would be inventing the evidence.
@@ -41,6 +52,7 @@ ALL_G2_CODES = frozenset(
         SOURCE_PAYWALLED,
         SOURCE_DRIFTED,
         SOURCE_ROBOTS_EXCLUDED,
+        SOURCE_NOT_HTML,
     }
 )
 
@@ -209,9 +221,22 @@ class FetchRecord:
     attempts: int = 0
     detail: str = ""
 
+    #: What the server said it was sending, and how much of it there was. Recorded because the extraction
+    #: check below is only interpretable next to them.
+    content_type: str = ""
+    html_bytes: int = 0
+
+    #: Large page, almost no extracted text. A flag, never a code: see extract.extraction_looks_thin. The
+    #: source stays auditable and the run says so out loud, because the alternative failure is silent.
+    extraction_thin: bool = False
+
     #: Extracted text. Deliberately excluded from to_dict: the repo publishes verdicts and quoted spans,
     #: not copies of the pages it fetched. See DATA_CONTRACT.md §9.
     text: str = field(default="", repr=False)
+
+    #: The decoded markup, kept in memory for the extraction check in judge.py and dropped from to_dict for
+    #: the same reason as `text`. Never written to the repo.
+    html: str = field(default="", repr=False)
 
     @property
     def auditable(self) -> bool:
@@ -220,4 +245,5 @@ class FetchRecord:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d.pop("text", None)
+        d.pop("html", None)
         return d

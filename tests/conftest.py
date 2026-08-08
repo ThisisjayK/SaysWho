@@ -91,6 +91,21 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             return self.wfile.write(payload)
+        if self.path == "/report.pdf":
+            payload = b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n%%EOF\n"
+            self.send_response(200)
+            self.send_header("Content-Type", "application/pdf")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
+        if self.path == "/liar.html":
+            # A PDF served as text/html. Seen in the wild from CDNs and document servers.
+            payload = b"%PDF-1.4\n" + b"0" * 400
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
         if self.path == "/flaky":
             type(self).flaky_hits += 1
             if type(self).flaky_hits <= 2:
