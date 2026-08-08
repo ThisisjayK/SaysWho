@@ -156,12 +156,16 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       before the splitter sees them, or report the skip rate in a unit that is not block-based. Until then
       the skip rate does not measure the share of the answer that went unchecked, and the writeup has to say
       so. `FINDINGS.md` item 9
-- [ ] **Pin the gold set to a stored split.** The splitter returned 139 skipped lines on one run and 119 on
-      the next over the byte identical capture. If day 5 labels a claim that a later run does not produce,
-      the agreement number is computed over a set that no longer matches. Store the split the gold set was
-      labelled against and judge against that, rather than re-deriving it. `FINDINGS.md` item 8
-- [ ] Say how many splits any published skip rate is over, or stop reporting `skipped_count` as a property of
-      the answer. Two runs do not characterise the spread
+- [ ] **Pin the gold set to a stored split. Highest priority in this file.** Eight splits of one capture gave
+      15 to 21 claims and 104 to 156 skipped lines. Claim ids are positional, so `#009` in one run and `#009`
+      in the next are different sentences: a gold set labelled by id against a re-derived split would not
+      just lose claims, it would relabel them. Store the split, label against the stored split, judge against
+      the stored split. `FINDINGS.md` item 8
+- [x] Measure the spread rather than guessing at it. `tools/split_spread.py`, Phase 1 only, five runs for
+      nothing on the free tier. claims 15 to 21, skipped 104 to 156, uncited 0 to 9
+- [ ] Every published rate derived from a split states how many splits it is over. `uncited_claim_count`
+      especially: §7 offers it as the evidence about omission blindness and it ranged from 0 to 9 on one
+      answer
 - [ ] Count the uncited factual lines currently landing in the skip list, so `uncited_claim_count` is
       reported as a floor with a measured gap rather than a floor with an unknown one
 - [x] **Stop publishing extraction failures as citation failures.** Every way the tool fails to read a page
@@ -174,6 +178,11 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [ ] Measure which way `EXTRACTION_SUSPECT` errs. It is biased on purpose, towards losing coverage rather
       than towards accusing a product, but neither its false positive nor its false negative rate is known.
       The day 5 gold set is the only thing that can measure it, and the writeup says so until it does
+- [ ] Extend the extraction check to qualitative claims, or accept that it cannot cover them and say so.
+      It fired on none of the six `NOT_FOUND_IN_SOURCE` verdicts in the guards re-run, and checking by hand
+      showed none of the six carried a number or a dropped proper noun. Recorded in `SCOPE.md` §7
+- [ ] Exercise `SOURCE_NOT_HTML` and the thin-page flag on live data. Both are tested and neither has fired
+      on a real capture, because this answer cites no PDFs. The Claude research report cites one
 - [ ] Label extraction failures separately in the gold set. As designed they will fold into the judge's error
       rate, since a hand-labeller reading the real page marks supported where the pipeline said not-found.
       A bad extractor and a bad judge are different problems with the same symptom

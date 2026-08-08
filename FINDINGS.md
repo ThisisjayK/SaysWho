@@ -137,16 +137,33 @@ The day 3 run split a ChatGPT answer into 20 claims and 139 skipped lines. Re-ru
 identical capture, same `answer_sha256`, same judge, same pinned model, same `claims-v1` prompt, returned 20
 claims again and 119 skipped lines.
 
-The kept side was stable. The skipped side moved by 14%.
+**Corrected after a third run.** This entry originally said the kept side was stable and only the skip count
+moved. That was two data points and it was wrong. The third pipeline run returned 15 claims, and a five-run
+Phase 1 spread (`tools/split_spread.py`) settled it:
 
-So `skipped_count` is not a property of the answer. It is a property of one splitting run over that answer,
-and `SCOPE.md` §3 currently publishes it as though it were the former. Any skip rate in the writeup needs to
-say how many splits it is over, and two runs are not enough to characterise the spread.
+| | min | max | spread | mean | stdev |
+|---|---|---|---|---|---|
+| claims | 15 | 21 | 6 | 18.2 | 2.9 |
+| skipped | 104 | 156 | 52 | 112.2 | 13.4 |
+| uncited | 0 | 9 | 9 | 5.6 | 3.9 |
 
-Worse for day 5: the gold set is labelled against one split. If the split moves, a claim in the gold set can
-be absent from the next run's claim list, and the agreement number is then computed over a set that no longer
-matches. Whatever unit the support rate settles on, the gold set has to be pinned to a stored split rather
-than re-derived.
+Eight splits in total, one answer, one judge, one prompt version.
+
+Phase 1 never sees a source document, only the answer text and the citation markers, so none of this is a
+side effect of the extraction work in item 11. It is the splitter alone.
+
+`uncited_claim_count` is the worst of the three. `SCOPE.md` §7 offers it as the evidence for how much
+omission blindness there is, and across eight runs of the same answer it ranged from zero to nine. A single
+run reporting zero would have read as "this answer cites everything it asserts".
+
+So none of these are properties of the answer. They are properties of one splitting run over that answer, and
+§3 publishes all three. Any rate derived from a split now carries the number of splits it is over.
+
+Worse for day 5: the gold set is labelled against one split. Claim ids are positional, `#001` through
+`#0NN` in splitter order, so `#009` in one run and `#009` in the next are not the same sentence. A gold set
+labelled by id against a re-derived split would not merely lose claims, it would silently relabel them. The
+gold set has to be pinned to a stored split and judged against that stored split, whatever unit the support
+rate settles on.
 
 Also found on the way: the run published the skip count and discarded the skipped text, so this could not
 have been checked at all. Fixed with `--dump-skipped`, and the split is now carried in the `--json` record.
@@ -230,6 +247,19 @@ The last one is deliberately biased and the bias is the point. A false positive 
 negative publishes "the cited source does not support this" when the truth is "we could not read the part
 that does". Only the day 5 gold set can measure which way it errs, and until then the mitigation is a
 mitigation rather than a fix.
+
+**It did not fire on the first capture it ran against, and checking why narrowed the claim.** All six
+`NOT_FOUND_IN_SOURCE` verdicts stood. Running the guard's inputs by hand against the cached pages rather than
+assuming that was correct: none of the six was close, because none of the six claims contained a number at
+all, and no proper noun in them had been dropped by the extractor. Sentences like "It specifically serves
+underserved populations, including eligible uninsured/underinsured Massachusetts residents" carry nothing
+distinctive enough for the check to work with.
+
+So the guard has no coverage on qualitative claims, which on this capture was six of six. It defends the
+numeric claims, which are the ones a reader acts on, and it leaves prose assertions where they were. Recorded
+in `SCOPE.md` §7. The other two guards, `SOURCE_NOT_HTML` and the thin-page flag, had nothing to catch on
+this capture either: it cites no PDFs and no page came back suspiciously thin. All three are tested and only
+one has been exercised on live data.
 
 One correction fell out of the same pass: `NOT_FOUND_IN_SOURCE` was setting `span_verified = True`, meaning
 "nothing to check". Nothing counted it, so no published number was wrong, but a marking interface reading
