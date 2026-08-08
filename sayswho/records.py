@@ -126,6 +126,11 @@ class Capture:
     citations_possibly_hidden: int = 0
     expanders_seen: int = 0
 
+    #: Characters the browser laid out, versus characters present in the DOM. A shortfall means part of the
+    #: answer was never rendered and is missing from the captured text.
+    rendered_chars: int = 0
+    dom_chars: int = 0
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)
@@ -145,7 +150,10 @@ class Capture:
         A capture that is quietly short produces a support rate over a subset of the answer and looks
         entirely normal doing it. This is the one thing about a capture that must never be silent.
         """
-        return self.citations_possibly_hidden > 0
+        if self.citations_possibly_hidden > 0:
+            return True
+        # Five percent of slack for whitespace differences between innerText and textContent.
+        return self.dom_chars > 0 and self.dom_chars > self.rendered_chars * 1.05
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
