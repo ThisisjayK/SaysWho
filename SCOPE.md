@@ -408,6 +408,25 @@ rest test how good the judge is, which matters less than whether the guard rails
 - **Whether a source is authoritative** for the claim it supports. A blog post and a peer-reviewed paper are
   the same object to this tool.
 
+- **Whether a qualitative claim was missed by the extractor rather than absent from the source.** The
+  extraction check in §3 Phase 3 voids a `NOT_FOUND_IN_SOURCE` when the claim's numbers or proper nouns are
+  in the page markup and missing from the extracted text. It only works on claims that carry such tokens.
+
+  Measured on the first capture it ran against: of six `NOT_FOUND_IN_SOURCE` verdicts, six contained no
+  numbers at all and no proper noun the extractor had dropped, so the check could not fire on any of them.
+  It defends numeric claims, which are the ones a reader acts on, and it leaves prose assertions exactly
+  where they were. The mitigation is narrower than "extraction failures no longer read as citation
+  failures", and the writeup uses the narrow version.
+
+- **How much of the skip rate is the answer and how much is the splitter.** Phase 1 is a model call and it
+  does not return the same split twice. Eight splits of one byte-identical capture returned between 15 and
+  21 claims, between 104 and 156 skipped lines, and between 0 and 9 uncited claims.
+
+  That last range is the uncomfortable one, because `uncited_claim_count` is the number this section offers
+  as evidence about omission blindness, and one run put it at zero while another put it at nine. Every rate
+  derived from a split therefore carries the number of splits it is over, and the writeup does not report a
+  skip rate from a single run.
+
 - **Whether the judge is neutral about one of the audited products.** The judge runs on Gemini's free tier,
   because a run that costs nothing is a hard constraint on this project rather than a preference. §10 audits
   Google AI Overviews alongside Claude, ChatGPT and Perplexity, so for that one product the judge and the
