@@ -50,4 +50,8 @@ measured, and incumbent behaviour is attributed to their marketing copy.
 - `email-to-professor.md` is a record of what was already sent. Do not edit it, including to fix the old
   project name. It said RECEIPTS because that is what went out
 - Prose in this project contains no em dashes. Check before committing anything written
-- Tooling is stdlib only. Python 3.11 or newer for `tomllib`. Do not add dependencies without asking
+- The fetch, extraction, re-extraction and gate layers are stdlib only. Python 3.11 or newer for `tomllib`
+- One dependency: `anthropic`, the official SDK, used only by `sayswho/model.py`. Added on day 3 because the
+  judge needs a model and hand-rolling HTTP against an API with structured outputs, prompt caching and
+  refusal handling would be reimplementing the SDK badly. Nothing else imports it
+- Do not add further dependencies without asking

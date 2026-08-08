@@ -35,6 +35,13 @@ def main(argv: list[str] | None = None) -> int:
         help="skip the Wayback comparison. Drift is on by default, because a run with it off measures "
         "something different and the difference would not be visible in the output",
     )
+    parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="run Phase 1 and Phase 3. Costs money and needs ANTHROPIC_API_KEY. Off by default so the "
+        "fetch pass can be run freely",
+    )
+    parser.add_argument("--budget", type=int, default=2_000_000, help="token budget; the run halts at it")
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
     args = parser.parse_args(argv)
 
@@ -119,6 +126,57 @@ def main(argv: list[str] | None = None) -> int:
     if auditable == 0:
         print()
         print("No source could be read. Nothing here is evidence that any claim is unsupported.")
+
+    claim_set = None
+    report = None
+    if args.judge and auditable:
+        from .claims import split_claims
+        from .judge import JudgeReport, judge_claim
+        from .model import AnthropicJudge, BudgetExceeded, Meter
+
+        meter = Meter(budget_tokens=args.budget)
+        client = AnthropicJudge(meter=meter)
+        by_url = {r.url: r for r in records}
+
+        print()
+        print("Phase 1   splitting the answer into claims   [model-inference]")
+        claim_set = split_claims(capture, client)
+        print(f"  claims   {len(claim_set.claims)}   uncited {claim_set.uncited_count}")
+        print(f"  G1 skipped {len(claim_set.skipped)}, counted and reported, never dropped")
+
+        print()
+        print("Phase 3   judging each claim against its source   [model-inference]")
+        judgements = []
+        try:
+            for claim in claim_set.claims:
+                for url in claim.urls:
+                    record = by_url.get(url)
+                    if record is None or not record.auditable:
+                        continue
+                    j = judge_claim(claim, record, client)
+                    judgements.append(j)
+                    flag = "" if not j.voided else f"  VOID {j.void_reason}"
+                    print(f"  {j.claim_id}  {j.verdict:<22}{flag}")
+        except BudgetExceeded as exc:
+            print(f"  HALTED  {exc}")
+
+        report = JudgeReport(judgements)
+        rate = report.fabricated_span_rate
+        print()
+        print(f"verdicts     {report.counts()}")
+        print(
+            "fabricated   "
+            + (
+                f"{report.fabricated_span_count} of {len([j for j in judgements if j.span])} "
+                f"span-bearing verdicts ({rate:.1%})"
+                if rate is not None
+                else "no verdict required a span, so there is no rate"
+            )
+        )
+        print(f"metering     {meter.to_dict()}")
+        print()
+        print("No aggregate support rate is printed. G4: there is no gold set for this judge and prompt")
+        print("version yet, so per-claim verdicts are all this run is entitled to report.")
 
     if args.json:
         print()

@@ -57,7 +57,29 @@ link, so a person clicking it would probably see the page: `SOURCE_UNREACHABLE` 
 citation is broken" and "this citation is unreadable to anyone automated", and those are different findings.
 And this is one report, chosen because it was open, not sampled.
 
-## 4. Three silent-shortfall bugs in one day of building
+## 4. The span guard is narrower than the scope document claimed
+
+Written on day 3 while testing break attempt 5. `SCOPE.md` §6 said the guard would "contain the blast
+radius" of a prompt injection. Building it showed the containment splits cleanly in two.
+
+An injection that **orders a verdict without naming evidence** is caught. The judge obeys the page, invents a
+span to justify the verdict, and the substring check voids it.
+
+An injection that **dictates the span** is not caught, and the reason is structural rather than a bug to fix.
+Writing a span into the instruction puts that span on the page. The guard tests presence; the attacker
+controls the page; so the attacker can always satisfy presence. No substring check survives this.
+
+The same hole exists without any adversary: a judge can quote a real but irrelevant sentence and call it
+support. The guard checks presence, never relevance.
+
+So the guarantee is not "the judge cannot invent its evidence." It is "the judge cannot invent evidence the
+page does not contain." Against an adversarial page those are different sentences. The writeup uses the
+second one, and the gold set is what measures the gap between them.
+
+This was found because a test written to assert the guard *worked* failed. Both cases are now pinned by
+tests, including the one that fails by design and is kept rather than fixed.
+
+## 5. Three silent-shortfall bugs in one day of building
 
 Unrendered text, citations hidden behind a "+N" control, and a stale content script. Each produced a capture
 that parsed cleanly, carried a plausible citation count, and was wrong. None announced itself.
