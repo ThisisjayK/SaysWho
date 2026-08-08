@@ -1,3 +1,9 @@
+# secrets. The key belongs in the shell environment, never in the repo. DATA_CONTRACT.md §8: the key is
+# read from the environment and is never written to disk or committed.
+.env
+.env.*
+*.key
+
 # macOS
 .DS_Store
 
