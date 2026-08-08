@@ -156,11 +156,12 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       before the splitter sees them, or report the skip rate in a unit that is not block-based. Until then
       the skip rate does not measure the share of the answer that went unchecked, and the writeup has to say
       so. `FINDINGS.md` item 9
-- [ ] **Pin the gold set to a stored split. Highest priority in this file.** Eight splits of one capture gave
-      15 to 21 claims and 104 to 156 skipped lines. Claim ids are positional, so `#009` in one run and `#009`
-      in the next are different sentences: a gold set labelled by id against a re-derived split would not
-      just lose claims, it would relabel them. Store the split, label against the stored split, judge against
-      the stored split. `FINDINGS.md` item 8
+- [x] **Pin the gold set to a stored split.** `sayswho/splits.py`, plus `--split` and `--save-split`. A
+      stored split carries the `answer_sha256` it came from, the claim prompt version and a `split_sha256`
+      over its own claims, and binding it to a different answer, a different prompt version or an edited
+      file all raise rather than falling back to re-splitting. Claim ids are now content-addressed, so an id
+      means one sentence rather than one position: under the old positional ids a gold set would have
+      silently relabelled rather than merely lost claims. G4's tuple is now judge, prompt version and split
 - [x] Measure the spread rather than guessing at it. `tools/split_spread.py`, Phase 1 only, five runs for
       nothing on the free tier. claims 15 to 21, skipped 104 to 156, uncited 0 to 9
 - [ ] Every published rate derived from a split states how many splits it is over. `uncited_claim_count`
@@ -181,6 +182,10 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [ ] Extend the extraction check to qualitative claims, or accept that it cannot cover them and say so.
       It fired on none of the six `NOT_FOUND_IN_SOURCE` verdicts in the guards re-run, and checking by hand
       showed none of the six carried a number or a dropped proper noun. Recorded in `SCOPE.md` §7
+- [x] Fix the extraction check's first two live firings, both false positives. `extract.raw_text` was
+      written for the comparison and never wired in, so the guard was matching claim tokens against raw
+      markup: "Case" hit a `switch` statement and "Transportation" hit a nav link. The raw pass now excludes
+      site furniture as well as scripts, and both cases are regression tests. `FINDINGS.md` item 11
 - [ ] Exercise `SOURCE_NOT_HTML` and the thin-page flag on live data. Both are tested and neither has fired
       on a real capture, because this answer cites no PDFs. The Claude research report cites one
 - [ ] Label extraction failures separately in the gold set. As designed they will fold into the judge's error

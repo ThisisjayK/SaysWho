@@ -203,6 +203,19 @@ Splits the answer into atomic factual claims bound to citation markers.
   → `NOT_A_FACTUAL_CLAIM`, skipped.
   *Failure path:* skipped claims are counted and reported, never dropped silently. The skip count is a
   published number, because a system that quietly discards what it can't handle is lying by omission.
+- **A split is a sample, so it is written down.** This phase is a model call and it does not return the same
+  split twice: eight splits of one byte-identical capture gave 15 to 21 claims, 104 to 156 skipped lines and
+  0 to 9 uncited claims. A split is therefore stored to a file (`sayswho/splits.py`), and the gold set is
+  labelled against that file rather than against whatever the next run happens to produce.
+
+  Claim ids are content-addressed, derived from the claim's own normalised text, so an id means one sentence
+  rather than one position in splitter order. Under the old positional ids, `#009` was a different sentence
+  in every run and a gold set labelled by id would have silently relabelled rather than merely lost claims.
+
+  *Failure path:* a stored split records the `answer_sha256` it came from, the claim prompt version, and a
+  `split_sha256` over its own claims. Binding it to a different answer raises, binding it under a different
+  prompt version raises, and an edited file raises. It never falls back to re-splitting, because a run that
+  looks pinned and is not is worse than a run that stops.
 
 ### Phase 2: Source retrieval (liveness)
 Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extracted text length.
@@ -266,6 +279,10 @@ Expanding the set is a stretch item.
   version, the tool refuses to print aggregate rates.
   *Failure path:* it emits per-claim verdicts only, each stamped model-judgment. An uncalibrated judge can
   produce useful individual audits; it cannot produce a trustworthy percentage.
+
+  G4 was written assuming "the gold set for this judge and prompt version" identified a fixed set of claims.
+  Phase 1's nondeterminism broke that assumption, so the tuple is now judge, prompt version **and
+  `split_sha256`**. A gold set is valid for the split it was labelled against and no other.
 
 ### Phase 5: Report
 Emits the audit JSON, a human-readable report, and a `RUN_LOG.md` entry.

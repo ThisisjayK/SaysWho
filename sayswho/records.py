@@ -234,9 +234,13 @@ class FetchRecord:
     #: not copies of the pages it fetched. See DATA_CONTRACT.md §9.
     text: str = field(default="", repr=False)
 
-    #: The decoded markup, kept in memory for the extraction check in judge.py and dropped from to_dict for
-    #: the same reason as `text`. Never written to the repo.
-    html: str = field(default="", repr=False)
+    #: The permissive extraction, for the extraction check in judge.py. Dropped from to_dict for the same
+    #: reason as `text`, and never written to the repo.
+    #:
+    #: This holds `extract.raw_text` output rather than the markup. The check compares two *extractions* of
+    #: the same page, so what it needs is the wider one. Handing it raw markup, which is what the first
+    #: version did, meant a claim's tokens could match a `switch` statement or a CSS class name.
+    raw: str = field(default="", repr=False)
 
     @property
     def auditable(self) -> bool:
@@ -245,5 +249,5 @@ class FetchRecord:
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d.pop("text", None)
-        d.pop("html", None)
+        d.pop("raw", None)
         return d

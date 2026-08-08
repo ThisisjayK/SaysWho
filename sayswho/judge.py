@@ -232,7 +232,7 @@ def judge_claim(claim, record: FetchRecord, client: JudgeClient, drift=None) -> 
         # NOT_FOUND_IN_SOURCE has nothing to quote, so `span_verified` stays False: nothing was verified.
         # It used to be set True here, meaning "nothing to check", which reads as "checked and fine" to
         # anything downstream that displays it.
-        dropped = extraction_dropped_evidence(claim.text, record.text, record.html)
+        dropped = extraction_dropped_evidence(claim.text, record.text, record.raw)
         if dropped:
             judgement.voided = True
             judgement.void_reason = EXTRACTION_SUSPECT

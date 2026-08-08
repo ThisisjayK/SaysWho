@@ -13,8 +13,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
+from .extract import normalise_for_span
 from .model import JudgeClient, ModelRefused
-from .records import Capture, normalise_url
+from .records import Capture, normalise_url, sha256
 
 #: Bumping this invalidates the gold set, same as the judge prompt. `SCOPE.md` §3 gate G4.
 CLAIM_PROMPT_VERSION = "claims-v1"
@@ -124,6 +125,27 @@ class ClaimSet:
         }
 
 
+def claim_id(query_id: str, text: str, seen: dict[str, int]) -> str:
+    """A claim id derived from the claim's own text rather than from its position in the split.
+
+    Ids used to be `#001` through `#0NN` in splitter order. Phase 1 is not deterministic, so the same answer
+    split twice gives `#009` to two different sentences, and a gold set labelled by id against a re-derived
+    split would not merely lose claims, it would relabel them. `FINDINGS.md` item 8.
+
+    Content addressing does not make the split reproducible, and nothing here claims it does. It makes an id
+    mean one sentence, so a claim that survives a re-split keeps its label and a claim that does not is
+    visibly absent rather than quietly replaced. The stored split in `splits.py` remains the authority.
+
+    Normalised for whitespace and case first, so a reflowed line is the same claim.
+    """
+    digest = sha256(normalise_for_span(text))[:8]
+    n = seen.get(digest, 0)
+    seen[digest] = n + 1
+    # A splitter that emits the same sentence twice is unusual but not an error, and two claims cannot
+    # share an id.
+    return f"{query_id}#{digest}" + (f".{n + 1}" if n else "")
+
+
 def _marker_index(capture: Capture) -> dict[str, list[str]]:
     """Marker text to the URLs it points at, normalised for fetching."""
     index: dict[str, list[str]] = {}
@@ -157,16 +179,18 @@ def split_claims(capture: Capture, client: JudgeClient) -> ClaimSet:
 
     index = _marker_index(capture)
     claims: list[Claim] = []
+    seen: dict[str, int] = {}
 
-    for i, raw in enumerate(reply.get("claims", []), start=1):
+    for raw in reply.get("claims", []):
         markers = [m for m in raw.get("markers", []) if m]
         urls: list[str] = []
         for marker in markers:
             for url in index.get(" ".join(marker.split()).casefold(), []):
                 if url not in urls:
                     urls.append(url)
+        text = raw.get("text", "")
         claims.append(
-            Claim(id=f"{capture.query_id}#{i:03d}", text=raw.get("text", ""), markers=markers, urls=urls)
+            Claim(id=claim_id(capture.query_id, text, seen), text=text, markers=markers, urls=urls)
         )
 
     skipped = [
