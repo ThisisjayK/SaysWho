@@ -140,12 +140,21 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       still the same document" at a threshold near zero. Whether a change mattered is decided per claim, by
       checking the judge's span against the archived version. A span that postdates the answer voids the
       verdict as `SPAN_ADDED_AFTER_GENERATION`; a reference list that churned no longer excludes anything
-- [ ] Re-run the ChatGPT capture and confirm the PubMed source now survives as auditable
+- [ ] Re-run the ChatGPT capture and confirm the PubMed source now survives as auditable. Started once and
+      stopped before it finished, so this is unverified against live data. The fix is covered by tests,
+      including a regression test carrying the real PubMed author names, but a passing test is not a run
 - [ ] Bind captures to the frozen query set. Every capture so far carries `query_id: UNASSIGNED`, so nothing
       ties a verdict back to the query that produced it
 - [ ] **Decide before day 5 whether Google AI Overviews stays in the audited set.** A Gemini judge scoring a
       Google product is a vendor grading its own homework. Recorded in `SCOPE.md` §7. Either drop it or
       report its per-product result with the conflict stated beside it
+
+## Where day 3 left things
+
+- [x] Pipeline runs end to end on a real capture: 9 sources, 6 auditable, 20 claims, 13 judgements
+- [x] 0 fabricated spans out of 7 span-bearing verdicts. Small sample, reported as one
+- [x] G4 held: the run refused to print an aggregate support rate, with the reason
+- [ ] The five open items above are all from reading that run's output rather than from the plan
 
 ## Day 4: gates and the contract check
 
