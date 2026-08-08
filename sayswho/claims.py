@@ -5,8 +5,8 @@ model-inference and is labelled as such in every output surface, per `SCOPE.md` 
 
 Gate G1 skips anything that is not a factual claim: opinions, hedges, instructions, definitions, transitional
 sentences, and the interface furniture that rides along in a DOM capture ("Give feedback", a maps card's
-phone number). Skipped claims are **counted and reported, never dropped silently** — a system that quietly
-discards what it cannot handle is lying by omission, and the skip count is a published number.
+phone number). Skipped claims are **counted and reported, never dropped silently**. A system that quietly
+discards what it cannot handle is lying by omission, so the skip count is a published number.
 """
 
 from __future__ import annotations
