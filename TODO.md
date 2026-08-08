@@ -125,7 +125,21 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [x] Free-tier rate limits waited out with backoff rather than dropping the claim, and the waiting time
       recorded. A claim skipped for quota is a hole in the denominator
 - [x] Refusals, truncated answers and empty answers all void rather than half-parse
-- [ ] Get a free key from aistudio.google.com and run it against a real capture. Needs `GEMINI_API_KEY`
+- [x] Ran end to end against a real ChatGPT capture on `gemini-3.5-flash-lite`. 20 claims, 13 judgements,
+      0 fabricated spans out of 7 span-bearing verdicts. Model pinned rather than aliased, because
+      `gemini-flash-latest` would move underneath the gold set and G4 would never notice
+- [ ] **Define the unit of the support rate.** A claim citing three sources currently produces three
+      judgements, and nothing combines them. Claim #009 came back SUPPORTED by one source and
+      NOT_FOUND_IN_SOURCE by two. §5 says "SUPPORTED / auditable claims" without saying whether the unit is
+      a claim or a claim-source pair, and the two give different numbers. Decide before day 5, because the
+      gold set is labelled in whichever unit is chosen
+- [ ] **Look at the 139 skipped lines.** The first real split kept 20 claims and skipped 139. Much of that
+      answer is genuinely table furniture and journey-map arrows, but an 87% skip rate is exactly the number
+      §3 gate G1 publishes so that somebody checks it. Dump them and read them
+- [ ] **Fix the drift false positive** (`FINDINGS.md` §5). Check whether the judge's span survives into the
+      archived version rather than whether the whole page did
+- [ ] Bind captures to the frozen query set. Every capture so far carries `query_id: UNASSIGNED`, so nothing
+      ties a verdict back to the query that produced it
 - [ ] **Decide before day 5 whether Google AI Overviews stays in the audited set.** A Gemini judge scoring a
       Google product is a vendor grading its own homework. Recorded in `SCOPE.md` §7. Either drop it or
       report its per-product result with the conflict stated beside it

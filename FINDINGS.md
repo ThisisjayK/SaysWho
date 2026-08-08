@@ -79,7 +79,40 @@ second one, and the gold set is what measures the gap between them.
 This was found because a test written to assert the guard *worked* failed. Both cases are now pinned by
 tests, including the one that fails by design and is kept rather than fixed.
 
-## 5. Three silent-shortfall bugs in one day of building
+## 5. The drift check flags reference lists as drift
+
+First live judged run, day 3, over a ChatGPT capture. One of nine sources came back `SOURCE_DRIFTED` at
+containment 0.6210 and was excluded from the denominator. It should not have been.
+
+The source is a PubMed abstract. Comparing the archived and live extractions directly: the archive held
+10,153 characters, the live page 6,575, and the 498 missing 5-grams are all from the **Similar articles** and
+**Cited by** blocks. Author names, DOIs, publication dates of *other* papers. The abstract itself, which is
+the only part a claim would ever cite, is unchanged.
+
+So the drift check measured the page's furniture rather than its content, and a false `SOURCE_DRIFTED`
+removes a genuinely auditable source from every rate. This inflates the unauditable rate and deflates the
+denominator, in the direction that flatters the tool's headline caution while hiding a real miss.
+
+The containment metric was chosen to tolerate a page that *grew* (§6 of `DATA_CONTRACT.md`). This is the
+opposite case: the page shrank, and what it shed was noise. Any site with a "related content" block will
+behave this way.
+
+Not yet fixed. The most promising repair is to stop asking whether the *page* changed and start asking
+whether the *span the judge quoted* is also present in the archived version. Drift only matters when it moved
+the sentence the claim actually rests on, the machinery for that check already exists in the span guard, and
+it costs no model calls.
+
+## 6. Most sources have no archived snapshot at all
+
+Same run: five of six readable sources returned `DRIFT_NO_SNAPSHOT`. The Wayback Machine simply has nothing
+near the generation timestamp for ordinary `mass.gov` and hospital pages.
+
+Reported as unknown rather than as unchanged, which is the correct behaviour, but it means the drift check is
+mostly unable to run on this kind of source. Whatever drift rate the writeup reports will be over a small and
+non-random subset: the pages popular enough to be archived. That is a coverage limitation and belongs beside
+the number.
+
+## 7. Three silent-shortfall bugs in one day of building
 
 Unrendered text, citations hidden behind a "+N" control, and a stale content script. Each produced a capture
 that parsed cleanly, carried a plausible citation count, and was wrong. None announced itself.
