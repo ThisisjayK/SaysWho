@@ -126,8 +126,16 @@ class Capture:
     citations_possibly_hidden: int = 0
     expanders_seen: int = 0
 
-    #: Characters the browser laid out, versus characters present in the DOM. A shortfall means part of the
-    #: answer was never rendered and is missing from the captured text.
+    #: Characters the browser laid out, versus characters present in the DOM.
+    #:
+    #: These are not directly comparable and the check built on them is weak in both directions. innerText
+    #: inserts newlines at block boundaries and tabs between table cells, so it often runs *longer* than
+    #: textContent: a real ChatGPT capture measured 15,840 against 15,647. textContent meanwhile includes
+    #: script and style text that innerText omits.
+    #:
+    #: So a large shortfall is evidence, and a small one is noise. This catches half a document going
+    #: missing. It would not catch five percent. The scroll pass is the actual defence; this is a
+    #: backstop, and the writeup should not claim more for it than that.
     rendered_chars: int = 0
     dom_chars: int = 0
 

@@ -206,7 +206,8 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     // Two captures that differ only because the extension changed underneath them are not comparable.
     extension_version: (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || "unknown",
     adapter: `${adapter.id}:${found.selector}`,
-    adapter_verified: adapter.verified === true,
+    // True only when the selector that actually produced this capture has been checked against the screen.
+    adapter_verified: (adapter.verifiedSelectors || []).indexOf(found.selector) >= 0,
     // How many links in the answer were dropped as page furniture. Published rather than hidden: if this
     // number is large, the exclusion list is eating real citations.
     chrome_links_excluded: excluded.length,
