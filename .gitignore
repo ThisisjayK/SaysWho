@@ -10,6 +10,12 @@ __pycache__/
 .venv/
 .pytest_cache/
 
+# stored pages from captures. A full claude.ai page includes the sidebar, and therefore the titles of every
+# other conversation, which are real queries from real work. DATA_CONTRACT.md §9 scrubs those before
+# anything is committed, so the raw pages stay on the machine.
+sayswho-page-*.html
+pages/
+
 # fetched pages. DATA_CONTRACT.md §9: the repo publishes verdicts and quoted spans, not copies of the
 # pages it fetched.
 .cache/

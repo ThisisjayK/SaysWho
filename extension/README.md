@@ -53,6 +53,31 @@ Until then, treat captures as structurally correct and substantively unconfirmed
 | Host permissions on the four products | Reading the rendered answer |
 | `optional_host_permissions: <all_urls>` | Fetching cited sources from day 3. Optional and requested at the point of use rather than granted at install, because a blanket read-any-site permission asked for up front is a lot to hand over for a tool you have not tried yet |
 
+## Stored pages
+
+Every capture also downloads the page as it stood, next to the capture JSON:
+
+```bash
+python3 -m sayswho.reextract ~/Downloads/sayswho-page-claude-20260808T000132.html --capture ~/Downloads/sayswho/capture-claude-2026-08-08T0001320000.json
+```
+
+That re-runs container selection and citation extraction over the same bytes. A selector fix no longer means
+reloading three tabs and capturing again, which matters for a reason beyond convenience: re-capturing
+re-runs the query, so the answer can change between attempts and a selector fix and an answer change arrive
+together with no way to tell them apart.
+
+**What re-extraction recovers:** citations, the container choice, the structure. All of it comes from the
+markup.
+
+**What it does not:** the answer text. The extension reads `innerText`, which depends on layout and
+stylesheets a stored HTML file does not carry. Re-extraction reports citations and leaves the captured text
+alone, rather than producing a slightly different text that would quietly disagree with the capture it came
+from.
+
+**These files stay on your machine.** A full claude.ai page carries the sidebar, and therefore the titles of
+every other conversation, which are real queries from real work. `.gitignore` keeps them out and
+`DATA_CONTRACT.md` §9 is the reason.
+
 ## Parity
 
 `src/capture.js` computes sha256 over the UTF-8 bytes of the answer text, exactly as `sayswho.records.sha256`

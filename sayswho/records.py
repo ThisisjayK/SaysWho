@@ -131,6 +131,11 @@ class Capture:
     rendered_chars: int = 0
     dom_chars: int = 0
 
+    #: The stored page this capture came from. Kept local and gitignored: a full claude.ai page carries the
+    #: sidebar, and therefore the titles of every other conversation.
+    page_file: str = ""
+    page_bytes: int = 0
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)

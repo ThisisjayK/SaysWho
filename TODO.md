@@ -83,6 +83,14 @@ Python side done, browser side not started.
 - [ ] **Compare a capture field by field against the screen, then flip `verified`.** Selectors now match, but
       matching is not the same as capturing the right thing. Still `verified: false` for every product
 - [ ] ChatGPT and Perplexity selectors checked against their real pages. Only Claude has been looked at
+- [x] Auto-scroll before capture, and `rendered_chars` against `dom_chars` so unrendered text is reported
+      rather than silently missing
+- [x] `extension_version` stamped into every capture, so a stale content script announces itself
+- [x] Raw page HTML stored with every capture, and `python3 -m sayswho.reextract` re-runs selection over the
+      same bytes. A selector fix no longer re-runs the query, so a selector change and an answer change
+      cannot arrive together and be mistaken for each other
+- [x] Stored pages gitignored. A full claude.ai page carries the sidebar and therefore the titles of every
+      other conversation
 - [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk
 - [ ] Marking UI. Deliberately not built yet: there are no verdicts until day 3, and marking claims before
       there is anything behind it would be finding-shaped output
