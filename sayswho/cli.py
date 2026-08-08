@@ -48,6 +48,12 @@ def main(argv: list[str] | None = None) -> int:
         "so changing this after labelling means relabelling",
     )
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
+    parser.add_argument(
+        "--dump-skipped",
+        action="store_true",
+        help="print every line G1 skipped, with its reason. The skip count is meaningless unless somebody "
+        "reads what was skipped, and a high rate is either furniture or a hole in the denominator",
+    )
     args = parser.parse_args(argv)
 
     capture = Capture.from_json(args.capture)
@@ -159,6 +165,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  claims   {len(claim_set.claims)}   uncited {claim_set.uncited_count}")
         print(f"  G1 skipped {len(claim_set.skipped)}, counted and reported, never dropped")
 
+        if args.dump_skipped:
+            print()
+            print("  G1 skipped lines, in the order the splitter returned them:")
+            for n, s in enumerate(claim_set.skipped, start=1):
+                print(f"    [{n:03d}] {s.reason}")
+                print(f"          {' '.join(s.text.split())}")
+
         print()
         print("Phase 3   judging each claim against its source   [model-inference]")
         judgements = []
@@ -206,6 +219,9 @@ def main(argv: list[str] | None = None) -> int:
                     "named_citations": named.to_dict(),
                     "auditable": auditable,
                     "unauditable": unauditable,
+                    # The split itself, skipped lines and all. Without this the run publishes a skip count
+                    # and discards the evidence for it, which makes the count uncheckable.
+                    "claims": claim_set.to_dict() if claim_set is not None else None,
                 },
                 indent=2,
             )
