@@ -13,10 +13,8 @@ claim where it sits as one of three things:
 
 ## Status
 
-Day 2 of ten, done. The pipeline can tell you whether a cited source can be read at all. It cannot yet tell
-you whether the source supports the claim, because the judge and the span guard are day 3.
-
-So the refusing half of this tool works and the checking half does not.
+Day 3 of ten, done. The pipeline runs end to end on a real answer: it captures, fetches, splits into claims,
+judges each one against its source, and refuses to print an aggregate rate because no gold set exists yet.
 
 **In the browser.** A Manifest V3 extension captures an answer from claude.ai, chatgpt.com, perplexity.ai or
 Google AI Overviews. It scrolls the answer into existence first, since a long answer is not fully in the DOM
@@ -25,19 +23,28 @@ both a capture record and the page it came from. When it cannot reach everything
 handing back a plausible number.
 
 **In the terminal.** `python3 -m sayswho.cli <capture.json>` re-verifies the hash, refuses answers with no
-citations, fetches every cited URL under `DATA_CONTRACT.md`, and assigns one of six outcomes: `SOURCE_OK`,
-`SOURCE_UNREACHABLE`, `SOURCE_EMPTY`, `SOURCE_PAYWALLED`, `SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`. It
-compares each readable page against the Wayback Machine for drift, counts sources named in prose with no
-link, and enforces that unauditable claims never reach a denominator.
+citations, fetches every cited URL under `DATA_CONTRACT.md`, and assigns one of six outcomes. Add `--judge`
+and it splits the answer into claims, judges each against its cited source, and checks every span.
+
+The judge runs on Gemini's free tier by default, so a run costs nothing. `--judge-provider anthropic`
+switches. Both satisfy the same protocol, so the pipeline and the gates never know which is running.
+
+**The span guard.** To return `SUPPORTED` the judge must quote the source verbatim, and a script confirms by
+substring match that the span is in the document that was actually retrieved. A span that is not there voids
+the verdict and logs `JUDGE_FABRICATED_SPAN`, and that rate is published as a finding about the judge. On the
+first live run it voided nothing across seven span-bearing verdicts, which is a small sample and reported as
+one.
 
 `python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs extraction over the stored bytes
-and compares the result to what the extension produced. Two implementations, one in JavaScript against a
-live DOM and one in Python against saved markup, and they have to agree.
+and compares it to what the extension produced. Two implementations, one in JavaScript against a live DOM and
+one in Python against saved markup, and they have to agree.
 
-81 tests. Each gate has a test that makes it fire on the bug it exists to catch.
+129 tests, all offline. Every gate has a test that makes it fire on the bug it exists to catch, including two
+that pin failures rather than fixes: an injection that dictates its own span defeats the guard, and a judge
+can quote a real but irrelevant sentence. Deleting either test would delete the finding.
 
-**Not built yet:** claim splitting, the judge, the span guard, the marking UI, the gold set. The
-professional query stratum is empty by design until real queries are scrubbed into it.
+**Not built yet:** the marking UI, the gold set, per-claim verdict aggregation. The professional query
+stratum is empty by design until real queries are scrubbed into it.
 
 No number this project produces is a measurement yet. `FINDINGS.md` records what has been observed so far,
 and every entry there is n=1.
