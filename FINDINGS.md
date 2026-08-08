@@ -105,6 +105,10 @@ The model cannot have read it, so it is not evidence about that answer.
 
 The reference-list case is now a regression test, with the real PubMed authors in it.
 
+**Confirmed against live data on 2026-08-07**, re-running the same capture. PubMed came back
+`DRIFT_PAGE_CHANGED` at containment 0.6210, the same number that used to exclude it, and stayed auditable.
+Auditable sources went from 6 of 9 to 7 of 9. A passing test is not a run, so this is the run.
+
 ## 6. Most sources have no archived snapshot at all
 
 Same run: five of six readable sources returned `DRIFT_NO_SNAPSHOT`. The Wayback Machine simply has nothing
@@ -126,3 +130,68 @@ looking at the output and judging whether it seemed right.
 
 That is the same failure this project exists to catch, appearing in the tool built to catch it. It is a
 better argument for the span guard than any explanation of the span guard.
+
+## 8. The claim splitter is not deterministic, and the skip count moves
+
+The day 3 run split a ChatGPT answer into 20 claims and 139 skipped lines. Re-running Phase 1 over the byte
+identical capture, same `answer_sha256`, same judge, same pinned model, same `claims-v1` prompt, returned 20
+claims again and 119 skipped lines.
+
+The kept side was stable. The skipped side moved by 14%.
+
+So `skipped_count` is not a property of the answer. It is a property of one splitting run over that answer,
+and `SCOPE.md` §3 currently publishes it as though it were the former. Any skip rate in the writeup needs to
+say how many splits it is over, and two runs are not enough to characterise the spread.
+
+Worse for day 5: the gold set is labelled against one split. If the split moves, a claim in the gold set can
+be absent from the next run's claim list, and the agreement number is then computed over a set that no longer
+matches. Whatever unit the support rate settles on, the gold set has to be pinned to a stored split rather
+than re-derived.
+
+Also found on the way: the run published the skip count and discarded the skipped text, so this could not
+have been checked at all. Fixed with `--dump-skipped`, and the split is now carried in the `--json` record.
+
+## 9. Gate G1 skips by form rather than by content, so one skip can discard ninety claims
+
+Reading the 119 lines, roughly a third are unarguable furniture: 24 headings, five Google Maps cards that
+rode along in the DOM complete with star ratings and phone numbers, a "Give feedback" control, the arrow
+blocks of a journey map, and the closing source list.
+
+Two things in the remainder are not furniture.
+
+**Tables are skipped whole.** One skipped line is the answer's entire competitive matrix: thirteen
+capabilities against eight organisations, roughly ninety cells, each asserting something checkable such as
+whether BWH offers breast MRI or whether MBCCP transportation assistance is "Strong". It was skipped as
+"table data". Five more table rows went the same way.
+
+This breaks the arithmetic the rate is built on. A DOM capture flattens a table into one text block, so the
+unit being skipped is a block, and "119 skipped against 20 kept" puts a heading and a ninety cell matrix in
+the same denominator. The skip rate does not measure the share of the answer that went unchecked, and until
+the unit is fixed it should not be reported as though it does.
+
+**The skip list absorbs uncited claims.** These four were labelled framing or opinion, and each asserts
+something checkable about a named organisation:
+
+- "BWH's Comprehensive Breast Health Center provides breast-risk assessment, screening and prevention
+  planning, with patient coordinators helping patients through the process."
+- "Dedicated breast imaging nurse navigator ... MRI/ultrasound/biopsy"
+- "3D mammography ... Saturday availability at some locations"
+- "MBCCP is primarily designed around underserved populations."
+
+None carries a citation. Had G1 kept them they would have landed in `uncited_claim_count`, which reported 8.
+So that 8 is a floor, not a count, and part of the omission blindness §7 admits to is being absorbed by the
+skip list rather than counted by it. The failure mode is quiet in the same way as the others: the number is
+published, it looks like a measurement, and it is smaller than the thing it names.
+
+Two claims that were skipped as opinion do state facts, on citywide navigation across six hospitals and on
+BIDMC's AI risk estimation, but both restate claims the splitter kept, so no citation went unaudited because
+of them.
+
+## 10. The span guard voided a live verdict
+
+Same re-run: one verdict came back `SUPPORTED` and was voided as `JUDGE_FABRICATED_SPAN`, 1 of 9 span-bearing
+verdicts. Day 3 was 0 of 7.
+
+Across both runs that is 1 of 16, and it is not a rate. It is recorded because the guard fired on ordinary
+output rather than only on the adversarial test written to trip it, which is the first evidence that the
+fabricated-span rate §5 promises to publish will not be zero.

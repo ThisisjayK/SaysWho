@@ -133,28 +133,49 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       NOT_FOUND_IN_SOURCE by two. §5 says "SUPPORTED / auditable claims" without saying whether the unit is
       a claim or a claim-source pair, and the two give different numbers. Decide before day 5, because the
       gold set is labelled in whichever unit is chosen
-- [ ] **Look at the 139 skipped lines.** The first real split kept 20 claims and skipped 139. Much of that
-      answer is genuinely table furniture and journey-map arrows, but an 87% skip rate is exactly the number
-      §3 gate G1 publishes so that somebody checks it. Dump them and read them
+- [x] **Look at the 139 skipped lines.** Dumped and read. `--dump-skipped` added, because the run had been
+      publishing the skip count and discarding the text, so the check was impossible rather than merely
+      undone. The split is now carried in the `--json` record too. Three things came out of reading them,
+      written up as `FINDINGS.md` items 8 and 9: the re-run returned 119 rather than 139 on the identical
+      capture, tables are skipped whole so one skipped line held about ninety checkable cells, and four
+      uncited factual lines were skipped as framing, which makes `uncited_claim_count` a floor
 - [x] Drift false positive fixed. Page-level containment is no longer a gate: it now only answers "is this
       still the same document" at a threshold near zero. Whether a change mattered is decided per claim, by
       checking the judge's span against the archived version. A span that postdates the answer voids the
       verdict as `SPAN_ADDED_AFTER_GENERATION`; a reference list that churned no longer excludes anything
-- [ ] Re-run the ChatGPT capture and confirm the PubMed source now survives as auditable. Started once and
-      stopped before it finished, so this is unverified against live data. The fix is covered by tests,
-      including a regression test carrying the real PubMed author names, but a passing test is not a run
+- [x] Re-run the ChatGPT capture and confirm the PubMed source now survives as auditable. Done. PubMed came
+      back `DRIFT_PAGE_CHANGED` at containment 0.6210, the same number that used to exclude it, and stayed
+      auditable. Auditable sources went from 6 of 9 to 7 of 9
 - [ ] Bind captures to the frozen query set. Every capture so far carries `query_id: UNASSIGNED`, so nothing
       ties a verdict back to the query that produced it
 - [ ] **Decide before day 5 whether Google AI Overviews stays in the audited set.** A Gemini judge scoring a
       Google product is a vendor grading its own homework. Recorded in `SCOPE.md` §7. Either drop it or
       report its per-product result with the conflict stated beside it
+- [ ] **Fix the unit G1 skips in.** A table arrives from the DOM as one text block, so one skip decision
+      discarded about ninety checkable cells while a heading also counts as one. Split tables into rows
+      before the splitter sees them, or report the skip rate in a unit that is not block-based. Until then
+      the skip rate does not measure the share of the answer that went unchecked, and the writeup has to say
+      so. `FINDINGS.md` item 9
+- [ ] **Pin the gold set to a stored split.** The splitter returned 139 skipped lines on one run and 119 on
+      the next over the byte identical capture. If day 5 labels a claim that a later run does not produce,
+      the agreement number is computed over a set that no longer matches. Store the split the gold set was
+      labelled against and judge against that, rather than re-deriving it. `FINDINGS.md` item 8
+- [ ] Say how many splits any published skip rate is over, or stop reporting `skipped_count` as a property of
+      the answer. Two runs do not characterise the spread
+- [ ] Count the uncited factual lines currently landing in the skip list, so `uncited_claim_count` is
+      reported as a floor with a measured gap rather than a floor with an unknown one
 
 ## Where day 3 left things
 
 - [x] Pipeline runs end to end on a real capture: 9 sources, 6 auditable, 20 claims, 13 judgements
 - [x] 0 fabricated spans out of 7 span-bearing verdicts. Small sample, reported as one
 - [x] G4 held: the run refused to print an aggregate support rate, with the reason
-- [ ] The five open items above are all from reading that run's output rather than from the plan
+- [ ] The open items above are all from reading that run's output rather than from the plan
+
+Re-run on 2026-08-07, same capture, after the drift fix. 9 sources, 7 auditable, 20 claims, 15 judgements.
+PubMed survived. One verdict voided as `JUDGE_FABRICATED_SPAN`, 1 of 9 span-bearing, against 0 of 7 on day 3.
+That is 1 of 16 across both runs and it is not a rate, but the guard has now fired on ordinary output rather
+than only on the test built to trip it. `FINDINGS.md` item 10.
 
 ## Day 4: gates and the contract check
 
