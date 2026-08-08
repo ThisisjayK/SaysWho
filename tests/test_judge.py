@@ -271,3 +271,83 @@ def test_the_rate_is_none_when_nothing_needed_a_span():
 
     report = JudgeReport([Judgement("a", "u", NOT_FOUND_IN_SOURCE, span_verified=True)])
     assert report.fabricated_span_rate is None, "no denominator means no rate, not zero"
+
+
+# ---------------------------------------------------------------- drift, at the level that matters
+
+
+def test_a_span_that_predates_the_answer_stands():
+    from sayswho.drift import DRIFT_PAGE_CHANGED, DriftRecord
+
+    drift = DriftRecord(url="https://example.org/a", status=DRIFT_PAGE_CHANGED, archived_text=DOCUMENT)
+    judge = FakeJudge({
+        "verdict": SUPPORTED, "span": "reduced recurrence in the trial cohort",
+        "reasoning": "stated directly", "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge, drift=drift)
+
+    assert result.span_predates_generation is True
+    assert not result.voided and result.counts_as_supported
+
+
+def test_a_span_added_after_the_answer_was_written_is_voided():
+    """The replacement for the old whole-page gate.
+
+    The page gained a sentence after generation and the judge quoted it. The span is genuinely on the live
+    page, so G3 passes. But the model that wrote the answer could not have read it, so it is not evidence
+    about that answer.
+    """
+    from sayswho.drift import DRIFT_PAGE_CHANGED, DriftRecord
+    from sayswho.judge import SPAN_ADDED_AFTER_GENERATION
+
+    archived = "Extending adjuvant endocrine therapy beyond five years reduced recurrence in the trial cohort."
+    live = archived + "\nA 2026 correction adds that overall survival improved by 12%."
+    drift = DriftRecord(url="https://example.org/a", status=DRIFT_PAGE_CHANGED, archived_text=archived)
+
+    judge = FakeJudge({
+        "verdict": SUPPORTED, "span": "overall survival improved by 12%",
+        "reasoning": "the page says so", "notes": "",
+    })
+    result = judge_claim(claim(), source(text=live), judge, drift=drift)
+
+    assert result.span_verified, "the span really is on the live page"
+    assert result.span_predates_generation is False
+    assert result.voided and result.void_reason == SPAN_ADDED_AFTER_GENERATION
+    assert not result.counts_as_supported
+
+
+def test_a_reference_list_that_churned_does_not_void_an_abstract_span():
+    """The PubMed case end to end, at claim level.
+
+    The archive carried a Similar articles block the live page has dropped. The claim rests on the abstract,
+    which is unchanged, so the verdict stands. Under the old page-level gate this source was excluded
+    entirely.
+    """
+    from sayswho.drift import DRIFT_PAGE_CHANGED, DriftRecord
+
+    archived = DOCUMENT + "\nSimilar articles: Munjewar PK, Wanjari MB. Nayyar V, Mullikin KR."
+    drift = DriftRecord(url="https://example.org/a", status=DRIFT_PAGE_CHANGED, archived_text=archived)
+
+    judge = FakeJudge({
+        "verdict": SUPPORTED, "span": "reduced recurrence in the trial cohort",
+        "reasoning": "stated in the abstract", "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge, drift=drift)
+
+    assert result.span_predates_generation is True
+    assert not result.voided
+
+
+def test_without_a_snapshot_the_verdict_stands_and_says_it_could_not_check():
+    """Unknown is unknown. Voiding on missing data would be the same error in the other direction."""
+    from sayswho.drift import DRIFT_NO_SNAPSHOT, DriftRecord
+
+    drift = DriftRecord(url="https://example.org/a", status=DRIFT_NO_SNAPSHOT)
+    judge = FakeJudge({
+        "verdict": SUPPORTED, "span": "reduced recurrence in the trial cohort",
+        "reasoning": "stated directly", "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge, drift=drift)
+
+    assert result.span_predates_generation is None
+    assert not result.voided and result.counts_as_supported

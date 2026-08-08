@@ -15,21 +15,47 @@ A threshold nobody can inspect would be doing the work of a measurement without 
 **Containment rather than Jaccard.** Jaccard punishes a page that grew. A site that added a new section since
 the answer was generated would look drifted, even though every sentence the model read is still there.
 Containment of the snapshot in the current page asks the question that actually matters: is what the model
-saw still present. Both numbers are recorded; only containment decides the code.
+saw still present. Both numbers are recorded.
+
+**Page-level containment is not a gate.** It was, and it was wrong. On the first live run a PubMed abstract
+came back at containment 0.62 and was excluded as `SOURCE_DRIFTED`. The 498 missing shingles were all from
+the *Similar articles* and *Cited by* blocks: authors, DOIs and dates of other papers. The abstract itself,
+the only part any claim would cite, was unchanged. The check measured the page's furniture, and a false
+`SOURCE_DRIFTED` deletes a genuinely auditable source from every denominator. Any page with a "related
+content" block behaves this way, so the failure is systematic rather than unlucky.
+
+So the question moved. Page level now answers only "is this still the same document at all", which is a
+threshold near zero rather than near one. Whether drift actually matters is decided per claim in Phase 3, by
+asking whether **the span the judge quoted** is also in the archived version. Drift only matters when it
+moved the sentence the claim rests on, the machinery already exists in the span guard, and it costs no model
+calls.
+
+**What this still cannot see.** It catches support that arrived *after* generation. It does not catch support
+that was *removed* before we fetched: if the page once said something and no longer does, the judge returns
+`NOT_FOUND_IN_SOURCE` and we cannot tell that apart from a citation that was always wrong. Detecting that
+would mean judging every claim twice, against live and against archive, and doubling the run to measure it is
+a trade this project has not made. It is a limitation, stated.
 """
 
 from __future__ import annotations
 
 import json
 import urllib.parse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 from .extract import normalise_for_span
 from .records import SOURCE_DRIFTED, SOURCE_OK, FetchRecord
 
-#: Fixed before the first run. Not tuned afterwards.
+#: Fixed before the first run. Not tuned afterwards. Now only the boundary between "unchanged" and
+#: "changed", both of which stay auditable; it no longer gates anything.
 DRIFT_THRESHOLD = 0.80
+
+#: Below this the URL is serving a different document, not an edited one. A redirect to a homepage, a
+#: paywall interstitial replacing an article, a 404 body served with a 200. That is genuinely unauditable,
+#: and it is the only page-level condition that still excludes a source.
+PAGE_REPLACED_THRESHOLD = 0.10
+
 SHINGLE_SIZE = 5
 
 AVAILABILITY_ENDPOINT = "https://archive.org/wayback/available"
@@ -37,7 +63,13 @@ AVAILABILITY_ENDPOINT = "https://archive.org/wayback/available"
 DRIFT_NOT_CHECKED = "DRIFT_NOT_CHECKED"
 DRIFT_NO_SNAPSHOT = "DRIFT_NO_SNAPSHOT"
 DRIFT_NONE = "DRIFT_NONE"
-DRIFT_DETECTED = "DRIFT_DETECTED"
+
+#: The page changed but is still the same document. Recorded, not a gate: whether it matters is a per-claim
+#: question answered by the span check in Phase 3.
+DRIFT_PAGE_CHANGED = "DRIFT_PAGE_CHANGED"
+
+#: The page is no longer the same document. The only drift condition that still makes a source unauditable.
+DRIFT_PAGE_REPLACED = "DRIFT_PAGE_REPLACED"
 
 
 @dataclass
@@ -50,8 +82,18 @@ class DriftRecord:
     snapshot_timestamp: str = ""
     detail: str = ""
 
+    #: The archived text, kept for the Phase 3 span check. Excluded from to_dict for the same reason
+    #: FetchRecord.text is: the repo publishes verdicts and spans, not copies of pages.
+    archived_text: str = field(default="", repr=False)
+
+    @property
+    def can_check_spans(self) -> bool:
+        return bool(self.archived_text)
+
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d.pop("archived_text", None)
+        return d
 
 
 def shingles(text: str, n: int = SHINGLE_SIZE) -> set[tuple[str, ...]]:
@@ -146,31 +188,55 @@ class DriftChecker:
             )
 
         containment, jaccard = compare(archived.text, record.text)
-        drifted = containment < DRIFT_THRESHOLD
+
+        if containment < PAGE_REPLACED_THRESHOLD:
+            status = DRIFT_PAGE_REPLACED
+            detail = (
+                f"containment {containment:.4f} below {PAGE_REPLACED_THRESHOLD}: this URL is serving a "
+                "different document from the one that was archived"
+            )
+        elif containment < DRIFT_THRESHOLD:
+            status = DRIFT_PAGE_CHANGED
+            detail = (
+                f"containment {containment:.4f}: the page changed but is still the same document. Whether "
+                "that matters is decided per claim, by checking the judge's span against the archive"
+            )
+        else:
+            status = DRIFT_NONE
+            detail = f"containment {containment:.4f} at or above threshold {DRIFT_THRESHOLD}"
 
         return DriftRecord(
             url=record.url,
-            status=DRIFT_DETECTED if drifted else DRIFT_NONE,
+            status=status,
             containment=round(containment, 4),
             jaccard=round(jaccard, 4),
             snapshot_url=raw_url,
             snapshot_timestamp=snapshot_ts,
-            detail=(
-                f"containment {containment:.4f} below threshold {DRIFT_THRESHOLD}"
-                if drifted
-                else f"containment {containment:.4f} at or above threshold {DRIFT_THRESHOLD}"
-            ),
+            detail=detail,
+            archived_text=archived.text,
         )
 
 
 def apply_drift(record: FetchRecord, drift: DriftRecord) -> FetchRecord:
-    """Upgrade a fetch record to SOURCE_DRIFTED when drift was detected.
+    """Mark a source unauditable only when the URL now serves a *different document*.
 
-    A drifted page is UNAUDITABLE, same as an unreachable one. We hold the current page but not the one the
-    model read, and auditing against the wrong document would produce a verdict about a text nobody cited.
+    A page that merely changed stays auditable. Excluding it would delete a real source over a reference list
+    that churned, which is what the old whole-page gate did. An edited page is still the page that was cited;
+    a replaced one is not.
     """
-    if drift.status != DRIFT_DETECTED:
+    if drift.status != DRIFT_PAGE_REPLACED:
         return record
     record.code = SOURCE_DRIFTED
     record.detail = drift.detail
     return record
+
+
+def span_predates_generation(span: str, drift: DriftRecord) -> bool | None:
+    """Was the judge's span already on the page when the answer was written?
+
+    `None` when there is nothing to compare against, which is most of the time: five of six sources on the
+    first live run had no archived snapshot at all. Unknown is reported as unknown, never as yes.
+    """
+    if not drift.can_check_spans or not span.strip():
+        return None
+    return normalise_for_span(span) in normalise_for_span(drift.archived_text)

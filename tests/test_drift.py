@@ -7,15 +7,17 @@ is the same distinction the whole project rests on, applied one layer down.
 from __future__ import annotations
 
 from sayswho.drift import (
-    DRIFT_DETECTED,
     DRIFT_NO_SNAPSHOT,
     DRIFT_NONE,
     DRIFT_NOT_CHECKED,
+    DRIFT_PAGE_CHANGED,
+    DRIFT_PAGE_REPLACED,
     DRIFT_THRESHOLD,
     DriftChecker,
     DriftRecord,
     apply_drift,
     compare,
+    span_predates_generation,
 )
 from sayswho.fetch import Fetcher
 from sayswho.records import SOURCE_DRIFTED, SOURCE_OK, SOURCE_PAYWALLED, FetchRecord
@@ -125,13 +127,40 @@ def test_unchanged_page_reports_no_drift():
     assert drift.containment == 1.0
 
 
-def test_changed_page_reports_drift_and_records_the_number():
-    checker = DriftChecker(_FakeFetcher(AVAILABLE, "An entirely different article about something else."))
+def test_a_page_that_shed_a_reference_list_is_changed_but_still_auditable():
+    """The PubMed false positive, pinned.
+
+    The archive holds the abstract plus a Similar articles block; the live page holds the abstract alone.
+    Containment falls well under the threshold, and excluding the source over that would delete a genuinely
+    auditable citation from every denominator.
+    """
+    archived = ORIGINAL + (
+        " Similar articles: Munjewar PK, Wanjari MB. Nayyar V, Mullikin KR, Lemon SC. "
+        "Okwaraji G, Lobaina D, Jhumkhawala V. doi 10.1177/22799036241268841. "
+        "Cited by: three further papers with their own authors and identifiers."
+    )
+    checker = DriftChecker(_FakeFetcher(AVAILABLE, archived))
     drift = checker.check(record(), "2026-01-02T00:00:00+00:00")
 
-    assert drift.status == DRIFT_DETECTED
-    assert drift.containment is not None and drift.containment < DRIFT_THRESHOLD
-    assert drift.jaccard is not None, "both numbers are published, not just the verdict"
+    assert drift.containment < DRIFT_THRESHOLD, "the page really did change by this measure"
+    assert drift.status == DRIFT_PAGE_CHANGED
+    assert drift.jaccard is not None, "both numbers are published, not just the status"
+
+    r = record()
+    apply_drift(r, drift)
+    assert r.code == SOURCE_OK, "a page that lost its reference list is still the page that was cited"
+    assert r.auditable
+
+
+def test_a_url_now_serving_a_different_document_is_unauditable():
+    """The one page-level condition that still excludes. A redirect to a homepage is not an edit."""
+    checker = DriftChecker(_FakeFetcher(AVAILABLE, "Sign in to continue. Create an account. Our newsletter."))
+    drift = checker.check(record(), "2026-01-02T00:00:00+00:00")
+
+    assert drift.status == DRIFT_PAGE_REPLACED
+    r = record()
+    apply_drift(r, drift)
+    assert r.code == SOURCE_DRIFTED and not r.auditable
 
 
 def test_snapshot_is_fetched_with_the_id_suffix():
@@ -172,14 +201,46 @@ def test_an_unreadable_source_is_not_drift_checked():
 # ---------------------------------------------------------------- applying it
 
 
-def test_detected_drift_makes_the_source_unauditable():
+def test_a_replaced_page_makes_the_source_unauditable():
     r = record()
     assert r.auditable
 
-    apply_drift(r, DriftRecord(url=r.url, status=DRIFT_DETECTED, containment=0.2, detail="containment 0.2"))
+    apply_drift(r, DriftRecord(url=r.url, status=DRIFT_PAGE_REPLACED, containment=0.02, detail="replaced"))
 
     assert r.code == SOURCE_DRIFTED
-    assert not r.auditable, "a page we cannot match to what the model read cannot enter a denominator"
+    assert not r.auditable, "a URL serving a different document cannot enter a denominator"
+
+
+def test_a_merely_changed_page_does_not(): 
+    r = record()
+    apply_drift(r, DriftRecord(url=r.url, status=DRIFT_PAGE_CHANGED, containment=0.62, detail="changed"))
+    assert r.code == SOURCE_OK, "this is the regression the PubMed false positive produced"
+
+
+# ---------------------------------------------------------------- drift, asked per claim
+
+
+ARCHIVED = "Recurrence fell in the extended arm. No survival difference was seen."
+LIVE = ARCHIVED + " A 2026 correction adds that overall survival improved by 12%."
+
+
+def drift_with_archive(text=ARCHIVED):
+    return DriftRecord(url="https://example.org/a", status=DRIFT_PAGE_CHANGED, archived_text=text)
+
+
+def test_a_span_that_was_already_on_the_archived_page_predates_the_answer():
+    assert span_predates_generation("Recurrence fell in the extended arm", drift_with_archive()) is True
+
+
+def test_a_span_added_after_generation_is_detected():
+    """The case that actually matters: the verdict rests on text the model could not have read."""
+    assert span_predates_generation("overall survival improved by 12%", drift_with_archive()) is False
+
+
+def test_no_snapshot_means_unknown_rather_than_yes():
+    """Five of six sources on the first live run had no snapshot. Unknown has to stay unknown."""
+    no_archive = DriftRecord(url="u", status=DRIFT_NO_SNAPSHOT)
+    assert span_predates_generation("anything at all", no_archive) is None
 
 
 def test_unknown_drift_leaves_the_source_alone():

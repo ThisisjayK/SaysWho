@@ -215,7 +215,7 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   | `SOURCE_UNREACHABLE` | 4xx / 5xx / timeout / DNS failure (an ERROR) |
   | `SOURCE_EMPTY` | 200 but no extractable text (JS-only, unparsed PDF), which is not an error |
   | `SOURCE_PAYWALLED` | paywall or consent wall detected |
-  | `SOURCE_DRIFTED` | content differs from the nearest Wayback snapshot to the generation timestamp |
+  | `SOURCE_DRIFTED` | the URL now serves a *different document* than the archived one (containment below 0.10) |
   | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
 
   `SOURCE_ROBOTS_EXCLUDED` was added while writing `DATA_CONTRACT.md`, which is the kind of thing writing a

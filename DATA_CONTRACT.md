@@ -87,11 +87,30 @@ paywall count as exact.
 
 ## 6. Drift
 
-- Nearest Wayback CDX snapshot to the answer's generation timestamp
-- Compare extracted text, normalised for whitespace and casing
-- `SOURCE_DRIFTED` when similarity falls below a threshold that is fixed before the first run and published
-  with the results. It is not tuned afterwards
-- No snapshot available means drift is unknown, and it is reported as unknown rather than as no-drift
+- Nearest Wayback snapshot to the answer's generation timestamp, fetched with the `id_` suffix so the
+  archive's own toolbar is not counted as drift
+- Compare extracted text, normalised for whitespace and casing. Both containment and Jaccard are recorded
+- **Page level answers one question only: is this still the same document.** `SOURCE_DRIFTED` fires below
+  containment 0.10, which means the URL is serving something else entirely: a redirect to a homepage, a
+  consent wall in place of an article, a 404 body behind a 200. Between 0.10 and 0.80 the page changed and
+  stays auditable, recorded as `DRIFT_PAGE_CHANGED`
+- **Whether the change mattered is a per-claim question, answered in Phase 3.** After the span guard confirms
+  the judge's span is on the live page, the span is checked against the archived version too. A span that was
+  not there when the answer was written voids the verdict as `SPAN_ADDED_AFTER_GENERATION`: the model cannot
+  have read it, so it is not evidence about that answer
+- No snapshot available means drift is unknown, reported as unknown rather than as no-drift, and the span
+  check returns unknown rather than passing
+
+  **Why it works this way.** The first live run excluded a PubMed abstract at containment 0.62. The missing
+  text was entirely the *Similar articles* and *Cited by* blocks; the abstract was unchanged. A whole-page
+  threshold measures furniture, and a false `SOURCE_DRIFTED` deletes a real source from every denominator.
+  Any page with a related-content block fails that way, so the fault was systematic. Asking about the span
+  the verdict actually rests on is both narrower and correct, and costs no model calls.
+
+  **What it still cannot see.** Support that was *removed* before the fetch. If a page once said something
+  and no longer does, the judge returns `NOT_FOUND_IN_SOURCE` and that is indistinguishable from a citation
+  that was always wrong. Catching it would mean judging every claim twice, against live and against archive.
+  Stated as a limitation rather than paid for.
 
 ## 7. Caching
 
