@@ -164,6 +164,22 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       the answer. Two runs do not characterise the spread
 - [ ] Count the uncited factual lines currently landing in the skip list, so `uncited_claim_count` is
       reported as a floor with a measured gap rather than a floor with an unknown one
+- [x] **Stop publishing extraction failures as citation failures.** Every way the tool fails to read a page
+      came out as `NOT_FOUND_IN_SOURCE`, the one verdict with no span and therefore no G3 check, and the one
+      that accuses the product. Four stdlib mitigations: `SOURCE_NOT_HTML` with a `%PDF-` sniff, SVG and
+      `img alt` extracted, a thin-page flag, and the extraction check that voids a not-found as
+      `EXTRACTION_SUSPECT` when the claim's own numbers are in the markup but not in the extracted text.
+      `FINDINGS.md` item 11
+- [x] `DATA_CONTRACT.md` §5 corrected. It claimed Readability and PDF parsing, and the code had neither
+- [ ] Measure which way `EXTRACTION_SUSPECT` errs. It is biased on purpose, towards losing coverage rather
+      than towards accusing a product, but neither its false positive nor its false negative rate is known.
+      The day 5 gold set is the only thing that can measure it, and the writeup says so until it does
+- [ ] Label extraction failures separately in the gold set. As designed they will fold into the judge's error
+      rate, since a hand-labeller reading the real page marks supported where the pipeline said not-found.
+      A bad extractor and a bad judge are different problems with the same symptom
+- [ ] Decide on a real extractor. `sayswho/extract.py` is behind a function boundary so trafilatura or
+      readability-lxml is a one-line swap, and it would fix tables, images and article-body detection at
+      once. Cost is the stdlib-only property of the extraction layer. Not taken yet
 
 ## Where day 3 left things
 

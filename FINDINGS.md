@@ -195,3 +195,42 @@ verdicts. Day 3 was 0 of 7.
 Across both runs that is 1 of 16, and it is not a rate. It is recorded because the guard fired on ordinary
 output rather than only on the adversarial test written to trip it, which is the first evidence that the
 fabricated-span rate §5 promises to publish will not be zero.
+
+## 11. Every way the tool fails to read a page comes out as the same verdict
+
+Asked how the pipeline avoids missing tables, images and PDFs, and the answer turned out to be that mostly it
+did not, and that all of the misses converge on one output.
+
+`DATA_CONTRACT.md` §5 said "Readability for HTML, PDFs parsed if a text layer exists". Neither was true.
+Extraction was a stdlib `HTMLParser`, and there was no content-type check anywhere in the fetch layer, so a
+cited PDF was handed to an HTML parser and whatever fell out was judged. Same shape as the gzip bug in item
+7: parses without error, produces plausible output, matches nothing. The contract described a tool that had
+not been built, which is the failure this project audits other people for.
+
+Alongside it, `svg` was in the drop list, so chart labels and figure titles were discarded, and `img alt`
+was never read at all, so a claim resting on a data visualisation had nowhere to be found.
+
+**The convergence is the finding.** A PDF, a JavaScript shell, a chart, a dropped table: every one of them
+produces `NOT_FOUND_IN_SOURCE`. That is the verdict that accuses the product being audited, and because it
+carries no span by definition, gate G3 never touches it. So the one verdict with no deterministic check
+behind it is also the one every silent failure lands on, and it points outward.
+
+Four mitigations built, all stdlib:
+
+- `SOURCE_NOT_HTML`, decided by `Content-Type` and by a `%PDF-` sniff that runs even when the header
+  disagrees. PDFs are now unauditable rather than mis-parsed, which is a worse-looking number and a truer one
+- SVG text and `img alt` are extracted. On the real capture this recovered between 25 and 50 characters per
+  source, which is small, and it is the difference between a chart's numbers existing and not
+- A thin-page flag: over 50KB of markup yielding under 0.002 of it as text. Flag only, never a code
+- The extraction check on `NOT_FOUND_IN_SOURCE`: if the claim's own numbers or proper nouns are in the markup
+  and absent from the extracted text, the verdict is voided as `EXTRACTION_SUSPECT` and the claim becomes
+  unauditable
+
+The last one is deliberately biased and the bias is the point. A false positive costs coverage. A false
+negative publishes "the cited source does not support this" when the truth is "we could not read the part
+that does". Only the day 5 gold set can measure which way it errs, and until then the mitigation is a
+mitigation rather than a fix.
+
+One correction fell out of the same pass: `NOT_FOUND_IN_SOURCE` was setting `span_verified = True`, meaning
+"nothing to check". Nothing counted it, so no published number was wrong, but a marking interface reading
+that field would have put a tick beside the only verdict carrying no evidence at all.

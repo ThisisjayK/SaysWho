@@ -121,8 +121,12 @@ def test_not_found_in_source_needs_no_span():
     result = judge_claim(claim(), source(), judge)
 
     assert result.verdict == NOT_FOUND_IN_SOURCE
-    assert result.span_verified
     assert not result.voided
+    assert not result.span_verified, (
+        "nothing was verified, so this stays False. It used to be set True to mean 'nothing to check', "
+        "which reads as 'checked and fine' to anything downstream that displays it, and the marking UI "
+        "would have put a tick beside the one verdict carrying no evidence at all"
+    )
 
 
 def test_contradicted_still_requires_a_real_span():
