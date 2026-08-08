@@ -147,6 +147,34 @@ function saysWhoAnswerText(element) {
   return (element.innerText || "").replace(/\r\n/g, "\n").trim();
 }
 
+/**
+ * Download the page as it stood at capture time.
+ *
+ * Written from the content script rather than the service worker, because a service worker cannot resolve a
+ * blob URL created in a page and a multi-megabyte data URL is not a reasonable thing to hand the downloads
+ * API.
+ *
+ * The stored page is a record, not a publication. It contains the whole application shell, which on
+ * claude.ai includes the sidebar and therefore the titles of every other conversation. Those are real
+ * queries from real work, which DATA_CONTRACT.md §9 says get scrubbed before anything is committed. The
+ * repo gitignores these files and they never leave the machine.
+ */
+function saysWhoDownloadPage(filename) {
+  const html = "<!doctype html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+  return html.length;
+}
+
 async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }) {
   await saysWhoForceRender(found.element);
 
@@ -160,6 +188,9 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
   const { citations, excluded } = saysWhoExtractCitations(adapter, found.element);
   const { expanders, hidden } = saysWhoCountHiddenCitations(found.element);
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+  const stamp = now.replace(/[:+]/g, "").replace(/\..*$/, "");
+  const pageFile = `sayswho-page-${product || adapter.id}-${stamp}.html`;
+  const pageBytes = saysWhoDownloadPage(pageFile);
 
   return {
     query_id: queryId || "UNASSIGNED",
@@ -185,6 +216,10 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     // Characters laid out versus characters present in the DOM. A shortfall means unrendered text.
     rendered_chars: renderedChars,
     dom_chars: domChars,
+    // The page as it stood, saved next to this record so a selector fix can be re-run over the same bytes
+    // instead of re-running the query and getting a different answer.
+    page_file: pageFile,
+    page_bytes: pageBytes,
     answer_text: answerText,
     answer_sha256: await saysWhoSha256Hex(answerText),
     citations,
