@@ -80,9 +80,16 @@ Python side done, browser side not started.
       chat summary and the report match, and only one has anything to audit
 - [x] Page furniture excluded from citations, and the exclusion counted into the capture. A large
       `chrome_links_excluded` means the exclusion list is eating real citations
-- [ ] **Compare a capture field by field against the screen, then flip `verified`.** Selectors now match, but
-      matching is not the same as capturing the right thing. Still `verified: false` for every product
-- [ ] ChatGPT and Perplexity selectors checked against their real pages. Only Claude has been looked at
+- [x] Claude `.bg-surface-3 .standard-markdown` verified: text read end to end against the screen, citation
+      count corroborated by a DOM probe, and re-extraction from the stored page returns the same citation
+      set. Verification is now recorded per selector rather than per adapter, since exercising one path says
+      nothing about the other
+- [x] Parity check demonstrated on a real page. The extension's JS extraction and the Python extraction from
+      the stored markup agree on container and citations
+- [ ] Claude `.font-claude-response` verified. The chat path has never been exercised
+- [ ] ChatGPT selectors verified. The capture works but has not been checked field by field
+- [ ] Perplexity: four source chips carry no anchor at all, so roughly a third of its citations are not in
+      the DOM as links. Needs a probe of what those chips actually are before the adapter can be trusted
 - [x] Auto-scroll before capture, and `rendered_chars` against `dom_chars` so unrendered text is reported
       rather than silently missing
 - [x] `extension_version` stamped into every capture, so a stale content script announces itself

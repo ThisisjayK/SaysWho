@@ -29,10 +29,16 @@ const SAYSWHO_CHROME_HOSTS = [
 const SAYSWHO_ADAPTERS = [
   {
     id: "claude",
-    // Selectors confirmed against a real logged-in claude.ai page on 2026-08-07. The capture those
-    // selectors produced has not yet been compared field by field against the screen, so this stays false.
-    verified: false,
     hosts: ["claude.ai"],
+    // Verification is per selector, not per adapter. Exercising one path says nothing about the other, and
+    // a capture is only as trustworthy as the selector that produced it.
+    //
+    // .bg-surface-3 .standard-markdown, verified 2026-08-08: captured a Research report, read the text end
+    // to end against the screen, confirmed it starts at the title and ends at the last caveat, confirmed
+    // the single citation against a DOM probe showing two external anchors on the whole page of which one
+    // was the support-link furniture, and confirmed re-extraction from the stored page yields the same
+    // citation set.
+    verifiedSelectors: [".bg-surface-3 .standard-markdown"],
     answerSelectors: [
       // The artifact panel, where a Research report lives. Listed first because when it is open it holds
       // the cited content and the chat message beside it holds only a summary.
@@ -46,7 +52,7 @@ const SAYSWHO_ADAPTERS = [
   },
   {
     id: "chatgpt",
-    verified: false,
+    verifiedSelectors: [],
     hosts: ["chatgpt.com", "chat.openai.com"],
     answerSelectors: [
       '[data-message-author-role="assistant"]',
@@ -57,7 +63,7 @@ const SAYSWHO_ADAPTERS = [
   },
   {
     id: "perplexity",
-    verified: false,
+    verifiedSelectors: [],
     hosts: ["www.perplexity.ai", "perplexity.ai"],
     answerSelectors: [".prose", '[class*="answer"]'],
     citationSelectors: ['a[href^="http"]'],
@@ -65,7 +71,7 @@ const SAYSWHO_ADAPTERS = [
   },
   {
     id: "google-ai-overviews",
-    verified: false,
+    verifiedSelectors: [],
     hosts: ["www.google.com"],
     answerSelectors: ['[data-attrid*="AIOverview"]', "#rcnt div[data-async-type]"],
     citationSelectors: ['a[href^="http"]'],
@@ -76,7 +82,7 @@ const SAYSWHO_ADAPTERS = [
 /** The generic fallback. Used when no product adapter matches, and always unverified. */
 const SAYSWHO_GENERIC_ADAPTER = {
   id: "generic",
-  verified: false,
+  verifiedSelectors: [],
   hosts: [],
   answerSelectors: ["article", "main", "body"],
   citationSelectors: ['a[href^="http"]'],
