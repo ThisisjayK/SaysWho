@@ -112,6 +112,10 @@ class Capture:
     adapter: str = ""
     adapter_verified: bool = False
 
+    #: Extension build that produced the capture. Absent means it predates version stamping, which means a
+    #: stale content script: Chrome keeps running old code in already-open tabs until the page reloads.
+    extension_version: str = ""
+
     #: Links in the answer container dropped as page furniture (product help links, same-origin nav).
     #: Recorded rather than hidden: a large value means the exclusion list is eating real citations.
     chrome_links_excluded: int = 0

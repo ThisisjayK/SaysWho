@@ -71,6 +71,8 @@
 
     const record = await saysWhoBuildCapture({ adapter, found, product: adapter.id });
 
+    console.log(`SaysWho ${record.extension_version} captured ${record.citations.length} citations`);
+
     if (record.citations.length === 0) {
       say(
         `Captured, but this answer has no citations.\n\n` +
@@ -80,7 +82,7 @@
       );
     } else {
       say(
-        `Captured.\n\n` +
+        `Captured.  (SaysWho ${record.extension_version})\n\n` +
           `citations: ${record.citations.length}\n` +
           `chars: ${record.answer_text.length}\n` +
           `chrome links dropped: ${record.chrome_links_excluded}\n` +

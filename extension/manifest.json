@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "SaysWho",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Checks whether the sources an AI answer cites actually say what it claims they say.",
-  "permissions": ["storage", "downloads", "activeTab"],
+  "permissions": [
+    "storage",
+    "downloads",
+    "activeTab"
+  ],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
@@ -11,7 +15,9 @@
     "https://www.perplexity.ai/*",
     "https://www.google.com/search*"
   ],
-  "optional_host_permissions": ["<all_urls>"],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "src/background.js"
   },
@@ -24,7 +30,11 @@
         "https://www.perplexity.ai/*",
         "https://www.google.com/search*"
       ],
-      "js": ["src/adapters.js", "src/capture.js", "src/content.js"],
+      "js": [
+        "src/adapters.js",
+        "src/capture.js",
+        "src/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],

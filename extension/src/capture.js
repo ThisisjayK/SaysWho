@@ -122,6 +122,10 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     generated_at: now,
     captured_at: now,
     source: "dom",
+    // Which build produced this capture. A capture with no version, or an old one, was made by a stale
+    // content script: Chrome keeps running the old code in already-open tabs until the page is reloaded.
+    // Two captures that differ only because the extension changed underneath them are not comparable.
+    extension_version: (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || "unknown",
     adapter: `${adapter.id}:${found.selector}`,
     adapter_verified: adapter.verified === true,
     // How many links in the answer were dropped as page furniture. Published rather than hidden: if this
