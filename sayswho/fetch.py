@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
 from .cache import FetchCache, now_iso
-from .extract import EMPTY_THRESHOLD, detect_wall, extract_text, extraction_looks_thin
+from .extract import EMPTY_THRESHOLD, detect_wall, extract_text, extraction_looks_thin, raw_text
 from .records import (
     SOURCE_EMPTY,
     SOURCE_NOT_HTML,
@@ -320,7 +320,7 @@ class Fetcher:
 
         html = decoded.decode("utf-8", errors="replace")
         text = extract_text(html)
-        base["html"] = html
+        base["raw"] = raw_text(html)
         base["extraction_thin"] = extraction_looks_thin(len(text), len(decoded))
 
         # Wall detection runs before the length threshold. A paywalled page usually is short, and reporting

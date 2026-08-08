@@ -137,18 +137,25 @@ def extract_text(html: str) -> str:
     return parser.text()
 
 
+#: Site furniture, excluded from the raw pass as well as the strict one. This is the opposite of how the
+#: function was first written, and the reason it produced false positives on its first live run: every
+#: mass.gov page carries a hamburger nav linking `/topics/transportation`, so a claim mentioning
+#: transportation looked like text the extractor had lost. Furniture repeated site-wide is not evidence
+#: that a particular page's body said anything.
+_FURNITURE = {"nav", "header", "footer", "form", "iframe"}
+
+
 def raw_text(html: str) -> str:
-    """Everything a reader could possibly see, with only scripts and styles removed.
+    """Content the strict pass might have dropped, for the extraction check in `judge.py`.
 
-    Not for the judge. This is the comparison side of the extraction check in `judge.py`: if a claim's
-    numbers are in here and absent from `extract_text`, this parser dropped them, and the resulting
-    NOT_FOUND_IN_SOURCE is a fact about the extractor rather than about the source.
+    Wider than `extract_text` in the only direction that matters: it keeps `aside` and attribute text, so a
+    claim's numbers hiding in a sidebar or a `title` attribute are visible. It is not "everything in the
+    bytes". Scripts, styles and site furniture are excluded, because a token found in a `switch` statement
+    or a navigation link is not evidence that the article contained it.
 
-    Deliberately noisier than `extract_text`. It keeps navigation, asides, footers and attribute text,
-    because the question it answers is "could this have been on the page at all", not "what does the page
-    say".
+    The question this answers is "did our extractor lose this", not "does this string appear anywhere".
     """
-    parser = _TextExtractor(drop_tags=_NEVER_TEXT, attr_names=_TEXT_ATTRS)
+    parser = _TextExtractor(drop_tags=_NEVER_TEXT | _FURNITURE, attr_names=_TEXT_ATTRS)
     try:
         parser.feed(html)
         parser.close()

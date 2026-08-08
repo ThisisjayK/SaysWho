@@ -165,6 +165,15 @@ labelled by id against a re-derived split would not merely lose claims, it would
 gold set has to be pinned to a stored split and judged against that stored split, whatever unit the support
 rate settles on.
 
+**Pinning also separates two kinds of variance that were previously compounded.** With the split stored and
+re-used, two runs over the same 20 claims and the same 7 sources produced 18 judgements each, identical in
+aggregate (4 supported, 7 not-found, 6 partial, 1 fabricated span) and differing on two individual
+claim-source pairs. So the judge moves too, and much less than the splitter does.
+
+Before pinning there was no way to tell those apart: a changed number could have been the split or the
+judge. That matters for day 5, because the kappa is supposed to measure the judge, and an unpinned split
+would have folded splitter variance into it.
+
 Also found on the way: the run published the skip count and discarded the skipped text, so this could not
 have been checked at all. Fixed with `--dump-skipped`, and the split is now carried in the `--json` record.
 
@@ -260,6 +269,28 @@ numeric claims, which are the ones a reader acts on, and it leaves prose asserti
 in `SCOPE.md` §7. The other two guards, `SOURCE_NOT_HTML` and the thin-page flag, had nothing to catch on
 this capture either: it cites no PDFs and no page came back suspiciously thin. All three are tested and only
 one has been exercised on live data.
+
+**Then it fired twice, and both were wrong.** On the next run, against a stored split, two
+`NOT_FOUND_IN_SOURCE` verdicts were voided as `EXTRACTION_SUSPECT`. The claim listed MBCCP services
+including case management and transportation assistance. Checking the pages by hand: neither mentions case
+management or childcare anywhere, and "transportation" appears only in the site-wide hamburger menu as
+`/topics/transportation`. The judge was right, and the guard overrode it.
+
+Two causes, and the first is the embarrassing one:
+
+- **The permissive parser was never wired in.** `extract.raw_text` was written for exactly this comparison
+  and then never called: the guard was handed the raw markup instead. So "Case" matched a `switch`
+  statement's `case` keyword inside a `<script>`. The function existed, was tested, and was dead.
+- **Even wired in, it kept navigation on purpose.** The docstring said the question was "could this have
+  been on the page at all", and that framing was wrong. Furniture repeated site-wide is not evidence that a
+  particular page's body said anything. `raw_text` now excludes `nav`, `header`, `footer`, `form` and
+  `iframe` as well as scripts and styles, and keeps only what a body might plausibly hold: `aside`, SVG
+  text, and `alt` and `title` attributes.
+
+The guard against publishing our own silent failures had a silent failure, and it failed in the direction of
+suppressing correct findings rather than inventing them, which is the safer direction and still wrong. It was
+caught by reading the two voided verdicts rather than by any test, which is the same lesson as item 7: the
+output looked reasonable, and only checking the specific pages showed it was not.
 
 One correction fell out of the same pass: `NOT_FOUND_IN_SOURCE` was setting `span_verified = True`, meaning
 "nothing to check". Nothing counted it, so no published number was wrong, but a marking interface reading

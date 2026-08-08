@@ -86,15 +86,28 @@ def test_scripts_and_styles_are_still_never_text():
     assert "color" not in text
 
 
-def test_raw_text_keeps_the_furniture_that_extraction_drops():
-    """The comparison side of the extraction check, so it has to see more, not less."""
-    html = "<nav>Skip to content</nav><aside>Funded in 2019</aside><p>Body.</p>"
-    assert "Skip to content" not in extract_text(html)
-    assert "Skip to content" in raw_text(html)
+def test_raw_text_sees_the_content_extraction_drops():
+    """Wider than the strict pass in the one direction that matters: a sidebar is plausibly content."""
+    html = "<aside>Funded in 2019</aside><p>Body.</p>"
+    assert "Funded in 2019" not in extract_text(html)
     assert "Funded in 2019" in raw_text(html)
 
 
-def test_raw_text_still_excludes_scripts():
+def test_raw_text_excludes_site_furniture():
+    """Regression, from the guard's first live run.
+
+    Every mass.gov page carries a hamburger nav linking /topics/transportation. With navigation in the raw
+    pass, any claim mentioning transportation looked like text the extractor had lost, and two correct
+    NOT_FOUND_IN_SOURCE verdicts were voided on two pages that never mention it outside the menu.
+    """
+    html = '<nav><a href="/topics/transportation">Transportation</a></nav><p>Body.</p>'
+    assert "Transportation" not in raw_text(html)
+
+
+def test_raw_text_excludes_scripts():
+    """The other half of the same live failure: "Case" matched a switch statement's `case` keyword."""
+    html = "<script>switch (h) { case 'www.mass.gov': break; }</script><p>Body.</p>"
+    assert "case" not in raw_text(html).lower()
     assert "var x" not in raw_text("<script>var x = 1;</script><p>Body.</p>")
 
 
@@ -124,10 +137,10 @@ MARKUP = (
 )
 
 
-def _record(text=DOCUMENT, html=MARKUP):
+def _record(text=DOCUMENT, markup=MARKUP):
     return FetchRecord(
         url="https://example.org/a", code=SOURCE_OK, fetched_at="2026-08-08T00:00:00+00:00",
-        http_status=200, text=text, text_length=len(text), html=html,
+        http_status=200, text=text, text_length=len(text), raw=raw_text(markup),
     )
 
 
@@ -162,17 +175,41 @@ def test_an_ordinary_not_found_is_left_alone():
 
 
 def test_one_capitalised_word_is_not_enough_to_fire_the_guard():
-    """Navigation is full of single capitalised words, and the raw pass keeps navigation on purpose."""
+    """One word can be a coincidence. Two words missing from the same claim is a pattern."""
     assert extraction_dropped_evidence(
-        "Boston has a screening programme.", "a screening programme", "<nav>Boston</nav>"
+        "Boston has a screening programme.", "a screening programme", "Boston"
     ) == ()
+
+
+def test_the_whole_mass_gov_false_positive_end_to_end():
+    """Regression for the two verdicts the guard wrongly voided on its first live run.
+
+    The claim listed services including case management and transportation assistance. Neither page said
+    either, but the raw pass was seeing markup rather than an extraction, so "Case" matched a script's
+    `case` keyword and "Transportation" matched a navigation link.
+    """
+    claim_text = (
+        "The Massachusetts Breast and Cervical Cancer Program (MBCCP) provides: Breast cancer screening, "
+        "Case management, Transportation assistance"
+    )
+    markup = (
+        "<script>switch (hostname) { case 'www.mass.gov': break; }</script>"
+        '<nav><a href="/topics/transportation">Transportation</a></nav>'
+        "<p>The programme provides breast cancer screening at participating sites.</p>"
+    )
+    extracted = extract_text(markup)
+
+    assert extraction_dropped_evidence(claim_text, extracted, raw_text(markup)) == (), (
+        "the source genuinely does not mention case management or transportation assistance, so a "
+        "NOT_FOUND_IN_SOURCE here is a real finding and must not be voided"
+    )
 
 
 def test_two_missing_proper_nouns_are_enough():
     assert extraction_dropped_evidence(
         "Dana Farber and Brigham both run the clinic.",
         "both run the clinic",
-        "Dana Farber and Brigham",
+        "<p>Dana Farber and Brigham</p>",
     ) == ("Brigham", "Dana", "Farber")
 
 
@@ -180,8 +217,8 @@ def test_a_single_digit_is_not_distinctive_enough():
     assert extraction_dropped_evidence("There are 6 sites.", "there are sites", "6") == ()
 
 
-def test_the_guard_does_nothing_without_stored_markup():
-    """Older records carry no html. Absent evidence must not become evidence of absence."""
+def test_the_guard_does_nothing_without_a_stored_raw_pass():
+    """Older records carry none. Absent evidence must not become evidence of absence."""
     assert extraction_dropped_evidence("Uptake reached 78% in 2022.", "nothing here", "") == ()
 
 

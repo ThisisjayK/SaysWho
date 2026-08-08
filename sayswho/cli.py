@@ -21,6 +21,7 @@ from .drift import DRIFT_NO_SNAPSHOT, DRIFT_NOT_CHECKED, DriftChecker, DriftReco
 from .fetch import Fetcher, user_agent
 from .gates import auditable_denominator, g0_has_citations
 from .named_citations import analyse as analyse_named
+from .splits import split_digest
 from .records import Capture
 
 
@@ -49,12 +50,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
     parser.add_argument(
+        "--split",
+        type=Path,
+        default=None,
+        help="use a stored split instead of calling Phase 1. The gold set is labelled against a stored "
+        "split, so the run that produces a rate has to judge the same claims a human read",
+    )
+    parser.add_argument(
+        "--save-split",
+        type=Path,
+        default=None,
+        help="write this run's split to a file, so it can be labelled and re-used",
+    )
+    parser.add_argument(
         "--dump-skipped",
         action="store_true",
         help="print every line G1 skipped, with its reason. The skip count is meaningless unless somebody "
         "reads what was skipped, and a high rate is either furniture or a hole in the denominator",
     )
     args = parser.parse_args(argv)
+
+    if (args.split or args.save_split) and not args.judge:
+        # Phase 1 only runs under --judge, so these would otherwise be accepted and silently ignored, and a
+        # run that looks pinned and is not is the exact failure the stored split exists to prevent.
+        parser.error("--split and --save-split need --judge, since Phase 1 only runs there")
 
     capture = Capture.from_json(args.capture)
 
@@ -153,10 +172,12 @@ def main(argv: list[str] | None = None) -> int:
     claim_set = None
     report = None
     if args.judge and auditable:
+        from .cache import now_iso
         from .claims import split_claims
         from .gemini import build_judge
         from .judge import EXTRACTION_SUSPECT, JudgeReport, judge_claim
         from .model import BudgetExceeded, Meter
+        from .splits import StoredSplit, store
 
         meter = Meter(budget_tokens=args.budget)
         client = build_judge(args.judge_provider, meter=meter)
@@ -166,10 +187,23 @@ def main(argv: list[str] | None = None) -> int:
         drift_by_url = {d.url: d for d in drifts}
 
         print()
-        print("Phase 1   splitting the answer into claims   [model-inference]")
-        claim_set = split_claims(capture, client)
+        if args.split is not None:
+            stored = StoredSplit.load(args.split)
+            claim_set = stored.bind(capture)
+            print("Phase 1   stored split, not re-derived   [model-inference, made earlier]")
+            print(f"  file     {args.split}")
+            print(f"  split    {stored.split_sha256[:16]}  made {stored.created_at}")
+            print(f"  by       {stored.judge_class} {stored.judge_model}, {stored.claim_prompt_version}")
+        else:
+            print("Phase 1   splitting the answer into claims   [model-inference]")
+            claim_set = split_claims(capture, client)
         print(f"  claims   {len(claim_set.claims)}   uncited {claim_set.uncited_count}")
         print(f"  G1 skipped {len(claim_set.skipped)}, counted and reported, never dropped")
+
+        if args.save_split is not None:
+            record = store(claim_set, capture, client, created_at=now_iso())
+            record.save(args.save_split)
+            print(f"  saved    {args.save_split}  split {record.split_sha256[:16]}")
 
         if args.dump_skipped:
             print()
@@ -235,6 +269,9 @@ def main(argv: list[str] | None = None) -> int:
                     # The split itself, skipped lines and all. Without this the run publishes a skip count
                     # and discards the evidence for it, which makes the count uncheckable.
                     "claims": claim_set.to_dict() if claim_set is not None else None,
+                    # Which split produced those claims. A rate is only comparable to a gold set labelled
+                    # against the same one.
+                    "split_sha256": split_digest(claim_set.claims) if claim_set is not None else None,
                 },
                 indent=2,
             )
