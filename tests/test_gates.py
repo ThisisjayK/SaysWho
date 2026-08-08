@@ -252,3 +252,39 @@ def test_a_complete_capture_does_not_claim_to_be_incomplete():
         citations=[Citation(marker="[1]", url="https://example.org/a")],
     )
     assert not c.capture_is_known_incomplete
+
+
+def test_a_capture_missing_unrendered_text_is_known_incomplete():
+    """Long answers are not fully laid out until they have been scrolled through.
+
+    innerText reads what was laid out; textContent reads what is in the DOM. A gap between them means the
+    capture is short, and a short capture parses cleanly and looks entirely normal.
+    """
+    c = Capture(
+        query_id="PR-01",
+        product="claude",
+        model_id="test",
+        generated_at="2026-08-08T00:00:00+00:00",
+        captured_at="2026-08-08T00:00:01+00:00",
+        answer_text="Only the visible part.",
+        citations=[Citation(marker="[1]", url="https://example.org/a")],
+        rendered_chars=4000,
+        dom_chars=20000,
+    )
+    assert c.capture_is_known_incomplete
+
+
+def test_whitespace_differences_alone_do_not_flag_a_capture():
+    """innerText and textContent never agree exactly, so a small gap is not evidence of anything."""
+    c = Capture(
+        query_id="PR-01",
+        product="claude",
+        model_id="test",
+        generated_at="2026-08-08T00:00:00+00:00",
+        captured_at="2026-08-08T00:00:01+00:00",
+        answer_text="The whole answer.",
+        citations=[Citation(marker="[1]", url="https://example.org/a")],
+        rendered_chars=20000,
+        dom_chars=20200,
+    )
+    assert not c.capture_is_known_incomplete

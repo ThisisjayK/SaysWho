@@ -56,10 +56,12 @@
   }
 
   async function capture() {
+    button.textContent = "SaysWho: reading...";
     const found = saysWhoFindAnswer(adapter);
 
     if (!found) {
       // No container matched. Reporting that plainly beats capturing the whole page and calling it an answer.
+      button.textContent = "SaysWho: capture answer";
       say(
         `No answer found on this page.\n\n` +
           `adapter: ${adapter.id}\n` +
@@ -84,8 +86,12 @@
       say(
         `Captured.  (SaysWho ${record.extension_version})\n\n` +
           `citations: ${record.citations.length}\n` +
-          `chars: ${record.answer_text.length}\n` +
+          `chars: ${record.rendered_chars} of ${record.dom_chars} in the DOM\n` +
           `chrome links dropped: ${record.chrome_links_excluded}\n` +
+          (record.dom_chars > record.rendered_chars * 1.05
+            ? `\nINCOMPLETE: ${record.dom_chars - record.rendered_chars} characters are in the page but ` +
+              `were never laid out, so they are missing from this capture.\n`
+            : "") +
           (record.citations_possibly_hidden
             ? `\nINCOMPLETE: ${record.expanders_seen} "+N" controls hide at least ` +
               `${record.citations_possibly_hidden} more citations.\n` +
@@ -101,6 +107,7 @@
       );
     }
 
+    button.textContent = "SaysWho: capture answer";
     chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record });
   }
 

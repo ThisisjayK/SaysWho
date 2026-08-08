@@ -97,6 +97,46 @@ function saysWhoCountHiddenCitations(element) {
 }
 
 /**
+ * Scroll the answer through the viewport so the browser lays all of it out.
+ *
+ * A long answer is not fully in the DOM until it has been on screen. Products either keep only the visible
+ * part rendered or mark off-screen sections so layout is skipped, and `innerText` reads what was laid out.
+ * Text you have not scrolled to is not there to read.
+ *
+ * Left to the user this becomes "remember to scroll before capturing", and a capture taken without
+ * scrolling is short, parses cleanly, and looks entirely normal. The extension does the scrolling instead,
+ * and puts the scroll position back where it found it.
+ */
+function saysWhoScroller(element) {
+  let node = element;
+  while (node && node !== document.body) {
+    const style = getComputedStyle(node);
+    const scrolls = /auto|scroll|overlay/.test(style.overflowY);
+    if (scrolls && node.scrollHeight > node.clientHeight + 40) return node;
+    node = node.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+async function saysWhoForceRender(element) {
+  const scroller = saysWhoScroller(element);
+  if (!scroller) return;
+
+  const original = scroller.scrollTop;
+  const step = Math.max(200, scroller.clientHeight * 0.8);
+
+  for (let y = 0; y <= scroller.scrollHeight; y += step) {
+    scroller.scrollTop = y;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  scroller.scrollTop = scroller.scrollHeight;
+  await new Promise((r) => setTimeout(r, 150));
+
+  scroller.scrollTop = original;
+  await new Promise((r) => setTimeout(r, 100));
+}
+
+/**
  * Answer text as rendered.
  *
  * `innerText` rather than `textContent`, because textContent includes text from hidden elements and drops
@@ -108,7 +148,15 @@ function saysWhoAnswerText(element) {
 }
 
 async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }) {
+  await saysWhoForceRender(found.element);
+
   const answerText = saysWhoAnswerText(found.element);
+
+  // innerText is what was laid out. textContent is what is in the DOM whether laid out or not. A large gap
+  // between them means the browser skipped rendering part of the answer and the capture is short, so the
+  // numbers are recorded and the gap is reported rather than left to be noticed later.
+  const domChars = (found.element.textContent || "").replace(/\s+/g, " ").trim().length;
+  const renderedChars = answerText.replace(/\s+/g, " ").trim().length;
   const { citations, excluded } = saysWhoExtractCitations(adapter, found.element);
   const { expanders, hidden } = saysWhoCountHiddenCitations(found.element);
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
@@ -134,6 +182,9 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
     // Citations the page showed behind a "+N" control and this capture did not reach. A floor.
     citations_possibly_hidden: hidden,
     expanders_seen: expanders,
+    // Characters laid out versus characters present in the DOM. A shortfall means unrendered text.
+    rendered_chars: renderedChars,
+    dom_chars: domChars,
     answer_text: answerText,
     answer_sha256: await saysWhoSha256Hex(answerText),
     citations,
