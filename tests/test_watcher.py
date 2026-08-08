@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 from watch_captures import append_ledger, pending, read_ledger  # noqa: E402
 
 
-def capture_file(directory: Path, name: str) -> Path:
+def capture_file(directory: Path, name: str, sha: str = "") -> Path:
     path = directory / name
-    path.write_text("{}", encoding="utf-8")
+    path.write_text(json.dumps({"answer_sha256": sha or name}), encoding="utf-8")
     return path
 
 
@@ -115,6 +115,104 @@ def test_the_lock_is_released_when_there_is_nothing_to_do(tmp_path):
     reports = tmp_path / "reports"
     assert main(["--captures", str(tmp_path), "--reports", str(reports)]) == 0
     assert not (reports / ".lock").exists(), "a stale lock would block every future run"
+
+
+# ------------------------------------------------- what the first live firing taught, one test each
+
+
+def test_a_capture_that_keeps_failing_is_eventually_left_alone(tmp_path):
+    """One wrong path replayed a backlog of eighteen failures on every launchd firing, twice over.
+
+    A retry that cannot succeed is a loop, not persistence.
+    """
+    capture_file(tmp_path, "capture-a.json")
+    ledger = {"capture-a.json": {"status": "failed", "attempts": 3}}
+    assert pending(tmp_path, ledger, max_attempts=3) == []
+
+
+def test_a_capture_below_the_attempt_cap_is_still_retried(tmp_path):
+    """A run that died on a rate limit deserves another go."""
+    capture_file(tmp_path, "capture-a.json")
+    ledger = {"capture-a.json": {"status": "failed", "attempts": 1}}
+    assert [p.name for p in pending(tmp_path, ledger, max_attempts=3)] == ["capture-a.json"]
+
+
+def test_a_second_capture_of_an_audited_answer_is_skipped(tmp_path):
+    """Twenty captures in the folder were four distinct answers.
+
+    Capturing the same page repeatedly while fixing selectors is normal, and the audit is a function of the
+    answer, so re-auditing identical text spends ten minutes of quota to learn nothing.
+    """
+    capture_file(tmp_path, "capture-first.json", sha="abc123")
+    capture_file(tmp_path, "capture-second.json", sha="abc123")
+    ledger = {"capture-first.json": {"status": "ok", "answer_sha256": "abc123"}}
+
+    assert pending(tmp_path, ledger) == []
+
+
+def test_two_unaudited_captures_of_one_answer_produce_one_audit(tmp_path):
+    import os
+
+    a = capture_file(tmp_path, "capture-a.json", sha="same")
+    b = capture_file(tmp_path, "capture-b.json", sha="same")
+    os.utime(a, (1, 1))
+    os.utime(b, (2, 2))
+
+    assert [p.name for p in pending(tmp_path, {})] == ["capture-a.json"]
+
+
+def test_a_different_answer_is_still_audited(tmp_path):
+    capture_file(tmp_path, "capture-first.json", sha="abc123")
+    capture_file(tmp_path, "capture-other.json", sha="def456")
+    ledger = {"capture-first.json": {"status": "ok", "answer_sha256": "abc123"}}
+
+    assert [p.name for p in pending(tmp_path, ledger)] == ["capture-other.json"]
+
+
+def test_a_capture_that_cannot_be_read_is_not_treated_as_a_duplicate(tmp_path):
+    """An unreadable file has no hash, and an empty hash must not match another empty one."""
+    (tmp_path / "capture-bad.json").write_text("{ not json", encoding="utf-8")
+    (tmp_path / "capture-worse.json").write_text("also not json", encoding="utf-8")
+
+    assert len(pending(tmp_path, {})) == 2
+
+
+def test_a_stale_lock_is_broken_rather_than_blocking_forever(tmp_path):
+    """A process killed mid-run would otherwise leave the automation dead with no sign of it."""
+    import os
+    import time
+
+    from watch_captures import main
+
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    lock = reports / ".lock"
+    lock.write_text("999 old", encoding="utf-8")
+    os.utime(lock, (time.time() - 10 * 3600,) * 2)
+
+    assert main(["--captures", str(tmp_path), "--reports", str(reports)]) == 0
+    assert not lock.exists(), "the stale lock should have been broken and then released"
+
+
+def test_the_ledger_never_claims_a_report_that_was_not_written(tmp_path, monkeypatch):
+    """Seen live: a capture whose only source returned 403 has no auditable claims, so Phase 1 never runs
+    and no report is written. The ledger recorded outcome "report" and a path to a file that did not exist.
+
+    A log asserting an artifact it never saw is the failure this project audits other people for, in the one
+    place nobody looks because it is automated.
+    """
+    import watch_captures
+
+    capture = capture_file(tmp_path, "capture-a.json")
+    reports = tmp_path / "reports"
+    monkeypatch.setattr(watch_captures, "cli_main", None, raising=False)
+    monkeypatch.setattr("sayswho.cli.main", lambda argv: 0)
+
+    entry = watch_captures.audit(capture, reports)
+
+    assert entry["outcome"] == "no report"
+    assert "report" not in entry, "no path may be recorded when no file was written"
+    assert "no source could be read" in entry["detail"]
 
 
 def test_the_ledger_records_what_the_report_found(tmp_path):
