@@ -389,6 +389,19 @@ rest test how good the judge is, which matters less than whether the guard rails
   does not, and the count it reports is a floor rather than a total.
 - **Whether a source is authoritative** for the claim it supports. A blog post and a peer-reviewed paper are
   the same object to this tool.
+
+- **Whether the judge is neutral about one of the audited products.** The judge runs on Gemini's free tier,
+  because a run that costs nothing is a hard constraint on this project rather than a preference. §10 audits
+  Google AI Overviews alongside Claude, ChatGPT and Perplexity, so for that one product the judge and the
+  audited system come from the same vendor.
+
+  This is stated rather than resolved. For the other three products a judge from outside all of them is
+  arguably *more* independent than one built by any of their makers. For AI Overviews it is the opposite, and
+  the per-product result carries the conflict beside it. Dropping AI Overviews from the audited set would
+  also be honest; quietly reporting it as though the conflict were not there would not be.
+
+  The span guard is unaffected either way. It is a substring check against the fetched document and knows
+  nothing about which model produced the span.
 - **Whether the answer is complete or fairly framed.** Selection bias in what was cited is beyond reach.
 
 - **Whether my query set resembles what people actually ask.** I wrote the queries. They shape what was

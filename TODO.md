@@ -120,7 +120,15 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       the guard, because dictating the span puts it on the page. Kept as a passing test of the failure
 - [x] Metering per call, budget cap that halts and records the halt, cost estimated only for known models
 - [x] Source document sent as a cached prefix, so several claims citing one page pay for it once
-- [ ] Run it against a real answer with a real key. Needs `ANTHROPIC_API_KEY` and costs money
+- [x] Gemini free-tier judge, chosen so the run costs nothing. Same `JudgeClient` protocol, so the pipeline,
+      the gates and the span guard are untouched by the swap
+- [x] Free-tier rate limits waited out with backoff rather than dropping the claim, and the waiting time
+      recorded. A claim skipped for quota is a hole in the denominator
+- [x] Refusals, truncated answers and empty answers all void rather than half-parse
+- [ ] Get a free key from aistudio.google.com and run it against a real capture. Needs `GEMINI_API_KEY`
+- [ ] **Decide before day 5 whether Google AI Overviews stays in the audited set.** A Gemini judge scoring a
+      Google product is a vendor grading its own homework. Recorded in `SCOPE.md` §7. Either drop it or
+      report its per-product result with the conflict stated beside it
 
 ## Day 4: gates and the contract check
 
