@@ -63,12 +63,28 @@ def main(argv: list[str] | None = None) -> int:
         help="write this run's split to a file, so it can be labelled and re-used",
     )
     parser.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="write a standalone HTML report: the answer with each claim marked, and the source's own "
+        "words on hover. Needs --judge, since an unjudged answer has nothing to mark",
+    )
+    parser.add_argument(
+        "--report-json",
+        type=Path,
+        default=None,
+        help="write the report payload as JSON, for the extension's report viewer",
+    )
+    parser.add_argument(
         "--dump-skipped",
         action="store_true",
         help="print every line G1 skipped, with its reason. The skip count is meaningless unless somebody "
         "reads what was skipped, and a high rate is either furniture or a hole in the denominator",
     )
     args = parser.parse_args(argv)
+
+    if (args.report or args.report_json) and not args.judge:
+        parser.error("--report and --report-json need --judge: an unjudged answer has nothing to mark")
 
     if (args.split or args.save_split) and not args.judge:
         # Phase 1 only runs under --judge, so these would otherwise be accepted and silently ignored, and a
@@ -254,6 +270,22 @@ def main(argv: list[str] | None = None) -> int:
         print()
         print("No aggregate support rate is printed. G4: there is no gold set for this judge and prompt")
         print("version yet, so per-claim verdicts are all this run is entitled to report.")
+
+        if args.report or args.report_json:
+            from .report import build as build_report
+
+            marked = build_report(
+                capture, records, claim_set, judgements,
+                drifts=drifts, split_sha256=split_digest(claim_set.claims),
+            )
+            if args.report:
+                marked.save(args.report)
+                print()
+                print(f"report       {args.report}")
+            if args.report_json:
+                args.report_json.parent.mkdir(parents=True, exist_ok=True)
+                args.report_json.write_text(marked.to_json(), encoding="utf-8")
+                print(f"report json  {args.report_json}")
 
     if args.json:
         print()

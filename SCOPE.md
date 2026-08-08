@@ -133,6 +133,17 @@ that would make this hard to build as a website is free here.
 **It is the demo.** A hiring manager installs it, opens Claude, and watches claims get marked. That is a more
 openable artifact than a terminal transcript.
 
+**Corrected on day 3, once the marking view was built.** That last paragraph promised one click and the
+build does not deliver one. Producing a verdict requires the fetch layer, the gates and the span guard,
+which are Python and stay Python: reimplementing them in the extension would create a second implementation
+of exactly what the §9 parity check exists to compare, and the two would drift.
+
+So the real sequence is: capture in the browser, run the harness locally, open the marked answer. The
+extension renders the result with the same `render.js` the harness embeds in its standalone report, so
+there is one view and it cannot disagree with itself. Closing the gap would mean a local server the
+extension talks to, which is a build worth doing and is not done. The writeup says capture and render, not
+install and watch.
+
 ## 1b. What separates this from the tools that already ship
 
 This space is occupied. CiteGuardian describes itself as breaking text into individual claims, reviewing the

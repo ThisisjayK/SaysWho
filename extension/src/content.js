@@ -1,12 +1,15 @@
 /**
  * The content script.
  *
- * Day 2 scope is capture only. There is no marking yet, because there are no verdicts yet: Phase 1 and
- * Phase 3 arrive on day 3. Shipping a marking UI before there is anything behind it would produce exactly
- * the finding-shaped output this project exists to refuse.
+ * Capture only, still, and now for a different reason than before. Day 2's reason was that there were no
+ * verdicts to show. There are verdicts now, and they are rendered by `report.html` in this extension using
+ * the same `render.js` the harness embeds in its standalone report.
  *
- * So the button captures the last answer on the page and hands the JSON to the harness. Nothing on screen
- * claims anything about whether a citation holds up.
+ * What is not here is marking on claude.ai itself, and that is a limitation rather than a decision made and
+ * finished. Producing a verdict needs the fetch layer, the gates and the span guard, all of which are Python
+ * and stay Python: a JavaScript reimplementation would be a second implementation of the thing the parity
+ * check in `SCOPE.md` §9 exists to compare. So the extension captures and renders, and the audit runs
+ * locally in between.
  */
 
 (() => {
