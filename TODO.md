@@ -185,6 +185,10 @@ Done means pytest with each gate failing on its target bug, not merely present.
       different facts and collapsing them would repeat the mistake this whole project is about
 
       Roughly half a day. Build only if the core lands on time
+- [ ] Split `SOURCE_UNREACHABLE`. A 403 from bot detection and a 404 dead link are different findings: one
+      says the citation is broken, the other says it is unreadable to anyone automated while a person
+      clicking it would see the page. Same class of distinction as `SOURCE_ROBOTS_EXCLUDED`. Seen live on
+      aacrjournals.org, the single link in a whole research report
 - [ ] Widen the `CITATION_NOT_LINKED` patterns and measure their recall against a hand-marked answer. The
       current count is a floor and the writeup has to keep saying so until that is measured
 

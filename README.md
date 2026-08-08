@@ -13,25 +13,34 @@ claim where it sits as one of three things:
 
 ## Status
 
-Day 1 of a ten day build. Nothing works yet. The extension is not started.
+Day 2 of ten, done. The pipeline can tell you whether a cited source can be read at all. It cannot yet tell
+you whether the source supports the claim, because the judge and the span guard are day 3.
 
-What is here:
+So the refusing half of this tool works and the checking half does not.
 
-- `SCOPE.md`, the scoping document. Phase gates, the boundary table separating recorded fields from
-  model inferences, the break attempts, and the day by day schedule.
-- `queries/consumer.toml`, the consumer stratum. 24 questions in health, personal finance, immigration and
-  local services, each carrying a written statement of what acting on a wrong answer costs the asker. Frozen.
-- `queries/professional.toml`, the primary stratum, currently a schema and an intake procedure with no
-  queries in it. Those have to come out of my own research history rather than be written, so the file stays
-  empty until they do.
-- `tools/`, which validates the query set and fails any run where a query was added, removed or edited after
-  the freeze. The freeze is a hash manifest, so this is checkable by someone who does not trust me.
+**In the browser.** A Manifest V3 extension captures an answer from claude.ai, chatgpt.com, perplexity.ai or
+Google AI Overviews. It scrolls the answer into existence first, since a long answer is not fully in the DOM
+until it has been on screen. It extracts the answer text and citation URLs, hashes the text, and downloads
+both a capture record and the page it came from. When it cannot reach everything, it says so instead of
+handing back a plausible number.
 
-Both strata get frozen before either one runs. If the consumer set were written later it would be written by
-someone who had already seen what the professional set produced, and there would be no way to prove it
-wasn't shaped by that.
+**In the terminal.** `python3 -m sayswho.cli <capture.json>` re-verifies the hash, refuses answers with no
+citations, fetches every cited URL under `DATA_CONTRACT.md`, and assigns one of six outcomes: `SOURCE_OK`,
+`SOURCE_UNREACHABLE`, `SOURCE_EMPTY`, `SOURCE_PAYWALLED`, `SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`. It
+compares each readable page against the Wayback Machine for drift, counts sources named in prose with no
+link, and enforces that unauditable claims never reach a denominator.
 
-No number this project produces is a measurement yet.
+`python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs extraction over the stored bytes
+and compares the result to what the extension produced. Two implementations, one in JavaScript against a
+live DOM and one in Python against saved markup, and they have to agree.
+
+81 tests. Each gate has a test that makes it fire on the bug it exists to catch.
+
+**Not built yet:** claim splitting, the judge, the span guard, the marking UI, the gold set. The
+professional query stratum is empty by design until real queries are scrubbed into it.
+
+No number this project produces is a measurement yet. `FINDINGS.md` records what has been observed so far,
+and every entry there is n=1.
 
 ## Why bother
 
