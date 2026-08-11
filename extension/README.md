@@ -32,6 +32,14 @@ Use the repo's virtualenv, or any Python that has `google-genai` in it. The serv
 judge before it starts listening: a missing package or a missing key stops it there, with the fix, rather
 than surfacing as a traceback two minutes into the first audit while the popup shows a green light.
 
+If the port is taken it says so and asks whatever is holding it whether it is an older SaysWho server. That
+is the case that actually happens, and it is the reason an audit can keep failing in exactly the same way
+after the file has been fixed: the extension is still talking to the old process.
+
+```bash
+lsof -ti tcp:8765 | xargs kill
+```
+
 An audit does not download anything. The server writes the capture to the repo's `captures/` directory
 before it starts fetching, which is where `tools/run_stratum.py` and `tools/bind_capture.py` read captures
 from, so there is one copy and it is in the right place.

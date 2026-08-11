@@ -454,3 +454,72 @@ def test_an_answer_refused_before_the_save_reports_no_path(tmp_path, server):
 
     assert result["error"] == "NO_CITATIONS"
     assert "saved_to" not in result
+
+
+# ---------------------------------------------------------------- the port
+
+
+def test_a_taken_port_is_explained_rather_than_raised(tmp_path, capsys):
+    """`OSError: [Errno 48] Address already in use` reads as a bug in this file. It is a process still
+    running from before, and it is the most likely reason a fixed server keeps failing the same way."""
+    from sayswho.server import HOST, main, serve
+
+    holder = serve(
+        AuditService(cache_dir=tmp_path / "c", judge=False, drift=False, captures_dir=tmp_path / "cap"),
+        HOST, 0,
+    )
+    port = holder.server_address[1]
+    try:
+        code = main(["--port", str(port), "--skip-freeze-check", "--captures", str(tmp_path / "cap")])
+    finally:
+        holder.server_close()
+
+    assert code == 2
+    out = capsys.readouterr().out
+    assert "THE PORT IS NOT FREE" in out
+    assert f"lsof -ti tcp:{port}" in out, "it has to say how to clear it"
+    assert "Traceback" not in out
+
+
+def test_an_older_sayswho_server_is_named_as_one(tmp_path):
+    """"A SaysWho server is already running" and "something else has this port" need different actions,
+    and the first is the one that actually happens."""
+    import threading
+
+    from sayswho.server import HOST, address_in_use_advice, serve
+
+    service = AuditService(
+        cache_dir=tmp_path / "c", judge=False, drift=False, captures_dir=tmp_path / "cap"
+    )
+    httpd = serve(service, HOST, 0)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        advice = address_in_use_advice(httpd.server_address[1])
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+    flat = " ".join(advice.split())
+    assert "An older SaysWho server is already listening" in flat
+    assert "without a judge" in flat, "it reports what that server can actually do"
+    assert "why an audit can keep failing the same way" in flat
+
+
+def test_a_port_held_by_something_else_gets_different_advice(tmp_path):
+    """A plain socket answers nothing, so it is not one of ours and the fix is not the same."""
+    import socket
+
+    from sayswho.server import address_in_use_advice
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    sock.listen(1)
+    try:
+        advice = address_in_use_advice(sock.getsockname()[1])
+    finally:
+        sock.close()
+
+    assert "Something else is already listening" in advice
+    assert "--port" in advice
+    assert "the extension has to change with it" in advice

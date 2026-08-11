@@ -35,6 +35,7 @@ import argparse
 import json
 import sys
 import threading
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -318,6 +319,49 @@ def serve(service: AuditService, host: str = HOST, port: int = PORT) -> Threadin
     return ThreadingHTTPServer((host, port), make_handler(service))
 
 
+def whatever_is_on(port: int, host: str = HOST, timeout: float = 1.0) -> str:
+    """Ask whatever already holds the port whether it is one of ours.
+
+    Worth the extra request. "A SaysWho server is already running" and "something else has this port" are
+    different problems, and the first one is the one that actually happens: an older server, started from a
+    Python without the judge dependency, still answering /health with judge=true while every audit fails.
+    The extension has no way to tell that apart from a working one.
+    """
+    try:
+        request = urllib.request.Request(f"http://{host}:{port}/health")
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read())
+    except Exception:
+        return "unknown"
+    if not isinstance(payload, dict) or "judge" not in payload:
+        return "unknown"
+    return "sayswho-with-judge" if payload.get("judge") else "sayswho-without-judge"
+
+
+#: What to do about a port that is already taken, in the two cases worth telling apart.
+def address_in_use_advice(port: int) -> str:
+    who = whatever_is_on(port)
+    stop = f"      lsof -ti tcp:{port} | xargs kill"
+
+    if who.startswith("sayswho"):
+        judge = "with a judge" if who.endswith("with-judge") else "without a judge"
+        return (
+            f"An older SaysWho server is already listening on {port}, {judge}.\n"
+            "  That is the one the extension is talking to, and it is why an audit can keep failing the\n"
+            "  same way after this file has been fixed. Stop it and start again:\n\n"
+            f"{stop}\n"
+            f"      .venv/bin/python -m sayswho.server --judge\n"
+        )
+    return (
+        f"Something else is already listening on {port}.\n"
+        "  Either stop it, or run this server somewhere else:\n\n"
+        f"{stop}\n"
+        f"      .venv/bin/python -m sayswho.server --judge --port {port + 1}\n\n"
+        f"  If you change the port, the extension has to change with it: it calls {port} by name, and\n"
+        "  there is a test asserting the two agree."
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--port", type=int, default=PORT)
@@ -355,7 +399,15 @@ def main(argv: list[str] | None = None) -> int:
         cache_dir=args.cache, judge=args.judge, provider=args.judge_provider,
         budget=args.budget, drift=not args.no_drift, captures_dir=args.captures,
     )
-    httpd = serve(service, HOST, args.port)
+    try:
+        httpd = serve(service, HOST, args.port)
+    except OSError as exc:
+        # EADDRINUSE, almost always. A raw traceback here reads as a bug in this file, and the actual
+        # situation is a process still running from before.
+        print(f"THE PORT IS NOT FREE. {exc}")
+        print()
+        print(address_in_use_advice(args.port))
+        return 2
 
     print(f"SaysWho audit server on http://{HOST}:{args.port}")
     print(f"  judge      {'on' if args.judge else 'off, fetch and liveness only'}")
