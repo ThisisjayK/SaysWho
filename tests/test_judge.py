@@ -12,6 +12,7 @@ import pytest
 from sayswho.claims import Claim
 from sayswho.judge import (
     CONTRADICTED,
+    PARTIALLY_SUPPORTED,
     JUDGE_FABRICATED_SPAN,
     JUDGE_REFUSED,
     NOT_FOUND_IN_SOURCE,
@@ -355,3 +356,78 @@ def test_without_a_snapshot_the_verdict_stands_and_says_it_could_not_check():
 
     assert result.span_predates_generation is None
     assert not result.voided and result.counts_as_supported
+
+
+# ---------------------------------------------------------------- missing_qualifiers
+
+
+def test_a_partial_verdict_says_which_part_is_missing():
+    """"Supports part of this" without saying which part hands the checking work back to the reader, which
+    is the same failure as a 500-character span."""
+    judge = FakeJudge({
+        "verdict": PARTIALLY_SUPPORTED,
+        "span": "The extended duration group reported more musculoskeletal adverse events",
+        "missing_qualifiers": ["observational, not causal", "trial cohort only"],
+        "reasoning": "the document supports a weaker version",
+        "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge)
+
+    assert result.verdict == PARTIALLY_SUPPORTED
+    assert result.missing_qualifiers == ["observational, not causal", "trial cohort only"]
+    assert not result.partial_without_qualifiers
+
+
+def test_a_partial_with_no_qualifiers_is_counted_not_voided():
+    """Not voided: the verdict may well be right, and voiding it would lose real signal. Counted, because a
+    verdict a reader cannot act on is a finding about the judge."""
+    judge = FakeJudge({
+        "verdict": PARTIALLY_SUPPORTED,
+        "span": "reduced recurrence in the trial cohort",
+        "missing_qualifiers": [],
+        "reasoning": "partly there",
+        "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge)
+
+    assert result.verdict == PARTIALLY_SUPPORTED
+    assert not result.voided, "a missing qualifier list is not grounds for throwing the verdict out"
+    assert result.partial_without_qualifiers
+
+
+def test_a_qualifier_that_is_really_a_score_is_dropped_and_recorded():
+    """The no-confidence gate walks keys, not string values, and it cannot walk values without failing on
+    this project's own prose. So the check is here, where the strings come from a model rather than from us."""
+    judge = FakeJudge({
+        "verdict": PARTIALLY_SUPPORTED,
+        "span": "reduced recurrence in the trial cohort",
+        "missing_qualifiers": ["trial cohort only", "confidence 0.72", "support score 0.6", "90% confident"],
+        "reasoning": "",
+        "notes": "",
+    })
+    result = judge_claim(claim(), source(), judge)
+
+    assert result.missing_qualifiers == ["trial cohort only"]
+    assert result.dropped_qualifiers == ["confidence 0.72", "support score 0.6", "90% confident"]
+
+
+def test_the_qualifier_list_survives_the_no_confidence_gate():
+    """A new field reaching every output surface has to pass the gate that guards them."""
+    from sayswho.gates import assert_no_confidence_number
+    from sayswho.judge import Judgement
+
+    judgement = Judgement(
+        claim_id="c1", url="https://example.org", verdict=PARTIALLY_SUPPORTED,
+        missing_qualifiers=["observational, not causal"], dropped_qualifiers=["confidence 0.7"],
+    )
+    assert_no_confidence_number(judgement.to_dict())
+
+
+def test_the_prompt_version_moved_with_the_prompt():
+    """G4 keys the gold set to judge and prompt version. A prompt that changed while the version stayed put
+    would let a gold set labelled against the old prompt calibrate the new one."""
+    from sayswho.judge import JUDGE_PROMPT_VERSION, SCHEMA, SYSTEM
+
+    assert "missing_qualifiers" in SYSTEM
+    assert "missing_qualifiers" in SCHEMA["required"]
+    assert JUDGE_PROMPT_VERSION != "judge-v1"

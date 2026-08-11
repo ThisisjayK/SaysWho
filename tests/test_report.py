@@ -9,6 +9,7 @@ may carry a confidence number.
 from __future__ import annotations
 
 import json
+import pathlib
 
 from sayswho.claims import Claim, ClaimSet, Skipped
 from sayswho.gates import assert_no_confidence_number
@@ -23,6 +24,7 @@ from sayswho.judge import (
 )
 from sayswho.records import SOURCE_OK, SOURCE_PAYWALLED, Capture, Citation, FetchRecord
 from sayswho.report import (
+    PARTIAL,
     COULD_NOT_VERIFY,
     MIXED,
     NOT_CHECKED,
@@ -98,8 +100,38 @@ def test_a_supported_claim_reads_as_supported():
     assert claim_state([row(SUPPORTED)], has_citation=True) == SUPPORTED_STATE
 
 
-def test_partial_support_is_not_a_failure():
-    assert claim_state([row(PARTIALLY_SUPPORTED)], has_citation=True) == SUPPORTED_STATE
+def test_partial_support_is_neither_a_failure_nor_a_full_support():
+    """It used to roll up into SUPPORTED, so a claim whose only verdict was "supports part of this" was
+    marked green and labelled "Supported by the cited source". `missing_qualifiers` made that indefensible
+    on screen: the card read "Supported by the cited source" above a list saying "association, claim says
+    reduction". Rounding a verdict up while the evidence underneath says otherwise is the move the honesty
+    rules exist to forbid.
+
+    The other direction matters just as much, which is what this test was originally guarding: partial
+    support is not a citation failure and must not be shown as one."""
+    state = claim_state([row(PARTIALLY_SUPPORTED)], has_citation=True)
+    assert state == PARTIAL
+    assert state != SUPPORTED_STATE
+    assert state != NOT_SUPPORTED
+
+
+def test_one_full_support_does_not_cancel_a_partial_one():
+    """Never round up. Two sources, one stating the claim and one stating a weaker version, is not the same
+    finding as two sources stating it."""
+    assert claim_state([row(SUPPORTED), row(PARTIALLY_SUPPORTED)], has_citation=True) == PARTIAL
+
+
+def test_two_partials_do_not_add_up_to_a_full_support():
+    assert claim_state([row(PARTIALLY_SUPPORTED), row(PARTIALLY_SUPPORTED)], has_citation=True) == PARTIAL
+
+
+def test_every_state_has_a_label_and_a_help_line():
+    """A state with no words is a colour, and colour is never the only carrier here."""
+    from sayswho.report import STATE_HELP, STATE_LABELS
+
+    for state in (SUPPORTED_STATE, PARTIAL, NOT_SUPPORTED, MIXED, COULD_NOT_VERIFY, NOT_CHECKED):
+        assert STATE_LABELS.get(state), state
+        assert STATE_HELP.get(state), state
 
 
 def test_not_found_and_contradicted_both_read_as_not_supported():
@@ -112,7 +144,7 @@ def test_disagreeing_sources_are_not_averaged():
     state = claim_state([row(SUPPORTED), row(NOT_FOUND_IN_SOURCE), row(NOT_FOUND_IN_SOURCE)],
                         has_citation=True)
     assert state == MIXED, (
-        "collapsing this would pre-empt the unit-of-the-support-rate decision that is still open"
+        "the rollup names the disagreement; the rate counts all three pairs rather than averaging them"
     )
 
 
@@ -283,3 +315,88 @@ def test_the_focus_offsets_reach_the_payload():
     lo, hi = row["span_focus"]
     assert span[lo:hi] == "Extending therapy reduced recurrence in the cohort."
     assert row["span"] == span, "the whole span still ships"
+
+
+# ---------------------------------------------------------------- the unit, in the payload
+
+
+def test_the_payload_states_the_unit_and_its_n():
+    """Every rate is over claim-source pairs, so the view carries the unit and the denominator rather than
+    leaving a reader to infer which one a number was counted in."""
+    pairs = _report().payload["counts"]["pairs"]
+
+    assert pairs["unit"] == "claim-source pair"
+    assert pairs["standing"] <= pairs["total"]
+    assert pairs["standing"] + pairs["unauditable"] == pairs["total"]
+
+
+def test_the_denominator_comes_from_the_one_function_that_owns_it():
+    """report.py used to grow its own pair counter. A second implementation of a denominator is what
+    standing_denominator exists to prevent, and one file away is the easiest place for it to appear."""
+    source = pathlib.Path(__file__).resolve().parent.parent.joinpath("sayswho", "report.py").read_text()
+    assert "from .rates import" in source
+    assert "standing_denominator(pairs)" in source
+    assert "def pair_counts" not in source, "the duplicate is gone"
+
+
+def test_a_claim_with_three_sources_contributes_three_pairs():
+    """The reason the unit matters. Claim #009 came back SUPPORTED by one source and NOT_FOUND by two, and
+    the claim-level rollup has to pick one colour for the sentence while the rate counts all three."""
+    from sayswho.claims import Claim, ClaimSet
+    from sayswho.judge import NOT_FOUND_IN_SOURCE, SUPPORTED, Judgement
+    from sayswho.records import SOURCE_OK, Capture, Citation, FetchRecord
+
+    urls = [f"https://example.org/{n}" for n in "abc"]
+    text = "Screening uptake rose in the intervention group."
+    capture = Capture(
+        query_id="PR-01", product="chatgpt", model_id="m",
+        generated_at="2026-08-11T00:00:00+00:00", captured_at="2026-08-11T00:00:01+00:00",
+        answer_text=text + " [1][2][3]",
+        citations=[Citation(marker=f"[{i}]", url=u) for i, u in enumerate(urls, start=1)],
+    )
+    records = [
+        FetchRecord(url=u, code=SOURCE_OK, fetched_at="t", text=text, text_length=len(text))
+        for u in urls
+    ]
+    claims = ClaimSet(claims=[Claim(id="PR-01#009", text=text, markers=["[1]"], urls=urls)], skipped=[])
+    judgements = [
+        Judgement(claim_id="PR-01#009", url=urls[0], verdict=SUPPORTED, span=text, span_verified=True),
+        Judgement(claim_id="PR-01#009", url=urls[1], verdict=NOT_FOUND_IN_SOURCE),
+        Judgement(claim_id="PR-01#009", url=urls[2], verdict=NOT_FOUND_IN_SOURCE),
+    ]
+
+    payload = build(capture, records, claims, judgements).payload
+
+    assert payload["counts"]["claims"] == 1
+    assert payload["counts"]["pairs"]["total"] == 3
+    assert payload["counts"]["pairs"]["standing"] == 3
+    assert payload["counts"]["pairs"]["multi_source_claims"] == 1
+    assert payload["counts"]["states"] == {"MIXED": 1}, "the rollup names the disagreement honestly"
+
+
+def test_missing_qualifiers_reach_the_view():
+    """The field only earns its keep if the reader sees it."""
+    from sayswho.claims import Claim, ClaimSet
+    from sayswho.judge import PARTIALLY_SUPPORTED, Judgement
+    from sayswho.records import SOURCE_OK, Capture, Citation, FetchRecord
+
+    text = "Screening uptake rose in the intervention group."
+    url = "https://example.org/a"
+    capture = Capture(
+        query_id="PR-01", product="chatgpt", model_id="m",
+        generated_at="2026-08-11T00:00:00+00:00", captured_at="2026-08-11T00:00:01+00:00",
+        answer_text=text + " [1]", citations=[Citation(marker="[1]", url=url)],
+    )
+    payload = build(
+        capture,
+        [FetchRecord(url=url, code=SOURCE_OK, fetched_at="t", text=text, text_length=len(text))],
+        ClaimSet(claims=[Claim(id="c1", text=text, markers=["[1]"], urls=[url])], skipped=[]),
+        [Judgement(
+            claim_id="c1", url=url, verdict=PARTIALLY_SUPPORTED, span=text, span_verified=True,
+            missing_qualifiers=["observational, not causal", "US sample only"],
+        )],
+    ).payload
+
+    row = payload["claims"][0]["sources"][0]
+    assert row["missing_qualifiers"] == ["observational, not causal", "US sample only"]
+    assert row["partial_without_qualifiers"] is False

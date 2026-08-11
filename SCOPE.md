@@ -336,7 +336,26 @@ every output surface. It is never printed bare next to a record-derived number.
 Each of these comes from a script over records. None is estimated.
 
 - **Citation support rate**: `SUPPORTED / claim-source pairs whose verdict stands`. Denominator excludes
-  unauditable, always.
+  unauditable, always. `PARTIALLY_SUPPORTED` is not in the numerator and is reported separately, because a
+  source that supports a weaker version of a claim has not supported the claim.
+
+  **The marking view carries six states, not five.** `PARTIALLY_SUPPORTED` gained its own state on day 5.
+  Until then it rolled up into `SUPPORTED`, so a claim whose only verdict was "supports part of this" was
+  marked green and labelled "Supported by the cited source". That became indefensible once the judge started
+  returning `missing_qualifiers`: the card read "Supported by the cited source" above a list saying
+  "association, claim says reduction". The heading was rounding the verdict up while the evidence underneath
+  it said otherwise, which is the move §7's honesty rules exist to forbid. The rollup never rounds up now: a
+  single partial verdict anywhere makes the claim partly supported, even beside a full support from another
+  source.
+
+  **`missing_qualifiers`** is what the cited page attaches to its finding that the claim does not, in the
+  page's own terms: "observational, not causal", "US subgroup only", "2019 figure, claim says 2023". A list
+  of strings, never a number. It is what makes `PARTIALLY_SUPPORTED` actionable, since "supports part of
+  this" without saying which part hands the checking work back to the reader. A `PARTIALLY_SUPPORTED` verdict
+  arriving with an empty list is counted and published as `partial_without_qualifiers` rather than voided:
+  the verdict may well be right, and voiding it would lose real signal. Anything score-shaped in that list is
+  dropped and recorded, because the no-confidence rule holds for strings a model wrote as much as for fields
+  we defined.
 
   **The unit is the claim-source pair, decided on day 4 and pinned by a test.** This section previously said
   "SUPPORTED / auditable claims", which did not say whether a claim citing three sources is one item or

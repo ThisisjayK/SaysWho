@@ -276,6 +276,27 @@ PubMed survived. One verdict voided as `JUDGE_FABRICATED_SPAN`, 1 of 9 span-bear
 That is 1 of 16 across both runs and it is not a rate, but the guard has now fired on ordinary output rather
 than only on the test built to trip it. `FINDINGS.md` item 10.
 
+## Day 5 additions, from reading a spec against the build
+
+- [x] **`missing_qualifiers` on every verdict.** What the cited page attaches that the claim does not, in
+      the page's own terms: "observational, not causal", "US subgroup only", "2019 figure, claim says 2023".
+      A list of strings, never a number. It is what makes `PARTIALLY_SUPPORTED` actionable, since "supports
+      part of this" without saying which part hands the checking work back to the reader
+- [x] A partial verdict arriving with an empty list is counted as `partial_without_qualifiers` and published
+      rather than voided. The verdict may well be right and voiding it would lose real signal
+- [x] Score-shaped qualifiers are dropped and recorded. The no-confidence gate walks keys, and it cannot walk
+      string values without failing on this project's own prose, so the check lives where the strings come
+      from a model rather than from us
+- [x] `JUDGE_PROMPT_VERSION` bumped to `judge-v2`, deliberately now. G4 keys the gold set to judge and prompt
+      version, so this is free before day 5 labelling and expensive after it. Leaving it at v1 with a changed
+      prompt underneath would have been the actual violation
+- [x] **`PARTIALLY_SUPPORTED` is its own claim state.** It used to roll up into `SUPPORTED`, so a claim whose
+      only verdict was "supports part of this" was marked green and labelled "Supported by the cited source".
+      `missing_qualifiers` made that indefensible on screen: the card read "Supported by the cited source"
+      above a list saying "association, claim says reduction". Six states now, and the rollup never rounds up
+- [x] `report.py` uses `rates.py` for the pair count rather than growing its own. A second denominator one
+      file away from `standing_denominator` is exactly what that function exists to prevent
+
 ## Day 4: gates and the contract check
 
 - [x] Unauditable claims excluded from every denominator, enforced by a hard contract check. Two levels now:

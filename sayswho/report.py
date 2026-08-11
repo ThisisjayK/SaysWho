@@ -9,10 +9,13 @@ recompute anything: it loads this JSON and calls the same `render.js`. `SCOPE.md
 and the harness to produce identical verdicts, and the cheapest way to satisfy that for the view is to have
 one implementation of it and no second opinion.
 
-**The claim-level state does not decide the unit of the support rate.** A claim citing three sources can
-come back supported by one and not-found by two, and which of those the rate counts is still open
-(`TODO.md`, due before day 5). So a disagreement renders as `MIXED` with the per-source rows visible, rather
-than being collapsed into whichever answer a rate would eventually want.
+**The claim-level state is a rollup, not the unit.** Every published rate is counted in claim-source pairs by
+`rates.py`; this module's states exist because the interface has to give a sentence one colour. A claim
+supported by one source and not-found by two renders as `MIXED` with both rows visible, and contributes three
+pairs to the denominator rather than being averaged into one answer.
+
+The rollup never rounds up. A single `PARTIALLY_SUPPORTED` anywhere makes the claim partly supported, even
+alongside a full support from another source.
 """
 
 from __future__ import annotations
@@ -24,11 +27,25 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .rates import UNIT_PAIR, pairs_from, standing_denominator
 from .extract import normalise_for_span
 from .judge import PARTIALLY_SUPPORTED, SUPPORTED
 
 #: What the reader sees. Three answers to "does the source say this", plus the two ways there is no answer.
 SUPPORTED_STATE = "SUPPORTED"
+
+#: Its own state, and it has to be.
+#:
+#: PARTIALLY_SUPPORTED used to roll up into SUPPORTED: a claim whose only verdict was "supports part of
+#: this" was marked green and labelled "Supported by the cited source". Adding `missing_qualifiers` made
+#: that indefensible on screen, because the card then read "Supported by the cited source" above a list
+#: saying "association, claim says reduction". The heading was rounding the verdict up while the evidence
+#: underneath it said otherwise, which is the exact move the honesty rules forbid: never weaken a claim's
+#: caveats to make a result read better.
+#:
+#: Six states now rather than five, and each addition has had the same justification: the alternative was
+#: collapsing two different findings into one word.
+PARTIAL = "PARTIALLY_SUPPORTED"
 NOT_SUPPORTED = "NOT_SUPPORTED"
 MIXED = "MIXED"
 COULD_NOT_VERIFY = "COULD_NOT_VERIFY"
@@ -38,6 +55,7 @@ NOT_CHECKED = "NOT_CHECKED"
 #: about the citation, not about the world: the claim may be perfectly true and cited to the wrong page.
 STATE_LABELS = {
     SUPPORTED_STATE: "Supported by the cited source",
+    PARTIAL: "Partly supported by the cited source",
     NOT_SUPPORTED: "Not supported by the cited source",
     MIXED: "Sources disagree",
     COULD_NOT_VERIFY: "Could not verify",
@@ -46,6 +64,10 @@ STATE_LABELS = {
 
 STATE_HELP = {
     SUPPORTED_STATE: "A passage from the cited page was quoted, and a script confirmed it is really there.",
+    PARTIAL: (
+        "The cited page supports part of this, or a weaker version of it. What it attaches that this "
+        "sentence does not is listed with the quote."
+    ),
     NOT_SUPPORTED: "The page was read and does not state this, or states something incompatible with it.",
     MIXED: "One cited source supports this and another does not. Both are shown; neither is averaged.",
     COULD_NOT_VERIFY: (
@@ -167,10 +189,17 @@ def claim_state(rows: list[dict], has_citation: bool) -> str:
     yes = [r for r in standing if r["verdict"] in supportive]
     no = [r for r in standing if r["verdict"] not in supportive]
 
+    # A supportive verdict alongside a non-supportive one is disagreement between sources, which is what
+    # MIXED means and what it keeps meaning.
     if yes and no:
         return MIXED
     if yes:
-        return SUPPORTED_STATE
+        # Never round up. One source fully supporting a claim does not cancel another that only supports
+        # part of it, so a single partial verdict anywhere makes the claim partly supported. Two sources
+        # that both support it partly are not jointly a full support either.
+        if all(r["verdict"] == SUPPORTED for r in yes):
+            return SUPPORTED_STATE
+        return PARTIAL
     return NOT_SUPPORTED
 
 
@@ -219,6 +248,13 @@ def build(capture, records, claim_set, judgements, drifts=None, split_sha256="")
                         list(focus)
                         if match and (focus := span_focus(match.span, claim.text)) else None
                     ),
+                    #: What the source attaches that the claim does not. Turns "part of this" into which
+                    #: part, which is the difference between a verdict a reader can act on and one that
+                    #: hands the checking back to them.
+                    "missing_qualifiers": list(match.missing_qualifiers) if match else [],
+                    "partial_without_qualifiers": (
+                        bool(match.partial_without_qualifiers) if match else False
+                    ),
                     "voided": bool(match.voided) if match else False,
                     "void_reason": match.void_reason if match else "",
                     # None means no archived snapshot, and stays None: unknown is not the same as fine.
@@ -248,6 +284,11 @@ def build(capture, records, claim_set, judgements, drifts=None, split_sha256="")
     for c in claims:
         counts[c["state"]] = counts.get(c["state"], 0) + 1
 
+    # The unit, from the one module that owns it. `rates.py` defines the claim-source pair, the standing
+    # test and the denominator contract; recomputing any of that here would be the second implementation the
+    # §9 parity check exists to catch, one file away from the first.
+    pairs = pairs_from(claim_set, records, judgements or [])
+
     return Report(
         {
             "generated_by": "SaysWho",
@@ -272,7 +313,25 @@ def build(capture, records, claim_set, judgements, drifts=None, split_sha256="")
                 "unlocatable": unlocatable,
                 "sources": len(records),
                 "sources_auditable": sum(1 for r in records if r.auditable),
+                #: The claim-level rollup, which is what the inline marking uses: a sentence gets one
+                #: colour. It is a presentation of the verdicts, not the unit they are counted in.
                 "states": counts,
+                #: The unit every published rate is counted in. See `rates.py` and `SCOPE.md` §5.
+                "pairs": {
+                    "unit": UNIT_PAIR,
+                    "total": len(pairs),
+                    #: n for any rate derived from this run. Computed by the function that raises if an
+                    #: unauditable pair ever reaches it.
+                    "standing": standing_denominator(pairs),
+                    "unauditable": sum(1 for p in pairs if not p.standing),
+                    #: How much the unit choice matters on this answer. Where no claim cites more than one
+                    #: source, pairs and claims are the same number and the decision is invisible.
+                    "multi_source_claims": sum(1 for c in claims if len(c["sources"]) > 1),
+                    #: PARTIALLY_SUPPORTED with no statement of which part. Published, not fixed quietly.
+                    "partial_without_qualifiers": sum(
+                        1 for c in claims for r in c["sources"] if r.get("partial_without_qualifiers")
+                    ),
+                },
             },
             "sources": [
                 {

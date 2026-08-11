@@ -19,6 +19,7 @@ five outcomes per claim:
 | Shown as | Means |
 |---|---|
 | Supported by the cited source | A passage from the cited page was quoted and a script confirmed it is really there |
+| Partly supported by the cited source | The page supports part of this, or a weaker version. What it attaches that the sentence does not is listed with the quote |
 | Not supported by the cited source | The page was read and does not state this, or states something incompatible |
 | Sources disagree | One cited source supports it and another does not. Both shown, neither averaged |
 | Could not verify | No verdict stands. The source was unreadable, or the verdict was thrown out |

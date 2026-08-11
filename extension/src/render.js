@@ -85,6 +85,23 @@
 
     wrap.appendChild(el("div", "sw-verdict", "This source " + (VERDICT_WORDS[row.verdict] || row.verdict) + "."));
 
+    // What the source attaches that the claim does not. "States part of this" without saying which part
+    // hands the checking work back to the reader, which is the same failure as a 500-character span.
+    if (row.missing_qualifiers && row.missing_qualifiers.length) {
+      const list = el("ul", "sw-qualifiers");
+      list.appendChild(el("li", "sw-qualifiers-head", "The source also says:"));
+      row.missing_qualifiers.forEach(function (q) {
+        list.appendChild(el("li", null, q));
+      });
+      wrap.appendChild(list);
+    } else if (row.partial_without_qualifiers) {
+      wrap.appendChild(
+        el("div", "sw-note",
+          "The judge did not say which part is unsupported, so this verdict is weaker than it looks. " +
+          "Counted and reported as such.")
+      );
+    }
+
     if (row.span) {
       // The span guard already confirmed this string is present in the fetched page, so quoting it here
       // cannot show the reader a sentence the source does not contain.

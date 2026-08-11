@@ -13,7 +13,7 @@ import json
 import pytest
 
 from sayswho.harness import readout, run_stratum, save, trace_table
-from sayswho.judge import NOT_FOUND_IN_SOURCE, SUPPORTED
+from sayswho.judge import JUDGE_PROMPT_VERSION, NOT_FOUND_IN_SOURCE, SUPPORTED
 from sayswho.records import Capture, Citation
 
 ANSWER = (
@@ -79,7 +79,7 @@ def gold_for(url, labels, tmp_path, name="gold.json"):
         split_sha256=scripted_split_sha(),
         judge_class="ScriptedJudge",
         judge_model="scripted-1",
-        judge_prompt_version="judge-v1",
+        judge_prompt_version=JUDGE_PROMPT_VERSION,
         claim_prompt_version="claims-v1",
         created_at="2026-08-08T00:00:00+00:00",
         labels=[
@@ -350,7 +350,7 @@ def test_a_gold_set_labelled_before_the_run_produces_an_agreement_number(
     gold = GoldSet(
         split_sha256="unchecked-here",
         judge_class="ScriptedJudge", judge_model="scripted-1",
-        judge_prompt_version="judge-v1", claim_prompt_version="claims-v1",
+        judge_prompt_version=JUDGE_PROMPT_VERSION, claim_prompt_version="claims-v1",
         created_at="2026-08-08T00:00:00+00:00",
         labels=[
             GoldLabel(claim_id=claim_id("PR-01", text_a, {}), url=url, label=SUPPORTED,
