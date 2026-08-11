@@ -83,16 +83,37 @@ leaving an absence for a reader to fill in.
 
 ---
 
-## Attempts 1 to 4, stretch: not yet run
+## Attempts 1 to 4, stretch: built, one run
 
-Marked not-done rather than deleted, per `SCOPE.md` §0a.
+`tools/break_attempts.py`. Each attempt serves a purpose-built adversarial document over real HTTP through
+the real fetch layer, and asks the configured judge. One command:
+
+```bash
+python3 tools/break_attempts.py --all --judge --out runs/break
+```
+
+**Each attempt declares the failure it is looking for before it runs**, in `LOOKING_FOR` in that file, and
+the script prints that line above every result. An attempt whose success criterion is chosen after seeing the
+output is not an attempt, and `_assess` reads the declared criterion mechanically rather than reinterpreting
+it in the light of what happened.
+
+**Three of the four need a live judge and have not had one yet.** These attempts ask whether the *judge* can
+be fooled by a document built to fool it. A fake judge cannot answer that: it returns whatever the fixture
+author expected, which measures the author's assumption and calls it a result. So they are reported as
+no-result rather than as passes, and the runner counts "no result" separately from "held" for exactly that
+reason.
 
 | # | Attempt | Status |
 |---|---|---|
-| 1 | Topical-match false positive: a source that discusses the subject at length and never states the claim | Not run. Partially anticipated by attempt 5's related hole, which shows the guard passes a real but irrelevant span. That is the mechanism this attempt would measure the frequency of |
-| 2 | Paywall misread: does a paywalled article return `UNAUDITABLE` or wrongly `NOT_FOUND_IN_SOURCE` | Not run. The detector is deliberately conservative, so the expected failure direction is a paywall missed rather than one invented, which would produce exactly the wrong verdict |
-| 3 | Post-hoc drift: a citation pointing at a page that changed after generation | Partly covered by ordinary operation rather than by an attempt. The drift layer was rebuilt on day 3 after a false positive, and `SPAN_ADDED_AFTER_GENERATION` fires per claim. A deliberate attempt would still be worth running against a page changed on purpose |
-| 4 | Shared-vocabulary contradiction: a source stating the opposite in the same words | Not run |
+| 1 | Topical-match false positive: a page discussing the subject at length that never states the claim | **Fixture built, no result.** Needs a judge. The fixture contains every content word of the claim, navigation, time to diagnosis, Boston cohort, days, reduced, and does not contain the number 21 or any effect estimate. Asserted by test, since a fixture that failed to share the vocabulary would test nothing. Partially anticipated by attempt 5's related hole, which shows the guard passes a real but irrelevant span |
+| 2 | Paywall misread: does a paywalled article return unauditable, or wrongly `NOT_FOUND_IN_SOURCE` | **Held.** The one of the four that needs no judge, because holding means the judge is never called. The teaser carries a title and an abstract-shaped opening; `detect_wall` returned `SOURCE_PAYWALLED`, the claim became unauditable, and `judge_claim` refuses to run on a non-`SOURCE_OK` source at all. One document, so this says the mechanism handled this wall, not that it catches walls |
+| 3 | Post-hoc drift: a citation pointing at a page that changed after generation | **Fixture built, no result.** Needs a judge. The archived text is supplied directly rather than fetched from Wayback, because a result that depends on whether a third party happens to hold a snapshot of a local fixture is not a result. Containment 0.62, and the sentence the claim rests on exists only in the live copy. Also asserted by test |
+| 4 | Shared-vocabulary contradiction: a source stating the opposite in the same words | **Fixture built, no result.** Needs a judge. Claim and contradicting sentence share every content word; the only difference is the negation |
+
+**What the one result is worth.** Attempt 2 held, and the honest reading is narrow: the pipeline refused to
+judge a claim against a page it had recognised as withheld. The failure direction that would matter is a wall
+*missed*, and one detected wall is not evidence about how often that happens. The detector is a list of
+phrases and it is described that way in `DATA_CONTRACT.md` §5.
 
 ---
 

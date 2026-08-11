@@ -97,6 +97,29 @@ two it is. A design difference I can demonstrate on my own tool is worth stating
 actually run is not something to imply. Likewise, one stratum means the professional-versus-consumer question
 in §0 stays open rather than getting answered, and the report says it's open.
 
+### Status table, as of 2026-08-11 (day 5)
+
+§0a promises every item is reported done or not-done rather than quietly dropped, so this table exists from
+day 5 rather than being assembled on day 10 when the answer is already known. **Blocked** is used only where
+the blocker is named. Nothing here reads a rate, because no rate may be printed yet: gate G4 refuses one
+until the gold set exists, which is item 3.
+
+| # | Item | State | Evidence, or what it waits on |
+|---|---|---|---|
+| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 541 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
+| 2 | One stratum: professional-research queries, scrubbed | **Blocked** | The queries are real ones asked during PM work and must be transcribed and scrubbed by hand (§10). `queries/professional.toml` is empty and stays empty until they arrive. Inventing one would make a published sentence false |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **Blocked on item 2** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
+| 4 | Two break attempts: injection, denominator contamination | **Done** | `BREAK_ATTEMPTS.md` attempts 5 and 6, both with written results. Attempt 5 revised §6: an injection that dictates its own span defeats the guard, because dictating the span puts it on the page. Kept as a passing test of the failure |
+| 5 | Parity check, extension against headless pipeline | **Done** | `tests/test_parity.py`, running `render.js` under Node against the same payload the harness embeds. One renderer, one payload, no second opinion |
+| 6 | Competitor head-to-head, dead-link and paywall stratum | **Not done** | Stretch. Until it runs, §1b's differentiator is described as structural, not measured, and incumbent behaviour is attributed to their marketing copy |
+| 7 | Consumer stratum | **Not done** | Stretch. Written and frozen (24 questions, `queries/consumer.toml`), not run |
+| 8 | Break attempts 1 to 4 | **1 of 4 has a result** | `tools/break_attempts.py`, one command for all four. Attempt 2 held and needed no judge, because holding means the judge is never called on a page recognised as withheld. Attempts 1, 3 and 4 ask whether the judge can be fooled and therefore need a live judge; they are reported as no-result rather than as passes, and the runner counts those separately |
+| 9 | Per-domain reporting; gold set beyond 40 | **Per-domain done, expansion blocked on item 3** | `sayswho/domains.py`, counted in claim-source pairs and gated by G4 exactly as the aggregate is. Expansion cannot precede a first gold set |
+
+**What this table costs, today.** Items 2 and 3 are the critical path, and both are hand work that no amount
+of building shortens. Everything downstream of them, which is the honest run, every published rate, the
+kappa and the per-number trace table, waits on them rather than on the code.
+
 **A stretch item can be reported as attempted-and-blocked.** Prof. Brown flagged that the competitor
 comparison may hit access problems independent of time: paywalls, rate limits, no scriptable interface. If
 one or two tools is all I can get in, the writeup says so plainly, names which tools and why each one was or

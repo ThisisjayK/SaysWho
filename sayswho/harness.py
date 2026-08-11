@@ -31,11 +31,19 @@ from .cache import FetchCache, now_iso
 from .claims import CLAIM_PROMPT_VERSION
 from .drift import DriftChecker
 from .fetch import Fetcher, user_agent
-from .gates import assert_no_confidence_number, g0_has_citations, g4_calibration_exists
+from .gates import (
+    GateResult,
+    assert_no_confidence_number,
+    g0_has_citations,
+    g4_calibration_exists,
+)
 from .judge import JUDGE_PROMPT_VERSION
 from .pipeline import fetch_sources, judge_claims, phase1
 from .queryset import binding, freeze_intact, stratum_of
+from .domains import by_domain
+from .domains import render as render_domains
 from .rates import (
+    pairs_from,
     CONFLICTED_PRODUCTS,
     ConflictedAggregate,
     RateNotPermitted,
@@ -108,6 +116,9 @@ class StratumRun:
     aggregate_rate: Any = None
     aggregate_refused: str = ""
     per_product: dict[str, Any] = field(default_factory=dict)
+    #: `SCOPE.md` §0a item 9. One row per publisher, counted in claim-source pairs, gated by G4 exactly as
+    #: the aggregate is. A diagnostic about this pipeline before it is anything about a publisher.
+    per_domain: list = field(default_factory=list)
     agreement: Any = None
     attribution: Any = None
     goldset_path: str = ""
@@ -221,15 +232,16 @@ def run_stratum(
             item.halted = str(exc)
             on_event("halted", run=item, detail=str(exc))
 
+        item.calibration = g4_calibration_exists(
+            gold, run.judge_class, run.judge_model, JUDGE_PROMPT_VERSION,
+            CLAIM_PROMPT_VERSION, item.split_sha256,
+        )
         item.rates = for_run(
             capture, item.claim_set, item.records, item.judgements,
             drifts=item.drifts,
             split_sha256=item.split_sha256,
             splits=1,
-            calibration=g4_calibration_exists(
-                gold, run.judge_class, run.judge_model, JUDGE_PROMPT_VERSION,
-                CLAIM_PROMPT_VERSION, item.split_sha256,
-            ),
+            calibration=item.calibration,
         )
         on_event("rates", run=item)
 
@@ -255,6 +267,32 @@ def run_stratum(
     for item in run.runs:
         if item.rates is not None:
             by_product.setdefault(item.capture.product, []).append(item.rates)
+    # Per-domain, over every pair in the stratum. Built from the same Pair objects the rates are, so the
+    # slice and the aggregate cannot disagree about what a denominator is.
+    every_pair = [
+        pair
+        for item in run.runs
+        if item.claim_set is not None
+        for pair in pairs_from(item.claim_set, item.records, item.judgements)
+    ]
+    if every_pair:
+        # A per-domain rate spans several captures, so it is calibrated only if every contributing run was.
+        # One uncalibrated run in the stratum withholds every domain rate, which is the same rule the
+        # aggregate follows rather than a stricter one invented here.
+        refusals = sorted(
+            {
+                item.calibration.detail
+                for item in run.runs
+                if item.calibration is not None and not item.calibration.passed
+            }
+        )
+        combined = GateResult(
+            passed=not refusals,
+            code="" if not refusals else "G4_NO_CALIBRATION",
+            detail="; ".join(refusals),
+        )
+        run.per_domain = by_domain(every_pair, calibration=combined)
+
     for product, rate_list in by_product.items():
         try:
             run.per_product[product] = aggregate(rate_list, allow_conflicted=True)
@@ -324,6 +362,12 @@ def readout(run: StratumRun) -> str:
             if product in CONFLICTED_PRODUCTS:
                 add(f"               conflict: {CONFLICTED_PRODUCTS[product]}")
                 add("               reported here only, never in the stratum rate above")
+        add("")
+
+    if run.per_domain:
+        add("PER DOMAIN")
+        for line in render_domains(run.per_domain).split("\n")[1:]:
+            add(line)
         add("")
 
     add("PER ANSWER")

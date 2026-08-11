@@ -393,11 +393,19 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] If the incumbents refuse cleanly on unreachable sources, say the differentiator collapsed, as
       prominently as the flattering result would have been reported
 - [ ] Consumer stratum run, rates reported per stratum rather than only in aggregate
-- [ ] Break attempt 1, topical-match false positive
-- [ ] Break attempt 2, paywall misread
-- [ ] Break attempt 3, post-hoc drift
-- [ ] Break attempt 4, shared-vocabulary contradiction
-- [ ] Per-domain reporting
+- [x] Break attempts 1 to 4 built as one runner, `tools/break_attempts.py`. Each declares the failure it is
+      looking for before it runs, and the criterion is read mechanically rather than reinterpreted afterwards
+- [x] Break attempt 2, paywall misread. **Held.** The only one of the four needing no judge, because holding
+      means the judge is never called on a page recognised as withheld. One document, so it says the mechanism
+      handled this wall, not that it catches walls
+- [ ] Break attempts 1, 3 and 4: run them. **Mine to do.** They ask whether the judge can be fooled, which a
+      fake judge cannot answer, so they need a real one and therefore a key.
+      `python3 tools/break_attempts.py --all --judge --out runs/break`
+- [x] Per-domain reporting. `sayswho/domains.py`, counted in claim-source pairs, grouped by registrable domain
+      so www and bare are one publisher, and gated by G4 exactly as the aggregate is: a slice of a number that
+      may not be printed is still that number. A single readable pair gets counts and no percentage, since
+      "100.0%" over one observation is what gets quoted without its n. The table leads with the reason sources
+      could not be read, because a low rate for one publisher is a hypothesis about this pipeline first
 - [ ] Gold set expansion beyond 40
 - [x] **Existence check for named citations, via Crossref.** `sayswho/crossref.py`, behind
       `--check-existence`, off by default because it makes requests to a third party. Four outcomes, not
@@ -455,7 +463,10 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Portfolio piece, 35 points: the case study. `CASE_STUDY.md`, for a technical reader, with the four
       load-bearing decisions and what each cost. The "what I would do differently" section is longer than
       the results section, which is the accurate shape on day 5
-- [ ] Portfolio piece, the other half: an extension a reader can install in about thirty seconds. The
+- [x] Portfolio piece, the install half. `README.md` now opens with it: clone, load unpacked, two buttons.
+      Capture needs nothing running; the extra three lines for verdicts are separated out and labelled, so the
+      thirty-second path is not padded with the five-minute one
+- [ ] Portfolio piece, the case study half: the other part of this row. The
       install works today; the thirty-second claim needs someone who is not me to try it
 - [ ] Explainer video, 20 points. **Mine to do.** Three to six minutes, one uncut segment showing a real answer marked live,
       including a claim it refuses to score

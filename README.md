@@ -5,11 +5,47 @@ claims they say.
 
 SaysWho is a browser extension that does the checking. When Claude, ChatGPT or Perplexity answers with
 citations, it splits the answer into individual factual claims, fetches every cited page, and marks each
-claim where it sits as one of three things:
+claim where it sits:
 
-- `SUPPORTED`, shown with the exact sentence from the source that backs it
-- `NOT_FOUND_IN_SOURCE`, meaning the citation is there but the support isn't
-- `UNAUDITABLE`, meaning a dead link, a paywall, or a page that changed since the answer was written
+- **Supported**, shown with the exact sentence from the source that backs it
+- **Partly supported**, with a list of what the source attaches that the claim does not: "association, claim
+  says reduction", "US subgroup only"
+- **Not supported**, meaning the citation is there and the support is not
+- **Sources disagree**, where a claim cites several pages and they do not answer alike
+- **Could not verify**, meaning a dead link, a paywall, a scan, or a page that changed since the answer was
+  written. Never counted as unsupported, and never in any denominator
+- **No citation to check**
+
+## Install it in thirty seconds
+
+No build step, no npm, no packaging. The extension is plain files.
+
+```bash
+git clone https://github.com/ThisisjayK/SaysWho.git
+```
+
+Then in Chrome: open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the
+`extension/` folder inside the clone. Open an answer on claude.ai, chatgpt.com, perplexity.ai or a Google
+search with an AI Overview, and two round buttons appear at the bottom right. Hover them to see what they do.
+
+That is the whole install, and it gets you **Capture**: the answer, its citations and their URLs, hashed and
+saved. Capture needs nothing running.
+
+**Verdicts need one more step**, because the gates, the claim splitter and the quoted-passage check are Python
+and there is deliberately only one implementation of them:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install google-genai
+export GEMINI_API_KEY=...        # free key from aistudio.google.com
+.venv/bin/python -m sayswho.server --judge
+```
+
+Now **Audit** works too, and the result opens in a panel over the page. Click the SaysWho icon in the toolbar
+for a status panel: a green light when the server is up, what the extension thinks of the current page, and
+the last capture with any warnings about it.
+
+The server refuses to start if it cannot build a judge, and says which of the two problems it is, rather than
+starting and failing an hour later. Nothing is sent anywhere except to the pages being cited and to the judge.
 
 ## Status
 
