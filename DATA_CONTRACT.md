@@ -65,7 +65,9 @@ Extends the G2 table in `SCOPE.md` §3 with one code that writing this document 
 | `SOURCE_PAYWALLED` | Paywall or consent wall detected per §5 |
 | `SOURCE_DRIFTED` | Content differs from the nearest snapshot per §6 |
 | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
-| `SOURCE_NOT_HTML` | 200, but the response is not markup this pipeline can parse (PDF, image, office document) |
+| `SOURCE_NOT_HTML` | 200, but the response is not a format this pipeline can parse (an image, a binary, an old `.doc`) |
+| `SOURCE_NO_TEXT_LAYER` | 200, readable format, no words to read: a scanned PDF, or a page whose content is an image |
+| `SOURCE_UNREADABLE_ENCODING` | 200, there is a text layer, and it did not decode to language. Ours to own, not the source's |
 
 `SOURCE_ROBOTS_EXCLUDED` is new. It is tempting to fold it into `SOURCE_UNREACHABLE`, and that would be
 wrong: unreachable means we tried and could not, robots-excluded means we chose not to try. Both leave the
@@ -85,7 +87,23 @@ code does is the same failure this project audits other people for.
 
 - A stdlib `HTMLParser`, not Readability. `sayswho/extract.py` is behind a function boundary so a real
   extractor can be swapped in, and that dependency decision has not been made
-- Non-markup responses are `SOURCE_NOT_HTML`, decided by the `Content-Type` header and by a `%PDF-` magic
+- **Formats read, all stdlib.** HTML, plain text, XML and RSS, PDF (`sayswho/pdf.py`), and `.docx`. The
+  extraction layer stays dependency-free: a PDF's content streams are Flate-compressed and `zlib` is in the
+  standard library, a `.docx` is a zip of XML and `zipfile` is too.
+
+  What that buys and what it costs is stated rather than implied. It reads a digitally-created PDF, which is
+  most government and journal citations. It cannot read a scan, because there is no text layer and OCR is
+  not something to hand-roll, and it cannot follow a custom CID font encoding, where the bytes in the stream
+  are glyph numbers rather than letters. Both of those are refusals with their own outcome code, never text
+  passed on to the judge. A garbled read would produce `NOT_FOUND_IN_SOURCE`, the one verdict with no span
+  and therefore no G3 check, and the one that accuses the product of miscitation. `FINDINGS.md` item 11 is
+  that bug found once already.
+
+  The garbled test is two ratios, printable characters and spaces, both heuristics and neither measured.
+  They are set to refuse in the ambiguous case: a refusal loses coverage, and passing garbage on invents a
+  finding.
+
+- Formats with no parser are `SOURCE_NOT_HTML`, decided by the `Content-Type` header and by a `%PDF-` magic
   number sniff that runs even when the header claims otherwise. **No PDF parsing and no OCR.** A cited PDF is
   unauditable, which is a real limitation and a common one, since government reports and papers are the
   citations most likely to be PDFs

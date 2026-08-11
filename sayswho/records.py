@@ -39,6 +39,23 @@ SOURCE_ROBOTS_EXCLUDED = "SOURCE_ROBOTS_EXCLUDED"
 #: nothing. Government reports and papers are exactly the citations most likely to be PDFs.
 SOURCE_NOT_HTML = "SOURCE_NOT_HTML"
 
+#: The format is one this pipeline can read, and this particular document has no text in it to read.
+#:
+#: A scanned PDF, or a page whose content is a chart image. Distinct from SOURCE_NOT_HTML, which now means
+#: only "no parser for this media type", and distinct from SOURCE_EMPTY, which means the page genuinely said
+#: nothing. Here the words are almost certainly on the screen and there is no way to reach them without OCR.
+#: All three make the claim UNAUDITABLE and the arithmetic is identical; the sentence published beside the
+#: number is not, and "this citation is a photograph of a document" is a finding worth keeping separate.
+SOURCE_NO_TEXT_LAYER = "SOURCE_NO_TEXT_LAYER"
+
+#: The format is readable, this document has a text layer, and what came out of it is not language.
+#:
+#: In practice a PDF whose fonts use a custom encoding, where the bytes are glyph numbers rather than
+#: letters. It is deliberately not SOURCE_OK with bad text: passing that on would put a document that does
+#: not contain the claim in front of the judge and produce a NOT_FOUND_IN_SOURCE that accuses the citation
+#: of something our parser did. This code says the failure is ours.
+SOURCE_UNREADABLE_ENCODING = "SOURCE_UNREADABLE_ENCODING"
+
 #: The citation points at nothing. 404 or 410: the server answered, and its answer was that the document is
 #: not there. This is a fact about the citation.
 SOURCE_DEAD_LINK = "SOURCE_DEAD_LINK"
@@ -85,6 +102,8 @@ ALL_G2_CODES = frozenset(
         SOURCE_DRIFTED,
         SOURCE_ROBOTS_EXCLUDED,
         SOURCE_NOT_HTML,
+        SOURCE_NO_TEXT_LAYER,
+        SOURCE_UNREADABLE_ENCODING,
     }
 )
 
@@ -257,6 +276,15 @@ class FetchRecord:
     #: check below is only interpretable next to them.
     content_type: str = ""
     html_bytes: int = 0
+
+    #: Which parser read this: `html`, `pdf`, `docx`, `xml`. Recorded because the extraction path taken is
+    #: part of the provenance of every verdict resting on this source, and because a PDF read by a
+    #: hand-rolled parser deserves to be identifiable as one in the writeup.
+    document_kind: str = "html"
+
+    #: The PDF reader's own diagnostics, when this was a PDF: pages, streams decoded, and the two ratios the
+    #: garbled test rests on. Kept so a refusal can be argued with rather than taken on faith.
+    pdf: dict = field(default_factory=dict)
 
     #: Large page, almost no extracted text. A flag, never a code: see extract.extraction_looks_thin. The
     #: source stays auditable and the run says so out loud, because the alternative failure is silent.

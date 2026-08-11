@@ -26,17 +26,27 @@ from test_judge import FakeJudge
 # ---------------------------------------------------------------- content type
 
 
-def test_a_pdf_is_not_run_through_the_html_parser():
-    parseable, why = is_parseable("application/pdf", b"%PDF-1.7 ...")
-    assert not parseable
-    assert "pdf" in why.lower()
+def test_a_pdf_is_routed_to_the_pdf_parser_not_the_html_one():
+    """It is parseable now, by a different parser. What must never happen is a PDF reaching the HTML
+    extractor and whatever falls out being judged."""
+    from sayswho.fetch import kind_of
+
+    assert kind_of("application/pdf", b"%PDF-1.7 ...") == "pdf"
+    assert is_parseable("application/pdf", b"%PDF-1.7 ...")[0]
 
 
 def test_a_pdf_mislabelled_as_html_is_still_caught():
     """The sniff runs even when the header looks fine, because a server can be wrong or lying."""
-    parseable, why = is_parseable("text/html", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    from sayswho.fetch import kind_of
+
+    assert kind_of("text/html", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n") == "pdf"
+
+
+def test_a_format_with_no_parser_is_still_refused():
+    """The category did not disappear, it got narrower: it means "no parser for this media type" now."""
+    parseable, why = is_parseable("image/png", b"\x89PNG\r\n\x1a\n")
     assert not parseable
-    assert "regardless" in why
+    assert "image/png" in why
 
 
 def test_html_and_plain_text_are_parseable():

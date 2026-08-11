@@ -237,8 +237,25 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       written for the comparison and never wired in, so the guard was matching claim tokens against raw
       markup: "Case" hit a `switch` statement and "Transportation" hit a nav link. The raw pass now excludes
       site furniture as well as scripts, and both cases are regression tests. `FINDINGS.md` item 11
-- [ ] Exercise `SOURCE_NOT_HTML` and the thin-page flag on live data. Both are tested and neither has fired
-      on a real capture, because this answer cites no PDFs. The Claude research report cites one
+- [x] **Read the formats instead of refusing them.** PDF, plain text, XML and RSS, and `.docx`, all stdlib:
+      a PDF's content streams are Flate-compressed and `zlib` is stdlib, a `.docx` is a zip of XML and
+      `zipfile` is stdlib. `sayswho/pdf.py` walks the text-showing operators. The extraction layer keeps its
+      dependency-free property, which was the argument against reaching for pypdf or trafilatura
+- [x] Two new outcome codes, because a refusal has to say whose failure it is. `SOURCE_NO_TEXT_LAYER` for a
+      scan or a page whose content is a chart image, where the words are on screen and OCR is out of scope.
+      `SOURCE_UNREADABLE_ENCODING` for a PDF whose fonts use a custom encoding, where the bytes are glyph
+      numbers and the recoverable "text" is plausible-looking rubbish. Neither ever passes text to the judge:
+      a garbled read produces `NOT_FOUND_IN_SOURCE`, the one verdict with no span and no G3 check, and the
+      one that accuses the product. `FINDINGS.md` item 11 found that once already
+- [x] Tables extract as rows, cells separated rather than one per line. A row label and its value used to
+      become two unrelated lines, so a claim about a measure's rate could not be found in a page stating it
+- [ ] Measure which way the PDF garbled test errs. Two ratios, printable characters and spaces, neither
+      measured, both set to refuse in the ambiguous case. The day 5 gold set is the only thing that can say
+      how much coverage that costs, same as `EXTRACTION_SUSPECT`
+- [ ] Exercise the PDF reader on live data. Unit-tested against five hand-built PDFs including a scan and a
+      CID-font document, and fetched over real HTTP, but not yet against a real cited PDF in the wild. The
+      Claude research report cites one, and the Perplexity answer cites a boston.gov PDF
+- [ ] Exercise the thin-page flag on live data. Still has never fired on a real capture
 - [x] Label extraction failures separately in the gold set. Solved with a deterministic check rather than a
       second opinion: the labeller pastes the passage they found, and if it is on the page and missing from
       what `extract.py` produced, `goldset.attribution` assigns that disagreement to the extractor and

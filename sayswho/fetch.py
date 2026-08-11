@@ -15,14 +15,27 @@ from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
 from .cache import FetchCache, now_iso
-from .extract import EMPTY_THRESHOLD, detect_wall, extract_text, extraction_looks_thin, raw_text
+from .extract import (
+    EMPTY_THRESHOLD,
+    detect_wall,
+    extract_docx_text,
+    extract_text,
+    extract_xml_text,
+    extraction_looks_thin,
+    looks_picture_only,
+    raw_text,
+)
+from .pdf import NO_TEXT_LAYER as PDF_NO_TEXT_LAYER
+from .pdf import extract_pdf_text
 from .records import (
     SOURCE_EMPTY,
+    SOURCE_NO_TEXT_LAYER,
     SOURCE_NOT_HTML,
     SOURCE_OK,
     SOURCE_PAYWALLED,
     SOURCE_ROBOTS_EXCLUDED,
     SOURCE_UNREACHABLE,
+    SOURCE_UNREADABLE_ENCODING,
     FetchRecord,
     code_for_status,
     sha256,
@@ -46,6 +59,21 @@ _PARSEABLE_TYPES = frozenset(
     {"text/html", "application/xhtml+xml", "application/xml", "text/xml", "text/plain"}
 )
 
+#: PDF. Read by `sayswho.pdf`, stdlib only, and it refuses rather than guesses: a scan becomes
+#: SOURCE_NO_TEXT_LAYER and a custom font encoding becomes SOURCE_UNREADABLE_ENCODING. Before this, every
+#: cited PDF was unauditable, which in a corpus of medical and government citations is a lot of them.
+_PDF_TYPES = frozenset({"application/pdf", "application/x-pdf"})
+
+#: WordprocessingML. A zip of XML, so `zipfile` reaches it. The old binary `.doc` is not this.
+_DOCX_TYPES = frozenset(
+    {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+)
+
+#: XML and feeds, which extract with every element treated as a block.
+_XML_TYPES = frozenset(
+    {"application/xml", "text/xml", "application/rss+xml", "application/atom+xml"}
+)
+
 
 def user_agent(contact: str = DEFAULT_CONTACT) -> str:
     return f"SaysWho/0.1 (citation audit research; +{PROJECT_URL}; {contact})"
@@ -60,20 +88,35 @@ def content_type_of(headers: dict) -> str:
     return ""
 
 
-def is_parseable(content_type: str, body: bytes) -> tuple[bool, str]:
-    """Can this pipeline read this response? Returns (parseable, reason when not).
+def kind_of(content_type: str, body: bytes) -> str:
+    """Which parser this response needs: `html`, `pdf`, `docx`, `xml`, or `none`.
 
-    The magic-number sniff runs even when the header looks fine, because a server that labels a PDF
-    `text/html` would otherwise put binary through the extractor. A missing Content-Type is treated as
-    markup, which is the conventional reading and is recorded here rather than left implicit.
+    The magic numbers decide, not the header, because a server that labels a PDF `text/html` would otherwise
+    put binary through the HTML parser. `%PDF-` and the zip signature are both checked. A missing
+    Content-Type is treated as markup, which is the conventional reading, and is recorded here rather than
+    left implicit.
     """
-    if body[:1024].lstrip()[:5] == b"%PDF-":
-        return False, "response body is a PDF regardless of what the Content-Type header said"
-    if not content_type:
+    head = body[:1024].lstrip()
+    if head[:5] == b"%PDF-":
+        return "pdf"
+    if content_type in _PDF_TYPES:
+        return "pdf"
+    # A .docx is a zip. Only trust the signature together with the media type: a bare zip could be anything,
+    # and guessing at it would be the kind of attempt-badly this module avoids.
+    if content_type in _DOCX_TYPES and body[:2] == b"PK":
+        return "docx"
+    if content_type in _XML_TYPES:
+        return "xml"
+    if not content_type or content_type in _PARSEABLE_TYPES:
+        return "html"
+    return "none"
+
+
+def is_parseable(content_type: str, body: bytes) -> tuple[bool, str]:
+    """Can this pipeline read this response at all? Returns (parseable, reason when not)."""
+    if kind_of(content_type, body) != "none":
         return True, ""
-    if content_type in _PARSEABLE_TYPES:
-        return True, ""
-    return False, f"Content-Type {content_type} is not markup this pipeline can parse"
+    return False, f"Content-Type {content_type} is not a format this pipeline can parse"
 
 
 def decode_body(body: bytes, headers: dict) -> tuple[bytes | None, str]:
@@ -314,18 +357,70 @@ class Fetcher:
         base["content_type"] = content_type
         base["html_bytes"] = len(decoded)
 
-        parseable, why_not = is_parseable(content_type, decoded)
-        if not parseable:
+        kind = kind_of(content_type, decoded)
+        base["document_kind"] = kind
+
+        if kind == "none":
             # We have the bytes and they are intact. We simply have no parser, which is a different fact
             # from an empty page and is published as one.
+            _, why_not = is_parseable(content_type, decoded)
             return FetchRecord(
                 code=SOURCE_NOT_HTML, text_length=0, **{**base, "detail": why_not}
             )
 
-        html = decoded.decode("utf-8", errors="replace")
-        text = extract_text(html)
-        base["raw"] = raw_text(html)
-        base["extraction_thin"] = extraction_looks_thin(len(text), len(decoded))
+        if kind == "pdf":
+            read = extract_pdf_text(decoded)
+            base["pdf"] = read.to_dict()
+            if not read.ok:
+                # A refusal, and which refusal it is. A scan and a font encoding this parser cannot follow
+                # are different findings, and neither is a finding about the claim.
+                code = (
+                    SOURCE_NO_TEXT_LAYER if read.code == PDF_NO_TEXT_LAYER
+                    else SOURCE_UNREADABLE_ENCODING
+                )
+                return FetchRecord(
+                    code=code, text_length=0, **{**base, "detail": read.detail}
+                )
+            text = read.text
+            # There is no markup, so the raw pass is the same text. The extraction check compares the two
+            # and would otherwise see everything as missing from a page with no HTML in it.
+            base["raw"] = text
+            base["extraction_thin"] = False
+
+        elif kind == "docx":
+            text, why_not = extract_docx_text(decoded)
+            if why_not:
+                return FetchRecord(
+                    code=SOURCE_NOT_HTML, text_length=0, **{**base, "detail": why_not}
+                )
+            base["raw"] = text
+            base["extraction_thin"] = False
+
+        elif kind == "xml":
+            text = extract_xml_text(decoded)
+            base["raw"] = text
+            base["extraction_thin"] = False
+
+        else:
+            html = decoded.decode("utf-8", errors="replace")
+            text = extract_text(html)
+            base["raw"] = raw_text(html)
+            base["extraction_thin"] = extraction_looks_thin(len(text), len(decoded))
+
+            # Almost no text, and pictures where the text should be. Reported as such rather than as an
+            # empty page: the words a claim rests on may be on the screen in a chart, and "we could not read
+            # the picture" is a different sentence from "the page said nothing".
+            if looks_picture_only(html, text):
+                return FetchRecord(
+                    code=SOURCE_NO_TEXT_LAYER,
+                    text_length=len(text),
+                    text=text,
+                    **{
+                        **base,
+                        "detail": "the page carries almost no text and its content appears to be in an "
+                                  "image, which this tool cannot read",
+                    },
+                )
 
         # Wall detection runs before the length threshold. A paywalled page usually is short, and reporting
         # it as SOURCE_EMPTY would lose the reason it was empty.

@@ -243,7 +243,9 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   | `SOURCE_PAYWALLED` | paywall or consent wall detected |
   | `SOURCE_DRIFTED` | the URL now serves a *different document* than the archived one (containment below 0.10) |
   | `SOURCE_ROBOTS_EXCLUDED` | `robots.txt` disallows the path, so no request was made |
-  | `SOURCE_NOT_HTML` | 200, but not markup this pipeline can parse: PDF, image, office document |
+  | `SOURCE_NOT_HTML` | 200, but not a format this pipeline can parse: an image, a binary, an old `.doc` |
+  | `SOURCE_NO_TEXT_LAYER` | 200 and readable in principle, but the words are in a picture: a scanned PDF, or a page whose content is a chart image. OCR is out of scope |
+  | `SOURCE_UNREADABLE_ENCODING` | 200 and there is a text layer, and what came out of it is not language. In practice a PDF using a custom font encoding. Recorded as a limitation of this tool, not a fact about the source |
 
   `SOURCE_ROBOTS_EXCLUDED` was added while writing `DATA_CONTRACT.md`, which is the kind of thing writing a
   contract before writing code is for. Folding it into `SOURCE_UNREACHABLE` would have been tidier and

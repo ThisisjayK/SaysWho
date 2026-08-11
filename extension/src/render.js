@@ -50,7 +50,13 @@
     SOURCE_EMPTY: "the page returned no readable text",
     SOURCE_PAYWALLED: "a paywall or consent wall blocked the text",
     SOURCE_ROBOTS_EXCLUDED: "robots.txt asked us not to fetch it, so we did not",
-    SOURCE_NOT_HTML: "the citation is a PDF or other format this tool cannot read",
+    SOURCE_NOT_HTML: "the citation is in a format this tool cannot read",
+    SOURCE_NO_TEXT_LAYER:
+      "the citation is a scan or a picture, so its words are in an image and cannot be read here. " +
+      "Opening it yourself may well show the passage",
+    SOURCE_UNREADABLE_ENCODING:
+      "the document has a text layer this tool could not decode, which is a limitation here rather than a " +
+      "problem with the source",
     SOURCE_DRIFTED: "the page is no longer the document that was cited",
   };
 

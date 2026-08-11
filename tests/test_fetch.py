@@ -11,6 +11,8 @@ import pytest
 
 from sayswho.fetch import Fetcher, user_agent
 from sayswho.records import (
+    SOURCE_NO_TEXT_LAYER,
+    SOURCE_UNREADABLE_ENCODING,
     SOURCE_BOT_BLOCKED,
     SOURCE_DEAD_LINK,
     SOURCE_EMPTY,
@@ -40,24 +42,87 @@ def test_readable_page_is_source_ok(server, cache):
     assert record.auditable
 
 
-def test_a_pdf_is_source_not_html_over_real_http(server, cache):
-    """The whole point is what arrives over the wire, so this asserts against a real response.
+def test_a_pdf_with_a_text_layer_is_read_and_auditable(server, cache):
+    """PDFs used to be unauditable as a class, which in a corpus of government and journal citations threw
+    away a lot of real sources. Read by `sayswho.pdf`, stdlib only."""
+    record = fetcher(cache).fetch(server.url("/readable.pdf"))
 
-    Before the content-type gate this was fed to an HTML parser and whatever fell out was judged.
-    """
+    assert record.code == SOURCE_OK
+    assert record.auditable
+    assert record.document_kind == "pdf"
+    assert record.content_type == "application/pdf"
+    assert "77.0 percent" in record.text
+    assert "$979 to $1,759" in record.text, "figures a claim would rest on survive extraction"
+    assert record.pdf["code"] == "PDF_OK"
+
+
+def test_a_scanned_pdf_says_it_is_a_scan_rather_than_being_judged(server, cache):
+    """The words are on the page and there is no way to reach them without OCR. That is a finding about
+    the citation, and a different one from the document being empty."""
+    record = fetcher(cache).fetch(server.url("/scanned.pdf"))
+
+    assert record.code == SOURCE_NO_TEXT_LAYER
+    assert not record.auditable
+    assert record.text == "", "nothing may carry into the judge"
+    assert "images" in record.detail
+    assert record.pdf["has_images"] is True
+
+
+def test_a_pdf_this_parser_cannot_decode_blames_the_parser(server, cache):
+    """A custom font encoding means the stream holds glyph numbers, and the "text" recoverable from one is
+    plausible-looking rubbish. Passing it on would produce a NOT_FOUND_IN_SOURCE that accuses the source of
+    something this tool did."""
+    record = fetcher(cache).fetch(server.url("/cid.pdf"))
+
+    assert record.code == SOURCE_UNREADABLE_ENCODING
+    assert not record.auditable
+    assert record.text == ""
+    assert "glyph numbers rather than letters" in record.detail
+
+
+def test_a_pdf_with_no_text_at_all_is_not_reported_as_having_no_parser(server, cache):
+    """The old stub fixture: structurally a PDF, no text in it. SOURCE_NOT_HTML now means only "no parser
+    for this media type", which is no longer true of PDFs."""
     record = fetcher(cache).fetch(server.url("/report.pdf"))
-    assert record.code == SOURCE_NOT_HTML
-    assert record.http_status == 200
+
+    assert record.code == SOURCE_NO_TEXT_LAYER
     assert record.content_type == "application/pdf"
     assert not record.auditable
-    assert record.text == "", "a document we cannot parse must not carry text into the judge"
 
 
-def test_a_pdf_served_as_html_is_still_source_not_html(server, cache):
+def test_a_pdf_served_as_html_is_still_recognised_as_a_pdf(server, cache):
+    """The magic number decides, not the header. A CDN serving a PDF as text/html is real."""
     record = fetcher(cache).fetch(server.url("/liar.html"))
-    assert record.code == SOURCE_NOT_HTML
-    assert "regardless" in record.detail
+
+    assert record.document_kind == "pdf", "the sniff wins over the header"
+    assert record.code == SOURCE_NO_TEXT_LAYER
     assert not record.auditable
+
+
+def test_plain_text_xml_and_docx_are_all_read(server, cache):
+    """Three formats that used to be SOURCE_NOT_HTML. Each is a small stdlib function, not a dependency."""
+    text = fetcher(cache).fetch(server.url("/notes.txt"))
+    assert text.code == SOURCE_OK and "80.3 percent" in text.text
+
+    feed = fetcher(cache).fetch(server.url("/feed.xml"))
+    assert feed.code == SOURCE_OK and feed.document_kind == "xml"
+    assert "Mammography rates" in feed.text
+    assert "Uptake among women" in feed.text, "the title must not fuse into the description"
+
+    doc = fetcher(cache).fetch(server.url("/notes.docx"))
+    assert doc.code == SOURCE_OK and doc.document_kind == "docx"
+    assert "80.3 percent" in doc.text
+    assert "Recent screening | 80.3%" in doc.text, "a table row keeps its label with its value"
+
+
+def test_a_page_whose_content_is_a_picture_says_so(server, cache):
+    """Not SOURCE_EMPTY. "We could not read the picture" and "the page said nothing" are different facts,
+    and only one of them is about the citation being thin."""
+    record = fetcher(cache).fetch(server.url("/chart.html"))
+
+    assert record.code == SOURCE_NO_TEXT_LAYER
+    assert not record.auditable
+    assert "image" in record.detail
 
 
 def test_short_page_is_source_empty_not_unreachable(server, cache):

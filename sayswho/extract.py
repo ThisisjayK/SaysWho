@@ -50,8 +50,19 @@ _TEXT_ATTRS = ("alt", "title", "aria-label")
 
 _BLOCK_TAGS = {
     "p", "div", "br", "li", "tr", "section", "article", "h1", "h2", "h3", "h4", "h5", "h6",
-    "blockquote", "pre", "td", "th",
+    "blockquote", "pre",
 }
+
+#: Cells end with a separator rather than a newline, so a row arrives as one line with its cells still
+#: distinguishable. A table used to extract as one cell per line, which destroyed the association between a
+#: row label and its value: "Recent mammography screening" and "80.3%" became two unrelated lines, and a
+#: claim about the rate of that measure could not be found in the text even though the page stated it.
+#:
+#: This is also the unit the G1 skip count needs. A table arriving as one text block is one skip decision
+#: covering every cell in it, which is why `FINDINGS.md` item 9 says the skip rate does not measure the
+#: share of an answer that went unchecked.
+_CELL_TAGS = {"td", "th"}
+CELL_SEPARATOR = " | "
 
 # Markers that suggest the body was withheld rather than absent. Deliberately conservative: a false
 # SOURCE_PAYWALLED is a claim excluded from the denominator for the wrong reason.
@@ -78,13 +89,16 @@ _CONSENT_MARKERS = (
 
 
 class _TextExtractor(HTMLParser):
-    def __init__(self, drop_tags=_DROP_TAGS, attr_names=("alt",)) -> None:
+    def __init__(self, drop_tags=_DROP_TAGS, attr_names=("alt",), every_tag_is_a_block=False) -> None:
         super().__init__(convert_charrefs=True)
         self._parts: list[str] = []
         self._skip_depth = 0
         self._skip_tag: str | None = None
         self._drop_tags = drop_tags
         self._attr_names = attr_names
+        #: XML has no fixed tag vocabulary, so there is no list of block tags to consult: an RSS title and
+        #: its description are siblings with nothing between them and they fuse into one line.
+        self._every_tag_is_a_block = every_tag_is_a_block
 
     def handle_starttag(self, tag, attrs):
         if self._skip_depth:
@@ -102,13 +116,15 @@ class _TextExtractor(HTMLParser):
             self._parts.append("\n")
 
     def handle_endtag(self, tag):
+        if not self._skip_depth and tag in _CELL_TAGS:
+            self._parts.append(CELL_SEPARATOR)
         if self._skip_depth:
             if tag == self._skip_tag:
                 self._skip_depth -= 1
                 if self._skip_depth == 0:
                     self._skip_tag = None
             return
-        if tag in _BLOCK_TAGS:
+        if tag in _BLOCK_TAGS or tag == "tr" or self._every_tag_is_a_block:
             self._parts.append("\n")
 
     def handle_data(self, data):
@@ -121,6 +137,10 @@ class _TextExtractor(HTMLParser):
         joined = re.sub(r"[ \t\r\f\v]+", " ", joined)
         joined = re.sub(r" *\n *", "\n", joined)
         joined = re.sub(r"\n{3,}", "\n\n", joined)
+        # Empty cells collapse, and a row does not end on a separator.
+        joined = re.sub(r"(?:\s*\|\s*){2,}", CELL_SEPARATOR, joined)
+        joined = re.sub(r"\s*\|\s*$", "", joined, flags=re.M)
+        joined = re.sub(r"^\s*\|\s*", "", joined, flags=re.M)
         return joined.strip()
 
 
@@ -199,3 +219,100 @@ def normalise_for_span(text: str) -> str:
     that class of disagreement.
     """
     return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+# ---------------------------------------------------------------------------------------------------
+# Formats other than HTML
+#
+# Each of these is a small function rather than a dependency, and each one either returns text or says why
+# it will not. The rule from `pdf.py` applies to all of them: text this module is willing to stand behind,
+# or a refusal. Never a partial read passed off as the document, because a claim judged against half a
+# document produces a NOT_FOUND_IN_SOURCE that reads as a fact about the citation.
+# ---------------------------------------------------------------------------------------------------
+
+#: Markup that shows a reader something this pipeline cannot read: a picture. Used to tell "this page said
+#: nothing" apart from "this page said it in an image", which are different findings and only one of them is
+#: about the citation being thin.
+_PICTURE_TAGS = ("<img", "<svg", "<picture", "<canvas", "<figure")
+
+#: Below this, a page with pictures in it is reported as having no readable text rather than as empty.
+PICTURE_ONLY_MAX_TEXT = EMPTY_THRESHOLD
+
+
+def looks_picture_only(html: str, text: str) -> bool:
+    """Almost no text, and pictures where the text would be.
+
+    A chart, a table rendered as an image, a scanned form. The words a claim rests on may be right there on
+    screen and there is no way to reach them from here, which is a different statement from the page being
+    empty and is worth its own outcome. `alt` text is already extracted, so this only fires when the page
+    did not even offer that.
+    """
+    if len(text) >= PICTURE_ONLY_MAX_TEXT:
+        return False
+    lowered = html.lower()
+    return any(tag in lowered for tag in _PICTURE_TAGS)
+
+
+def extract_xml_text(data: bytes, every_tag_is_a_block: bool = True) -> str:
+    """Text from XML or an RSS feed.
+
+    The HTML parser handles it: XML has no navigation or sidebars to drop, so only scripts and styles are
+    excluded, and every element's text is kept.
+
+    `every_tag_is_a_block` is off for WordprocessingML, which marks its own paragraphs and cells. Leaving it
+    on there put a newline after every `</w:t>`, which swallowed the cell separators and put every cell back
+    on its own line.
+    """
+    parser = _TextExtractor(
+        drop_tags=_NEVER_TEXT, attr_names=(), every_tag_is_a_block=every_tag_is_a_block
+    )
+    try:
+        parser.feed(data.decode("utf-8", errors="replace"))
+        parser.close()
+    except Exception:
+        pass
+    return parser.text()
+
+
+#: A .docx is a zip. This is the part with the words in it.
+_DOCX_BODY = "word/document.xml"
+
+#: Paragraph and cell ends in WordprocessingML. Without these every paragraph in the document fuses into
+#: one line, which breaks sentence splitting downstream.
+_DOCX_BREAKS = (
+    ("</w:p>", "\n"),
+    ("</w:tc>", CELL_SEPARATOR),
+    ("</w:tr>", "\n"),
+    ("<w:br/>", "\n"),
+    ("<w:br />", "\n"),
+)
+
+
+def extract_docx_text(data: bytes) -> tuple[str, str]:
+    """Text from a .docx. Returns (text, reason-it-failed).
+
+    Stdlib only: a .docx is a zip of XML, so `zipfile` reaches the document part and the tags come off with
+    the same parser the rest of this module uses. A .doc, the old binary format, is not this and is not
+    attempted.
+    """
+    import io
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as bundle:
+            if _DOCX_BODY not in bundle.namelist():
+                return "", (
+                    "the file is a zip but not a Word document: it has no word/document.xml. The old "
+                    "binary .doc format is a different thing and is not attempted"
+                )
+            body = bundle.read(_DOCX_BODY).decode("utf-8", errors="replace")
+    except (zipfile.BadZipFile, KeyError, OSError) as exc:
+        return "", f"the .docx could not be opened as a zip: {exc}"
+
+    # A cell holds a paragraph, and the paragraph's own break would put every cell on its own line, losing
+    # the association between a row label and its value. That is the whole reason the table work exists, so
+    # the paragraph end immediately inside a cell end is dropped first.
+    body = body.replace("</w:p></w:tc>", "</w:tc>")
+    for marker, replacement in _DOCX_BREAKS:
+        body = body.replace(marker, replacement + marker)
+    return extract_xml_text(body.encode("utf-8"), every_tag_is_a_block=False), ""
