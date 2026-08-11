@@ -48,9 +48,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     rendered_chars: capture.rendered_chars,
     dom_chars: capture.dom_chars,
     adapter_verified: capture.adapter_verified,
-    incomplete:
-      capture.citations_possibly_hidden > 0 ||
-      (capture.dom_chars > 0 && capture.dom_chars > capture.rendered_chars * 1.05),
+    //: Two separate problems, because they have two separate fixes: scroll the answer, or expand the "+N"
+    //: chips. They were one flag saying "this capture did not hold the whole answer", which is the wrong
+    //: sentence for hidden citations and sent you looking for missing text that was all present.
+    text_incomplete: capture.dom_chars > 0 && capture.dom_chars > capture.rendered_chars * 1.05,
+    citations_hidden: capture.citations_possibly_hidden || 0,
+    expanders_seen: capture.expanders_seen || 0,
   };
 
   // An audit that reached the server does not need a second copy in ~/Downloads: the server writes the

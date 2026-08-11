@@ -130,6 +130,11 @@ def content() -> str:
     return (EXTENSION / "src" / "content.js").read_text()
 
 
+def content_of(name: str) -> str:
+    """Any file in extension/src, by name."""
+    return (EXTENSION / "src" / name).read_text()
+
+
 def test_the_controls_are_labelled_with_what_they_do():
     """Two round icon buttons carry no words, so the label has to come from somewhere."""
     source = content()
@@ -503,3 +508,37 @@ def test_the_download_depends_on_whether_the_capture_was_stored_not_on_success()
     audit = source[source.index("async function auditHere"):]
     assert "if (!payload || !payload.saved_to)" in audit
     assert "payload.error" not in audit, "success is not the question; storage is"
+
+
+# ---------------------------------------------------------------- the two character counts
+
+
+def test_both_character_counts_measure_the_same_thing():
+    """innerText inserts separators textContent has no equivalent for: between two table cells textContent
+    yields "ab" and innerText yields "a\\tb". Collapsing whitespace is not enough, because the collapsed
+    separator is still a character on one side and nothing on the other. On a real Perplexity answer with a
+    table that reported 7912 rendered characters against 7835 in the DOM, a subset larger than its own set.
+
+    The display bug is the small half. The real one is that an inflated rendered count can swallow a genuine
+    gap and report a truncated capture as complete."""
+    source = content_of("capture.js")
+    assert "const withoutSpace = (value) => (value || \"\").replace(/\\s+/g, \"\")" in source
+    assert "withoutSpace(found.element.textContent).length" in source
+    assert "withoutSpace(answerText).length" in source
+    assert '.replace(/\\s+/g, " ").trim().length' not in source, "the collapsing version is the broken one"
+
+
+def test_hidden_citations_and_truncated_text_are_separate_warnings():
+    """Two problems with two different fixes: scroll the answer, or expand the "+N" chips. One flag saying
+    "this capture did not hold the whole answer" sends you looking for missing text that is all present."""
+    background = content_of("background.js")
+    assert "text_incomplete:" in background
+    assert "citations_hidden:" in background
+    # The conflated key, not merely the substring: `text_incomplete` contains it.
+    assert not re.search(r"^\s*incomplete:", background, re.M), "the conflated flag is gone"
+
+    popup = content_of("popup.js")
+    assert "record.text_incomplete" in popup
+    assert "record.citations_hidden" in popup
+    assert "Scroll the answer" in popup
+    assert "Expand them and capture again" in popup

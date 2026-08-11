@@ -134,9 +134,17 @@
     if (record.citations === 0) {
       warnings.push("No citations. G0 halts on this answer: it is a different object, not a zero result.");
     }
-    if (record.incomplete) {
+    if (record.text_incomplete) {
       warnings.push(
-        "This capture did not hold the whole answer, so anything computed from it covers part of it."
+        "Part of this answer was never laid out, so the capture is short of it. Scroll the answer to the " +
+        "end and capture again."
+      );
+    }
+    if (record.citations_hidden) {
+      // Not the same problem as truncated text, and not the same fix.
+      warnings.push(
+        `${record.expanders_seen} "+N" control(s) hide at least ${record.citations_hidden} more ` +
+        "citation(s), so this audit covers a subset of the sources. Expand them and capture again."
       );
     }
     if (!record.adapter_verified) {

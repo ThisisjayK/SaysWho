@@ -186,8 +186,16 @@ async function saysWhoBuildCapture({ adapter, found, product, modelId, queryId }
   // innerText is what was laid out. textContent is what is in the DOM whether laid out or not. A large gap
   // between them means the browser skipped rendering part of the answer and the capture is short, so the
   // numbers are recorded and the gap is reported rather than left to be noticed later.
-  const domChars = (found.element.textContent || "").replace(/\s+/g, " ").trim().length;
-  const renderedChars = answerText.replace(/\s+/g, " ").trim().length;
+  //
+  // Whitespace is removed from both rather than collapsed, which is not fussiness. innerText inserts
+  // separators that textContent has no equivalent for: between two table cells textContent yields "ab"
+  // and innerText yields "a\tb". On a Perplexity answer containing a table that produced 7912 rendered
+  // characters against 7835 in the DOM, a subset larger than the set it came from, which reads as a bug
+  // and, worse, means the gap could be inflated past a real one and hide it. Comparing the two counts only
+  // means anything if they count the same thing.
+  const withoutSpace = (value) => (value || "").replace(/\s+/g, "");
+  const domChars = withoutSpace(found.element.textContent).length;
+  const renderedChars = withoutSpace(answerText).length;
   const { citations, excluded } = saysWhoExtractCitations(adapter, found.element);
   const { expanders, hidden } = saysWhoCountHiddenCitations(found.element);
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");

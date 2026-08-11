@@ -254,7 +254,8 @@
           `chrome links dropped: ${record.chrome_links_excluded}\n` +
           (record.dom_chars > record.rendered_chars * 1.05
             ? `\nINCOMPLETE: ${record.dom_chars - record.rendered_chars} characters are in the page but ` +
-              `were never laid out, so they are missing from this capture.\n`
+              `were never laid out, so they are missing from this capture.\n` +
+              `Scroll the answer to the end and capture again.\n`
             : "") +
           (record.citations_possibly_hidden
             ? `\nINCOMPLETE: ${record.expanders_seen} "+N" controls hide at least ` +
