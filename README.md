@@ -13,8 +13,13 @@ claim where it sits as one of three things:
 
 ## Status
 
-Day 3 of ten, done. The pipeline runs end to end on a real answer: it captures, fetches, splits into claims,
-judges each one against its source, and refuses to print an aggregate rate because no gold set exists yet.
+Day 5 of ten. The pipeline runs end to end on a real answer: it captures, fetches, splits into claims, judges
+each one against its source, and refuses to print an aggregate rate because no gold set exists yet.
+
+`STATUS.md` is the honest version of this section, item by item, and `TODO.md` is the working list. The one
+row that matters: the professional query stratum is still empty, and it is the input to everything that
+produces a number, so several parts below are built and have never run on real data. They are marked as such
+rather than counted as working.
 
 **In the browser.** A Manifest V3 extension captures an answer from claude.ai, chatgpt.com, perplexity.ai or
 Google AI Overviews. It scrolls the answer into existence first, since a long answer is not fully in the DOM
@@ -32,22 +37,38 @@ switches. Both satisfy the same protocol, so the pipeline and the gates never kn
 **The span guard.** To return `SUPPORTED` the judge must quote the source verbatim, and a script confirms by
 substring match that the span is in the document that was actually retrieved. A span that is not there voids
 the verdict and logs `JUDGE_FABRICATED_SPAN`, and that rate is published as a finding about the judge. On the
-first live run it voided nothing across seven span-bearing verdicts, which is a small sample and reported as
-one.
+first live run it voided nothing across seven span-bearing verdicts, and on the re-run after the drift fix it
+voided one of nine. That is 1 of 16 across both runs. It is not a rate and it is reported as not being one.
 
 `python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs extraction over the stored bytes
 and compares it to what the extension produced. Two implementations, one in JavaScript against a live DOM and
 one in Python against saved markup, and they have to agree.
 
-129 tests, all offline. Every gate has a test that makes it fire on the bug it exists to catch, including two
-that pin failures rather than fixes: an injection that dictates its own span defeats the guard, and a judge
-can quote a real but irrelevant sentence. Deleting either test would delete the finding.
+**The refusals.** Five gates, and each one has a test that makes it fire on the bug it exists to catch. G4
+withholds every rate that depends on a calibrated judge until a gold set exists for this judge, this prompt
+version and this split. `INSUFFICIENT_EVIDENCE` withholds a rate when more than half an answer's claims
+produced no verdict that stands. An unbound capture is audited and excluded from every aggregate. And Google
+AI Overviews results never enter a cross-product aggregate, because the default judge is a Google model, a
+refusal enforced in `rates.aggregate` rather than in a paragraph.
 
-**Not built yet:** the marking UI, the gold set, per-claim verdict aggregation. The professional query
-stratum is empty by design until real queries are scrubbed into it.
+**The headless run.** `python3 tools/run_stratum.py --captures captures/ --judge --out runs/today` audits
+every capture bound to a frozen query and writes four files: the run record, the metric readout with an n and
+an interval on every rate, `RUN_LOG.md`, and a per-number trace table generated from the run rather than
+typed alongside it.
+
+343 tests, all offline except a node process for the parity check. Two of them pin failures rather than
+fixes: an injection that dictates its own span defeats the guard, and a judge can quote a real but irrelevant
+sentence. Deleting either test would delete the finding. `BREAK_ATTEMPTS.md` writes both up.
+
+**Not built yet:** marking on the product page itself, the gold set labels, and the head-to-head. The
+professional query stratum is empty by design until real queries are scrubbed into it, and that is what
+everything producing a number is waiting on.
 
 No number this project produces is a measurement yet. `FINDINGS.md` records what has been observed so far,
 and every entry there is n=1.
+
+Start here if you want to use it: [`recipes/audit-citations.md`](recipes/audit-citations.md), and the
+one-page card of [six ways it goes wrong](recipes/audit-citations.card.md).
 
 ## Why bother
 

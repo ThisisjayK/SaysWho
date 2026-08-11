@@ -295,3 +295,82 @@ output looked reasonable, and only checking the specific pages showed it was not
 One correction fell out of the same pass: `NOT_FOUND_IN_SOURCE` was setting `span_verified = True`, meaning
 "nothing to check". Nothing counted it, so no published number was wrong, but a marking interface reading
 that field would have put a tick beside the only verdict carrying no evidence at all.
+
+## 12. The unit of the rate was never decided, and the two choices give different numbers
+
+`SCOPE.md` §5 said `SUPPORTED / auditable claims` from the day it was written, and I read that sentence
+several dozen times without noticing it does not say what an item is. A claim citing three sources: is that
+one item or three?
+
+Claim #009 from the day 3 run answers it concretely. It came back `SUPPORTED` by one source and
+`NOT_FOUND_IN_SOURCE` by two. Counted in claim-source pairs that is 1 of 3, which reads as mostly
+unsupported. Counted in claims, with any supporting source enough, it is 1 of 1, which reads as fully
+supported. Same evidence, same run, and the two numbers are as far apart as they can get.
+
+Nothing in the pipeline was wrong. Three judgements existed and nothing combined them, so the number simply
+had not been computed yet, and it would have been computed the first time somebody needed a headline figure,
+by whichever line of code got there first.
+
+Decided: the unit is the claim-source pair, and it is now pinned by a test rather than by this paragraph. It
+is the question the tool asks, and it is the unit a human labels in, so the gold set and the rate count the
+same objects. The claim-level rate is published beside it, because the pair unit lets a claim citing five
+sources weigh five times as much and a reader is entitled to see what that did.
+
+**The general shape.** An ambiguous denominator does not announce itself. It sits in a specification looking
+like a definition until someone tries to compute it, and by then there is usually a number attached to it
+that nobody wants to change.
+
+## 13. Verdict-class stratification cannot be done in a blind gold set
+
+`SCOPE.md` §3 Phase 4 asks for the gold set to be stratified across products *and across verdict classes*,
+filling `UNAUDITABLE` and `CONTRADICTED` first, because a class the set never contains cannot be calibrated.
+That instruction is half impossible and I did not notice until I built the sampler.
+
+The verdict classes are the judge's output. §12 puts the labelling on day 5 specifically so it precedes the
+judge run. So stratifying on verdict class requires knowing what the judge said, and a sample selected using
+the judge's own output is not a blind sample. The two requirements are in direct conflict and the scope
+document asks for both.
+
+What is actually knowable before any model runs: the product, and the G2 source code. `UNAUDITABLE` is
+deterministic, so half the instruction survives and is implemented, with unauditable pairs reached first.
+
+For the other half the answer is a separate supplement, labelled after seeing verdicts, carrying
+`blind: false`, excluded from kappa, and reported on its own. That is worth something as coverage of a rare
+class and it is not agreement, so it is never pooled with the blind labels into one number.
+
+**Why this is worth recording rather than quietly fixing.** The scope document was written by someone who
+had not yet tried to draw the sample, which is most specifications. The failure mode it would have produced
+is specific: fill the `CONTRADICTED` cell by looking for contradictions in the judge's output, label those,
+and report a kappa that includes them. The kappa would look better and would be measuring the judge's
+agreement with a human on a sample the judge chose.
+
+## 14. A bad extractor and a bad judge are the same symptom, and the labeller can separate them
+
+Known since day 3 and recorded as a hole: an extraction failure folds into the judge's error rate, because a
+human reading the real page marks `SUPPORTED` where the pipeline said `NOT_FOUND_IN_SOURCE`, and the
+disagreement lands on the judge when it belongs to `extract.py`.
+
+The fix turned out to need no second opinion, only one more question at labelling time. The labeller is
+already reading the page. Asking them to paste the passage they found, which the judge is required to do
+anyway, makes the separation deterministic: if their passage is present in the page and absent from what
+`extract.py` produced, that disagreement is the extractor's, by string match rather than by judgement.
+
+`goldset.attribution` reports the split and a second kappa with those pairs removed, beside the headline
+one rather than instead of it. A floor on both counts, and it says so: it only sees pairs where the labeller
+quoted something, and it cannot see evidence the labeller also missed.
+
+The general version, which is the reusable part: when two components fail with the same symptom, look for a
+question the human is already answering that distinguishes them, before reaching for a second model.
+
+## 15. The no-confidence gate would have banned the confidence interval
+
+Small, and it is the kind of collision worth writing down because the tempting resolution is the wrong one.
+
+`gates.assert_no_confidence_number` walks keys and rejects any containing "confidence". `SCOPE.md` §5
+requires every rate to ship with a confidence interval. So the first `Rate.to_dict` with a
+`confidence_interval` field failed the project's own honesty gate.
+
+A confidence interval and a confidence score are genuinely different objects, so an exception list would
+have been defensible. It was not taken. A gate with an exception list is a gate that will eventually be
+argued past, and the argument will be made by whoever wants the exception. The field is called
+`interval_95`, the gate stayed blunt, and there is a test asserting a rate passes the gate unmodified.
