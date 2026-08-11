@@ -38,6 +38,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const filename = `sayswho/capture-${capture.product}-${stamp}.json`;
   const json = JSON.stringify(capture, null, 2);
 
+  // The summary is stored whether or not a file is written, because the popup shows it either way and
+  // "this capture did not hold the whole answer" has to survive the toast disappearing.
+  const summary = {
+    product: capture.product,
+    captured_at: capture.captured_at,
+    answer_sha256: capture.answer_sha256,
+    citations: capture.citations.length,
+    rendered_chars: capture.rendered_chars,
+    dom_chars: capture.dom_chars,
+    adapter_verified: capture.adapter_verified,
+    incomplete:
+      capture.citations_possibly_hidden > 0 ||
+      (capture.dom_chars > 0 && capture.dom_chars > capture.rendered_chars * 1.05),
+  };
+
+  // An audit that reached the server does not need a second copy in ~/Downloads: the server writes the
+  // capture to the repo's captures directory, which is where the harness reads them from anyway. The
+  // download is for the capture-only path, and for an audit that failed.
+  if (message.download === false) {
+    chrome.storage.local.set({ [LAST_CAPTURE_KEY]: { ...summary, filename: "" } });
+    sendResponse({ ok: true, filename: "" });
+    return true;
+  }
+
   // A data URL rather than a blob URL: MV3 service workers have no DOM, so URL.createObjectURL is not
   // available here.
   const url = "data:application/json;base64," + btoa(unescape(encodeURIComponent(json)));
@@ -49,25 +73,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
     console.log(`SaysWho: wrote ${filename} (download ${id})`);
-
-    // A summary for the popup. The in-page toast says all of this and then disappears, and "this capture
-    // did not hold the whole answer" is the one thing about a capture that must not be easy to miss.
-    chrome.storage.local.set({
-      [LAST_CAPTURE_KEY]: {
-        product: capture.product,
-        captured_at: capture.captured_at,
-        answer_sha256: capture.answer_sha256,
-        citations: capture.citations.length,
-        rendered_chars: capture.rendered_chars,
-        dom_chars: capture.dom_chars,
-        adapter_verified: capture.adapter_verified,
-        incomplete:
-          capture.citations_possibly_hidden > 0 ||
-          (capture.dom_chars > 0 && capture.dom_chars > capture.rendered_chars * 1.05),
-        filename,
-      },
-    });
-
+    chrome.storage.local.set({ [LAST_CAPTURE_KEY]: { ...summary, filename } });
     sendResponse({ ok: true, filename });
   });
 

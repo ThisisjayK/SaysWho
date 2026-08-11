@@ -98,9 +98,10 @@ is a rate over.
 python3 -m sayswho.server --judge
 ```
 
-Then click "SaysWho: audit here" on the answer. The marked result appears in a panel over the page. The
-capture is downloaded first either way, so if the server is not running nothing is lost, and you get told
-the server is not running rather than told the audit found nothing.
+Then click the magnifier on the answer, or Audit in the popup. The marked result appears in a panel over the
+page, and the capture is written to `captures/` by the server, which is where the harness reads them from.
+If the server is not running you are told that, rather than told the audit found nothing, and the capture is
+downloaded instead so nothing is lost.
 
 **The long path**, which needs nothing running and is what the honest run uses:
 

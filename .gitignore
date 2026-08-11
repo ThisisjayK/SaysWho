@@ -22,6 +22,10 @@ __pycache__/
 sayswho-page-*.html
 pages/
 
+# captures posted to the local audit server. They hold the answer text and the query behind it, which for
+# the professional stratum is real work. They are inputs to the harness, not published artifacts.
+captures/
+
 # fetched pages. DATA_CONTRACT.md §9: the repo publishes verdicts and quoted spans, not copies of the
 # pages it fetched.
 .cache/

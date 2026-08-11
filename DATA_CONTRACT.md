@@ -190,6 +190,10 @@ terminal step. A local server is a real surface, so its rules are here rather th
   is never in a file, a plist, a request or a response, per §8.
 - **A cap on what one request can cause.** A capture is a list of URLs the server will then fetch, so a
   posted capture carrying more than sixty citations is refused before anything is fetched.
+- **Every posted capture is written to the captures directory**, before any fetching starts, and never
+  overwritten. The capture is the irreplaceable half of an audit and the audit can be re-run, so it is
+  saved first. The directory is gitignored: a capture holds the answer text and the query behind it, and
+  for the professional stratum that is real work.
 - **One audit at a time.** Concurrent audits would interleave requests to the same host and break the
   one-request-per-second rule in §2, which is a promise made to the sites being fetched, so the service
   serialises them.

@@ -74,7 +74,9 @@ class AuditService:
     """The pipeline behind the server. Holds the fetcher, so the cache and the rate limiter are shared."""
 
     def __init__(self, cache_dir: Path, judge: bool = False, provider: str | None = None,
-                 budget: int = 2_000_000, drift: bool = True) -> None:
+                 budget: int = 2_000_000, drift: bool = True,
+                 captures_dir: Path | None = None) -> None:
+        self.captures_dir = Path(captures_dir) if captures_dir else Path("captures")
         self.fetcher = Fetcher(FetchCache(cache_dir))
         self.checker = DriftChecker(self.fetcher) if drift else None
         self.judge = judge
@@ -83,6 +85,28 @@ class AuditService:
         #: One audit at a time. Two concurrent audits would interleave their requests to the same host and
         #: break the one-request-per-second rule, which is a promise made to the sites being fetched.
         self.lock = threading.Lock()
+
+    def save_capture(self, capture: Capture, payload: dict) -> str:
+        """Write the capture where the harness reads captures from.
+
+        The extension used to download a copy to ~/Downloads on every audit, which meant a directory full
+        of JSON nobody asked for and a file in the wrong place: `tools/run_stratum.py` and
+        `tools/bind_capture.py` both work over a captures directory in the repo. Writing it here puts it
+        where the next step expects it, once.
+
+        Never overwrites. A capture is a record of something that happened, and two answers to the same
+        question in the same second are two records.
+        """
+        self.captures_dir.mkdir(parents=True, exist_ok=True)
+        stamp = capture.captured_at.replace(":", "").replace("-", "").replace("+", "")
+        base = f"capture-{capture.product}-{stamp}"
+        path = self.captures_dir / f"{base}.json"
+        n = 1
+        while path.exists():
+            path = self.captures_dir / f"{base}-{n}.json"
+            n += 1
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        return str(path)
 
     def audit(self, payload: dict) -> dict:
         capture = Capture.from_dict(payload)
@@ -100,6 +124,10 @@ class AuditService:
                 "error": "TOO_MANY_CITATIONS",
                 "detail": f"{len(capture.citations)} citations, limit {MAX_CITATIONS}",
             }
+
+        # Saved before the fetching starts, not after. An audit takes a minute or two and can be
+        # interrupted; the capture is the irreplaceable half and the audit can always be re-run.
+        saved = self.save_capture(capture, payload)
 
         with self.lock:
             records, drifts = [], []
@@ -134,6 +162,7 @@ class AuditService:
         report.payload["binding"] = {"ok": bound.ok, "code": bound.code, "detail": bound.detail}
         report.payload["skips"] = analyse_skips(claim_set).to_dict()
         report.payload["judged"] = self.judge
+        report.payload["saved_to"] = saved
 
         # The gate runs over exactly what is about to be sent, not over a sample of it.
         assert_no_confidence_number(strip_for_gate_check(report.payload))
@@ -235,6 +264,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--cache", type=Path, default=Path(".cache/fetch"))
+    parser.add_argument("--captures", type=Path, default=Path("captures"),
+                        help="where posted captures are written. This is where tools/run_stratum.py and "
+                             "tools/bind_capture.py read them from")
     parser.add_argument("--judge", action="store_true",
                         help="run Phase 1 and Phase 3. Needs a key in this shell's environment")
     parser.add_argument("--judge-provider", choices=["gemini", "anthropic"], default=None)
@@ -253,12 +285,13 @@ def main(argv: list[str] | None = None) -> int:
 
     service = AuditService(
         cache_dir=args.cache, judge=args.judge, provider=args.judge_provider,
-        budget=args.budget, drift=not args.no_drift,
+        budget=args.budget, drift=not args.no_drift, captures_dir=args.captures,
     )
     httpd = serve(service, HOST, args.port)
 
     print(f"SaysWho audit server on http://{HOST}:{args.port}")
     print(f"  judge      {'on' if args.judge else 'off, fetch and liveness only'}")
+    print(f"  captures   {args.captures}/  (posted captures are written here, never overwritten)")
     print(f"  origins    {', '.join(sorted(ALLOWED_ORIGINS))}")
     print("  bound to 127.0.0.1 only. Stop it when you are done; it is not something to leave running.")
     print()

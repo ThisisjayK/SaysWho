@@ -23,8 +23,15 @@ ANSWER = "Extending adjuvant endocrine therapy beyond five years reduced recurre
 
 @pytest.fixture
 def audit_server(tmp_path):
-    """The real server on a real ephemeral port, no judge, drift off."""
-    service = AuditService(cache_dir=tmp_path / "cache", judge=False, drift=False)
+    """The real server on a real ephemeral port, no judge, drift off.
+
+    `captures_dir` is pinned to the temporary directory. Without it these tests write real files into the
+    repo's own captures folder every run, which is both litter and a way to smuggle test data into a real
+    stratum run.
+    """
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
     httpd = serve(service, HOST, 0)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
@@ -239,7 +246,9 @@ def test_the_judge_runs_when_it_is_switched_on(tmp_path, server, monkeypatch):
 
     monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: ScriptedJudge())
 
-    service = AuditService(cache_dir=tmp_path / "cache", judge=True, drift=False)
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=True, drift=False, captures_dir=tmp_path / "captures"
+    )
     payload = service.audit(capture_payload(server))
 
     assert payload["judged"] is True
@@ -273,10 +282,69 @@ def test_a_fabricated_span_is_voided_on_this_path_too(tmp_path, server, monkeypa
 
     monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: LyingJudge())
 
-    service = AuditService(cache_dir=tmp_path / "cache", judge=True, drift=False)
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=True, drift=False, captures_dir=tmp_path / "captures"
+    )
     payload = service.audit(capture_payload(server))
 
     row = payload["claims"][0]["sources"][0]
     assert row["voided"] is True
     assert row["void_reason"] == "JUDGE_FABRICATED_SPAN"
     assert payload["claims"][0]["state"] == "COULD_NOT_VERIFY"
+
+
+# ---------------------------------------------------------------- captures on disk
+
+
+def test_a_posted_capture_is_written_where_the_harness_reads_them(tmp_path, server):
+    """The extension used to download a copy of every audited capture to ~/Downloads. That is a directory
+    full of JSON nobody asked for, and it is the wrong directory: the harness reads a captures folder."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
+    payload = service.audit(capture_payload(server))
+
+    written = sorted((tmp_path / "captures").glob("*.json"))
+    assert len(written) == 1
+    assert payload["saved_to"] == str(written[0])
+    assert json.loads(written[0].read_text())["answer_text"] == ANSWER
+
+
+def test_two_captures_in_the_same_second_are_two_files(tmp_path, server):
+    """A capture is a record of something that happened. Two answers to one question are two records."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
+    service.audit(capture_payload(server))
+    service.audit(capture_payload(server))
+    assert len(sorted((tmp_path / "captures").glob("*.json"))) == 2
+
+
+def test_the_capture_is_saved_before_any_fetching_starts(tmp_path, server):
+    """An audit takes a minute and can be interrupted. The capture is the irreplaceable half."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
+
+    seen = {}
+    original = service.fetcher.fetch
+
+    def watching(url, **kw):
+        seen["files_at_first_fetch"] = len(list((tmp_path / "captures").glob("*.json")))
+        return original(url, **kw)
+
+    service.fetcher.fetch = watching
+    service.audit(capture_payload(server))
+    assert seen["files_at_first_fetch"] == 1
+
+
+def test_an_uncitable_answer_is_not_written(tmp_path, server):
+    """G0 halts before anything else, and there is nothing to audit later."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
+    payload = capture_payload(server)
+    payload["citations"] = []
+    result = service.audit(payload)
+    assert result["error"] == "NO_CITATIONS"
+    assert not (tmp_path / "captures").exists() or not list((tmp_path / "captures").glob("*.json"))

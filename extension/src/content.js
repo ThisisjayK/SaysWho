@@ -172,7 +172,12 @@
     }
   }
 
+  const TOAST_SECONDS = 14;
+  let toastTimer = null;
+
   const toast = document.createElement("div");
+  toast.id = "sayswho-toast";
+  toast.title = "click to dismiss";
   toast.style.cssText = [
     "position:fixed",
     "right:16px",
@@ -186,17 +191,35 @@
     "border:1px solid #111",
     "border-radius:6px",
     "white-space:pre-wrap",
+    "cursor:pointer",
     "display:none",
   ].join(";");
 
-  function say(message) {
-    toast.textContent = message;
-    toast.style.display = "block";
+  /** Dismissable and self-dismissing.
+   *
+   * It used to sit there until the page was reloaded, which on a product you keep working in means it is
+   * still there an hour later covering something. Three ways out: click it, start another action, or wait.
+   */
+  function hideToast() {
+    toast.style.display = "none";
+    clearTimeout(toastTimer);
   }
+
+  function say(message) {
+    toast.textContent = message + "\n\n(click to dismiss)";
+    toast.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, TOAST_SECONDS * 1000);
+  }
+
+  toast.addEventListener("click", hideToast);
+  // audit.js hides it when a panel opens, since the panel supersedes anything the toast was saying.
+  window.saysWhoHideToast = hideToast;
 
   // ---------------------------------------------------------------- the work
 
-  async function capture() {
+  async function capture({ download = true } = {}) {
+    hideToast();
     working(captureButton, "SaysWho: reading the answer...");
     const found = saysWhoFindAnswer(adapter);
 
@@ -249,21 +272,29 @@
     }
 
     working(captureButton, null);
-    chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record });
+    chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record, download });
     return record;
   }
 
   async function auditHere() {
-    // The capture is downloaded either way, before anything is posted. If the server is not running, or
-    // the audit fails, the record still exists on disk and nothing has been lost.
-    const record = await capture();
+    // No download yet. A successful audit means the server wrote the capture to the repo's captures
+    // directory, which is where the harness reads them from, so downloading a second copy to ~/Downloads
+    // is clutter rather than safety.
+    const record = await capture({ download: false });
     if (!record) return;
 
     working(auditButton, "SaysWho: auditing...");
+    let payload = null;
     try {
-      await window.saysWhoAudit(record, (status) => working(auditButton, `SaysWho: ${status}`));
+      payload = await window.saysWhoAudit(record, (status) => working(auditButton, `SaysWho: ${status}`));
     } finally {
       working(auditButton, null);
+    }
+
+    // The audit did not happen, so nothing has stored this capture. Download it now: the promise that a
+    // capture is never lost to the server being down is kept here rather than by downloading every time.
+    if (!payload || payload.error) {
+      chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record, download: true });
     }
   }
 

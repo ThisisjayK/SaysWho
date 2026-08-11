@@ -92,12 +92,35 @@ def test_the_audit_script_decides_nothing():
         assert token not in source, f"audit.js references {token}, which means it is deciding something"
 
 
-def test_the_capture_path_still_works_without_the_server():
-    """The download is not conditional on the server, so a capture is never lost to it being down."""
-    content = (EXTENSION / "src" / "content.js").read_text()
-    assert 'chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record })' in content
-    audit = content[content.index("async function auditHere"):]
-    assert audit.index("const record = await capture()") < audit.index("saysWhoAudit")
+def test_the_capture_button_still_downloads():
+    """The path that needs nothing running has to keep needing nothing. `download` defaults to true."""
+    source = (EXTENSION / "src" / "content.js").read_text()
+    assert "async function capture({ download = true } = {})" in source
+    assert 'chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record, download })' in source
+
+
+def test_an_audit_does_not_also_download_a_copy():
+    """The server writes the capture to the repo's captures directory, which is where the harness reads
+    them from. A second copy in ~/Downloads is clutter, and in the wrong folder."""
+    source = (EXTENSION / "src" / "content.js").read_text()
+    audit = source[source.index("async function auditHere"):]
+    assert "capture({ download: false })" in audit
+
+
+def test_a_failed_audit_downloads_the_capture_after_all():
+    """The promise is that a capture is never lost to the server being down. It is now kept here rather
+    than by downloading every single time."""
+    source = (EXTENSION / "src" / "content.js").read_text()
+    audit = source[source.index("async function auditHere"):]
+    assert "if (!payload || payload.error)" in audit
+    assert audit.index("saysWhoAudit") < audit.index("download: true")
+
+
+def test_the_server_writes_every_capture_it_audits():
+    """The other half of the same promise, and the reason the browser can stop downloading."""
+    server = (REPO / "sayswho" / "server.py").read_text()
+    assert "def save_capture" in server
+    assert "saved = self.save_capture(capture, payload)" in server
 
 
 # ---------------------------------------------------------------- the two controls
@@ -269,3 +292,45 @@ def test_the_toast_is_mounted_even_when_the_dock_is_hidden():
     mount = source[source.index("dock.appendChild(tip);"):]
     assert "document.documentElement.appendChild(toast);" in mount
     assert mount.index("appendChild(toast)") < mount.index("function mountDock")
+
+
+# ---------------------------------------------------------------- the toast and the overflow
+
+
+def test_the_toast_can_be_dismissed_and_dismisses_itself():
+    """It used to sit on the page until a reload, which on a product you keep working in means an hour."""
+    source = content()
+    assert "function hideToast" in source
+    assert 'toast.addEventListener("click", hideToast)' in source
+    assert "setTimeout(hideToast" in source
+    assert "window.saysWhoHideToast = hideToast" in source
+
+
+def test_opening_the_panel_clears_the_toast():
+    """The panel supersedes whatever the toast was saying, so leaving both up is two answers to one thing."""
+    assert "window.saysWhoHideToast?.()" in (EXTENSION / "src" / "audit.js").read_text()
+
+
+def test_long_unbroken_strings_cannot_widen_the_panel():
+    """URLs, sha256 digests and CSS selectors have no spaces in them, so they set the minimum width of the
+    box, the box grows past the panel, and the text runs off the right of the screen."""
+    css = (EXTENSION / "src" / "render.css").read_text()
+    assert "overflow-wrap: break-word" in css
+    assert "min-width: 0" in css and "max-width: 100%" in css
+    meta = css[css.index(".sw-meta {"): css.index(".sw-banner")]
+    assert "flex-wrap: wrap" in meta
+    assert "white-space: nowrap" not in meta, "nowrap on the meta line is what pushed it off the panel"
+    assert "overflow-x:hidden" in (EXTENSION / "src" / "audit.js").read_text()
+
+
+def test_a_run_with_no_claims_shows_no_counters():
+    """Five counters reading zero is what a fetch-only run produces, and it reads as a result."""
+    render = (EXTENSION / "src" / "render.js").read_text()
+    assert "if (payload.counts.claims > 0)" in render
+    assert "nothing to count" in render
+
+
+def test_the_no_judge_warning_comes_before_the_counts():
+    audit = (EXTENSION / "src" / "audit.js").read_text()
+    assert "body.insertBefore(note, body.firstChild)" in audit
+    assert "not because nothing checked out" in audit

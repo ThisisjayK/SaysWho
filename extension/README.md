@@ -28,9 +28,14 @@ the page, stepping aside so the panel does not open on top of it. No terminal st
 python3 -m sayswho.server --judge
 ```
 
-The capture is downloaded before anything is posted, so if the server is not running the record still
-exists and nothing is lost. A server that is not running is reported as a server that is not running, never
-as an audit that found nothing.
+An audit does not download anything. The server writes the capture to the repo's `captures/` directory
+before it starts fetching, which is where `tools/run_stratum.py` and `tools/bind_capture.py` read captures
+from, so there is one copy and it is in the right place. If the audit does not happen, because the server is
+down or the request failed, the capture is downloaded after all: the promise that a capture is never lost is
+kept there rather than by downloading every single time.
+
+A server that is not running is reported as a server that is not running, never as an audit that found
+nothing.
 
 **Render.** `src/report.html` opens a report JSON and shows the answer with every claim marked. Hovering a
 marked sentence gives the cited page's own words, the ones the span guard confirmed are really on that page.

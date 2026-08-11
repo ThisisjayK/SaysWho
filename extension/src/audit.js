@@ -42,6 +42,10 @@
   }
 
   function panel() {
+    // The capture toast is superseded the moment a panel opens, and it was outliving its usefulness by
+    // sitting there until the page was reloaded.
+    window.saysWhoHideToast?.();
+
     let node = document.getElementById(PANEL_ID);
     if (node) return node;
 
@@ -55,6 +59,9 @@
       `width:${PANEL_WIDTH}`,
       "z-index:2147483646",
       "overflow-y:auto",
+      // A hard stop. The renderer wraps long strings itself, and this is the backstop that keeps a missed
+      // one from giving the whole page a horizontal scrollbar.
+      "overflow-x:hidden",
       "background:#faf9f6",
       "border-left:1px solid #111",
       "box-shadow:-6px 0 24px rgba(0,0,0,0.12)",
@@ -75,6 +82,8 @@
 
     const body = document.createElement("div");
     body.id = `${PANEL_ID}-body`;
+    // The renderer's own padding assumes a full page. In here the panel supplies it.
+    body.className = "sw-in-panel";
     node.appendChild(body);
 
     document.documentElement.appendChild(node);
@@ -135,12 +144,23 @@
     window.saysWhoRender(body, payload);
 
     if (!health.judge) {
+      // First, not last. Underneath this sit five counters reading zero, and a reader who meets those
+      // before the explanation reads them as "nothing checked out" rather than "nothing was checked".
       const note = document.createElement("p");
-      note.style.cssText = "font:400 12px/1.5 system-ui,sans-serif;color:#6b6759;margin-top:14px";
+      note.style.cssText =
+        "font:600 12.5px/1.5 system-ui,sans-serif;color:#8a5a00;margin:0 0 12px;padding:9px 11px;" +
+        "background:#fdf1dc;border:1px solid #e5cf9d;border-radius:5px";
       note.textContent =
-        "The server is running without --judge, so this shows which sources could be read and nothing " +
-        "about whether they support anything. Restart it with --judge for verdicts.";
-      body.appendChild(note);
+        "No verdicts in this run. The server is running without --judge, so the counts below are zero " +
+        "because nothing was judged, not because nothing checked out. Restart it with --judge.";
+      body.insertBefore(note, body.firstChild);
+    }
+
+    if (payload.saved_to) {
+      const where = document.createElement("p");
+      where.style.cssText = "font:400 11.5px/1.5 ui-monospace,Menlo,monospace;color:#6b6759;margin-top:14px";
+      where.textContent = `capture saved to ${payload.saved_to}`;
+      body.appendChild(where);
     }
     return payload;
   };

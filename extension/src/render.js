@@ -229,7 +229,13 @@
     });
     root.appendChild(meta);
 
-    root.appendChild(legend(payload));
+    // Five counters reading zero is what a fetch-only run produces, and it reads as "nothing checked out"
+    // rather than "nothing was checked". With no claims there is nothing to count, so nothing is shown.
+    if (payload.counts.claims > 0) {
+      root.appendChild(legend(payload));
+    } else {
+      root.appendChild(el("p", "sw-meta", "No claims in this run, so there is nothing to count."));
+    }
 
     const g4 = el("div", "sw-banner");
     g4.appendChild(el("strong", null, "No overall score. "));
@@ -275,11 +281,13 @@
 
     root.appendChild(el("h2", null, "Skipped by gate G1"));
     const skipped = el("div", "sw-skipped");
+    const n = payload.counts.skipped;
+    const lines = n === 1 ? "1 line was" : n + " lines were";
     skipped.appendChild(el("p", null,
-      payload.counts.skipped + " lines were not treated as factual claims. They are listed rather than " +
+      lines + " not treated as a factual claim. They are listed rather than " +
       "discarded, because a tool that quietly drops what it cannot handle is lying by omission."));
     skipped.appendChild(details(
-      "Show " + payload.counts.skipped + " skipped lines",
+      "Show " + (n === 1 ? "1 skipped line" : n + " skipped lines"),
       list(payload.skipped.map(function (s) { return [s.reason, s.text]; }))
     ));
     root.appendChild(skipped);
