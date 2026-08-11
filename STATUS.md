@@ -55,7 +55,7 @@ answer" are different claims and only one of them is currently true.
 | 9 | Per-domain reporting | **not done** | At the core's n the per-domain cells would be near-empty, which is why it was stretch |
 | 9 | Gold set expansion beyond 40 | **not done** | Depends on the first 40 |
 | (extra) | Crossref existence check for named citations | **not done** | Roughly half a day, and only if the core lands on time. The constraint if it is built: check existence, never support |
-| (extra) | Split `SOURCE_UNREACHABLE` into dead-link and bot-blocked | **not done** | Seen live on aacrjournals.org: a 403 from bot detection and a 404 dead link are different findings |
+| (extra) | Split `SOURCE_UNREACHABLE` into dead-link and bot-blocked | **done** | `SOURCE_DEAD_LINK` and `SOURCE_BOT_BLOCKED`. Done ahead of the stretch window because §5a's dead-link stratum cannot report a dead-link rate until the code distinguishing one exists |
 | (extra) | Widen `CITATION_NOT_LINKED` patterns and measure their recall | **not done** | The current count is a floor and the writeup keeps saying so |
 
 ## Extension surface

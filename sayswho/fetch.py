@@ -24,6 +24,7 @@ from .records import (
     SOURCE_ROBOTS_EXCLUDED,
     SOURCE_UNREACHABLE,
     FetchRecord,
+    code_for_status,
     sha256,
 )
 
@@ -299,7 +300,10 @@ class Fetcher:
         )
 
         if status != 200:
-            return FetchRecord(code=SOURCE_UNREACHABLE, text_length=0, **base)
+            # 404 and 403 are both "no document", and they are different findings: one says the citation is
+            # broken, the other says it is unreadable to anything automated while a person clicking it would
+            # see the page. See records.code_for_status.
+            return FetchRecord(code=code_for_status(status), text_length=0, **base)
 
         decoded, note = decode_body(body, headers or {})
         if decoded is None:

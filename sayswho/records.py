@@ -39,6 +39,36 @@ SOURCE_ROBOTS_EXCLUDED = "SOURCE_ROBOTS_EXCLUDED"
 #: nothing. Government reports and papers are exactly the citations most likely to be PDFs.
 SOURCE_NOT_HTML = "SOURCE_NOT_HTML"
 
+#: The citation points at nothing. 404 or 410: the server answered, and its answer was that the document is
+#: not there. This is a fact about the citation.
+SOURCE_DEAD_LINK = "SOURCE_DEAD_LINK"
+
+#: The server refused *us*. 401, 403 or 429: access denied or rate limited, from a page a person clicking
+#: the link would in all likelihood see.
+#:
+#: Split out of SOURCE_UNREACHABLE for the same reason SOURCE_ROBOTS_EXCLUDED was, and found the same way,
+#: by looking at a real run. `FINDINGS.md` item 3: aacrjournals.org returned 403 to the single link in a
+#: whole research report. Folded together, "the citation is broken" and "the citation is unreadable to
+#: anything automated" become one number, and only the first is a finding about the answer being audited.
+#: The arithmetic is identical, since all three are UNAUDITABLE. The sentence published beside the number
+#: is not.
+SOURCE_BOT_BLOCKED = "SOURCE_BOT_BLOCKED"
+
+#: Statuses that mean the document is gone rather than withheld.
+_DEAD_STATUSES = frozenset({404, 410})
+
+#: Statuses that mean we were refused rather than the document being absent.
+_BLOCKED_STATUSES = frozenset({401, 403, 429})
+
+
+def code_for_status(status: int) -> str:
+    """The G2 code for a non-200 response. The only place this mapping exists."""
+    if status in _DEAD_STATUSES:
+        return SOURCE_DEAD_LINK
+    if status in _BLOCKED_STATUSES:
+        return SOURCE_BOT_BLOCKED
+    return SOURCE_UNREACHABLE
+
 #: Every G2 code other than SOURCE_OK makes its claim UNAUDITABLE and stops the pipeline for that claim.
 #: No judge call is made against a source we do not have. Judging a claim against a page we could not read
 #: would be inventing the evidence.
@@ -48,6 +78,8 @@ ALL_G2_CODES = frozenset(
     {
         SOURCE_OK,
         SOURCE_UNREACHABLE,
+        SOURCE_DEAD_LINK,
+        SOURCE_BOT_BLOCKED,
         SOURCE_EMPTY,
         SOURCE_PAYWALLED,
         SOURCE_DRIFTED,

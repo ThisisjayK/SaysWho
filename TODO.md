@@ -340,10 +340,11 @@ The machinery is built and tested. What is left on this list is the labelling it
       different facts and collapsing them would repeat the mistake this whole project is about
 
       Roughly half a day. Build only if the core lands on time
-- [ ] Split `SOURCE_UNREACHABLE`. A 403 from bot detection and a 404 dead link are different findings: one
-      says the citation is broken, the other says it is unreadable to anyone automated while a person
-      clicking it would see the page. Same class of distinction as `SOURCE_ROBOTS_EXCLUDED`. Seen live on
-      aacrjournals.org, the single link in a whole research report
+- [x] Split `SOURCE_UNREACHABLE` into `SOURCE_DEAD_LINK` (404, 410) and `SOURCE_BOT_BLOCKED` (401, 403,
+      429), with the general code kept for everything else rather than forcing every status into one of the
+      two. Same class of distinction as `SOURCE_ROBOTS_EXCLUDED`, and all three stay `UNAUDITABLE`, so the
+      arithmetic is unchanged and only the sentence beside the number moves. Done early because it is small
+      and because the dead-link stratum in §5a needs the distinction to exist before it can report one
 - [ ] Widen the `CITATION_NOT_LINKED` patterns and measure their recall against a hand-marked answer. The
       current count is a floor and the writeup has to keep saying so until that is measured
 

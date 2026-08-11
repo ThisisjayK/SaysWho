@@ -45,6 +45,8 @@
   /** Why a source could not be read. Never phrased as a fact about the claim. */
   const SOURCE_WORDS = {
     SOURCE_UNREACHABLE: "the page could not be fetched",
+    SOURCE_DEAD_LINK: "the link is dead: the server says there is no such page",
+    SOURCE_BOT_BLOCKED: "the site refused an automated request. Clicking the link yourself may well work",
     SOURCE_EMPTY: "the page returned no readable text",
     SOURCE_PAYWALLED: "a paywall or consent wall blocked the text",
     SOURCE_ROBOTS_EXCLUDED: "robots.txt asked us not to fetch it, so we did not",

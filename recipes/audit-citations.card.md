@@ -10,18 +10,23 @@ product.** Five of these six look like "the citation failed" and only one of the
 
 ## 1. The source could not be read
 
-**Signal.** `SOURCE_UNREACHABLE`, `SOURCE_PAYWALLED`, `SOURCE_EMPTY`, `SOURCE_NOT_HTML`,
-`SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`.
+**Signal.** `SOURCE_DEAD_LINK`, `SOURCE_BOT_BLOCKED`, `SOURCE_UNREACHABLE`, `SOURCE_PAYWALLED`,
+`SOURCE_EMPTY`, `SOURCE_NOT_HTML`, `SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`.
 
 **Means.** Nothing about the claim. The page was dead, or behind a wall, or a PDF, or a JavaScript shell, or
 `robots.txt` asked us not to fetch it and we did not.
+
+Three of these are the same arithmetic and three different sentences. `SOURCE_DEAD_LINK` says the citation
+points at nothing, which is a finding about the answer. `SOURCE_BOT_BLOCKED` says the site refused an
+automated request, and a person clicking the link would probably see the page, which is not.
 
 **Do.** Nothing automatic. These are `UNAUDITABLE`, they are excluded from every denominator by a check that
 raises rather than warns, and they are never counted as unsupported. Open the link yourself if the claim
 matters. A paywall is a legitimate outcome, and routing around it would corrupt the measurement.
 
 **Watch for.** `SOURCE_ROBOTS_EXCLUDED` is not `SOURCE_UNREACHABLE`. Unreachable means we tried and could
-not; robots-excluded means we chose not to try. Same arithmetic, different sentence to publish.
+not; robots-excluded means we chose not to try. Same arithmetic, different sentence to publish. If you are
+reporting a dead-link rate, it is `SOURCE_DEAD_LINK` alone, not the union of all six.
 
 ---
 

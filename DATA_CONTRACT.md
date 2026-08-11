@@ -58,7 +58,9 @@ Extends the G2 table in `SCOPE.md` §3 with one code that writing this document 
 | Code | Condition |
 |---|---|
 | `SOURCE_OK` | 200, and extractable text above the threshold in §5 |
-| `SOURCE_UNREACHABLE` | 4xx, 5xx after retries, timeout, DNS failure, TLS failure |
+| `SOURCE_UNREACHABLE` | 5xx after retries, timeout, DNS failure, TLS failure, and any 4xx not listed below |
+| `SOURCE_DEAD_LINK` | 404 or 410. The document is gone, which is a fact about the citation |
+| `SOURCE_BOT_BLOCKED` | 401, 403 or 429. We were refused, which is a fact about the site's view of us |
 | `SOURCE_EMPTY` | 200, but extractable text below the threshold |
 | `SOURCE_PAYWALLED` | Paywall or consent wall detected per §5 |
 | `SOURCE_DRIFTED` | Content differs from the nearest snapshot per §6 |

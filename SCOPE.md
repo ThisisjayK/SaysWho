@@ -236,7 +236,9 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   | Code | Meaning |
   |---|---|
   | `SOURCE_OK` | 200, non-trivial extractable text |
-  | `SOURCE_UNREACHABLE` | 4xx / 5xx / timeout / DNS failure (an ERROR) |
+  | `SOURCE_UNREACHABLE` | 5xx after retries, timeout, DNS or TLS failure, and any 4xx not below |
+  | `SOURCE_DEAD_LINK` | 404 or 410. The server answered, and its answer was that the document is gone |
+  | `SOURCE_BOT_BLOCKED` | 401, 403 or 429. The site refused *us*, from a page a person would probably see |
   | `SOURCE_EMPTY` | 200 but no extractable text (JS-only), which is not an error |
   | `SOURCE_PAYWALLED` | paywall or consent wall detected |
   | `SOURCE_DRIFTED` | the URL now serves a *different document* than the archived one (containment below 0.10) |
@@ -247,6 +249,14 @@ Fetches each cited URL. Records HTTP status, fetch timestamp, content hash, extr
   contract before writing code is for. Folding it into `SOURCE_UNREACHABLE` would have been tidier and
   wrong: unreachable means we tried and could not, robots-excluded means we chose not to try. The arithmetic
   is the same either way, since both are `UNAUDITABLE`, but the reason published beside the number is not.
+
+  `SOURCE_DEAD_LINK` and `SOURCE_BOT_BLOCKED` were split out of `SOURCE_UNREACHABLE` on day 5, and found
+  the same way as `SOURCE_NOT_HTML`, by reading a real run rather than by planning. `FINDINGS.md` item 3:
+  aacrjournals.org returned 403 to the single link in a whole research report. Collapsed into one code, "the
+  citation is broken" and "the citation is unreadable to anything automated, while a person clicking it
+  would see the page" become one number, and only the first is a finding about the answer being audited.
+  All three remain `UNAUDITABLE`, so the arithmetic is unchanged; the sentence published beside the number
+  is not.
 
   `SOURCE_NOT_HTML` was added on day 3 for the same reason and was found the same way, by looking rather than
   by planning: there was no content-type check anywhere in the fetch layer, so a cited PDF went through the

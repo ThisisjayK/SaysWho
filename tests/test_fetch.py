@@ -11,12 +11,15 @@ import pytest
 
 from sayswho.fetch import Fetcher, user_agent
 from sayswho.records import (
+    SOURCE_BOT_BLOCKED,
+    SOURCE_DEAD_LINK,
     SOURCE_EMPTY,
     SOURCE_NOT_HTML,
     SOURCE_OK,
     SOURCE_PAYWALLED,
     SOURCE_ROBOTS_EXCLUDED,
     SOURCE_UNREACHABLE,
+    FetchRecord,
 )
 
 
@@ -77,11 +80,50 @@ def test_paywall_is_paywalled_not_empty(server, cache):
     assert not record.auditable
 
 
-def test_404_is_unreachable(server, cache):
+def test_404_is_a_dead_link(server, cache):
+    """A 404 says the document is not there, which is a fact about the citation."""
     record = fetcher(cache).fetch(server.url("/missing.html"))
-    assert record.code == SOURCE_UNREACHABLE
+    assert record.code == SOURCE_DEAD_LINK
     assert record.http_status == 404
     assert not record.auditable
+
+
+def test_403_is_bot_blocked_rather_than_a_dead_link(server, cache):
+    """`FINDINGS.md` item 3: aacrjournals.org returned 403 to the single link in a whole research report.
+
+    Folded into one code, "the citation is broken" and "the citation is unreadable to anything automated"
+    become one number, and only the first is a finding about the answer being audited.
+    """
+    record = fetcher(cache).fetch(server.url("/forbidden.html"))
+    assert record.code == SOURCE_BOT_BLOCKED
+    assert record.http_status == 403
+    assert not record.auditable
+
+
+def test_429_is_bot_blocked_too(server, cache):
+    record = fetcher(cache).fetch(server.url("/ratelimited.html"))
+    assert record.code == SOURCE_BOT_BLOCKED
+    assert not record.auditable
+
+
+def test_an_unclassified_status_stays_unreachable(server, cache):
+    """418 is neither gone nor refused, so it keeps the general code rather than being forced into one."""
+    from sayswho.records import code_for_status
+
+    assert code_for_status(418) == SOURCE_UNREACHABLE
+    assert code_for_status(500) == SOURCE_UNREACHABLE
+
+
+def test_all_three_are_unauditable_and_the_arithmetic_is_identical():
+    """The split changes the sentence published beside the number, never the number."""
+    from sayswho.gates import auditable_denominator
+
+    records = [
+        FetchRecord(url="https://a.example/1", code=SOURCE_DEAD_LINK, fetched_at="t"),
+        FetchRecord(url="https://b.example/2", code=SOURCE_BOT_BLOCKED, fetched_at="t"),
+        FetchRecord(url="https://c.example/3", code=SOURCE_UNREACHABLE, fetched_at="t"),
+    ]
+    assert auditable_denominator(records) == 0
 
 
 # ---------------------------------------------------------------- politeness

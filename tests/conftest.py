@@ -106,6 +106,11 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             return self.wfile.write(payload)
+        if self.path == "/forbidden.html":
+            # Bot detection, as seen live on aacrjournals.org. A person clicking the link sees the page.
+            return self._send(403, "<html><body>Access denied</body></html>")
+        if self.path == "/ratelimited.html":
+            return self._send(429, "<html><body>Too many requests</body></html>")
         if self.path == "/flaky":
             type(self).flaky_hits += 1
             if type(self).flaky_hits <= 2:
