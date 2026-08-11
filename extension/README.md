@@ -4,12 +4,13 @@ Manifest V3. It captures an answer, and it renders a finished audit. It does not
 
 ## What it does today
 
-**Capture.** Adds a button to claude.ai, chatgpt.com, perplexity.ai and Google search pages. Clicking it
-reads the last answer out of the DOM, extracts the citation markers and their URLs, hashes the answer text,
-and downloads a capture JSON.
+Two round buttons sit in the bottom-right corner, side by side. Hovering either one names it.
 
-**Audit here.** A second button posts that same record to the local server and draws the result in a panel
-over the page. No terminal step in the loop:
+**Capture** (the viewfinder). Reads the last answer out of the DOM, extracts the citation markers and their
+URLs, hashes the answer text, and downloads a capture JSON.
+
+**Audit** (the magnifier). Posts that same record to the local server and draws the result in a panel over
+the page, stepping aside so the panel does not open on top of it. No terminal step in the loop:
 
 ```bash
 python3 -m sayswho.server --judge
@@ -44,6 +45,10 @@ name.
 answer text, and mapping those onto a live DOM that re-renders as you scroll is separate work with its own
 failure modes, the worst of which is putting a verdict beside the wrong sentence. The panel shows the marked
 answer next to the page instead.
+
+**Every node is built through the DOM API, never `innerHTML`.** claude.ai enforces Trusted Types, where an
+`innerHTML` assignment throws, and the failure would be total: no buttons at all, on the product this was
+first screenshotted against. There is a test for it, and the rule applies to anything added later.
 
 **The browser leg is not covered by tests.** The server is, thoroughly, and so are the things about this
 package that can be checked without a browser: every file the manifest names exists, every script parses,

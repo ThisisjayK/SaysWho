@@ -33,6 +33,14 @@
     }
   }
 
+  const PANEL_WIDTH = "min(560px,46vw)";
+
+  /** Step the buttons aside so the panel does not open on top of them. */
+  function moveDock(open) {
+    const dock = document.getElementById("sayswho-dock");
+    if (dock) dock.style.right = open ? `calc(${PANEL_WIDTH} + 16px)` : "16px";
+  }
+
   function panel() {
     let node = document.getElementById(PANEL_ID);
     if (node) return node;
@@ -44,7 +52,7 @@
       "top:0",
       "right:0",
       "bottom:0",
-      "width:min(560px,46vw)",
+      `width:${PANEL_WIDTH}`,
       "z-index:2147483646",
       "overflow-y:auto",
       "background:#faf9f6",
@@ -59,7 +67,10 @@
     close.style.cssText =
       "position:sticky;top:0;float:right;font:500 12px system-ui,sans-serif;cursor:pointer;" +
       "background:#f5f3ee;border:1px solid #111;border-radius:6px;padding:4px 8px";
-    close.addEventListener("click", () => node.remove());
+    close.addEventListener("click", () => {
+      node.remove();
+      moveDock(false);
+    });
     node.appendChild(close);
 
     const body = document.createElement("div");
@@ -67,6 +78,7 @@
     node.appendChild(body);
 
     document.documentElement.appendChild(node);
+    moveDock(true);
     return node;
   }
 

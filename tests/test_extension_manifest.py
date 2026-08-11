@@ -96,3 +96,70 @@ def test_the_capture_path_still_works_without_the_server():
     assert 'chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record })' in content
     audit = content[content.index("async function auditHere"):]
     assert audit.index("const record = await capture()") < audit.index("saysWhoAudit")
+
+
+# ---------------------------------------------------------------- the two controls
+
+
+def content() -> str:
+    return (EXTENSION / "src" / "content.js").read_text()
+
+
+def test_the_controls_are_labelled_with_what_they_do():
+    """Two round icon buttons carry no words, so the label has to come from somewhere."""
+    source = content()
+    for label in ("SaysWho: capture", "SaysWho: audit"):
+        assert f'"{label}"' in source, f"no control is labelled {label!r}"
+
+
+def test_each_control_has_both_an_accessible_name_and_a_tooltip():
+    """A hover label is a visual affordance. A screen reader and a keyboard user get the same words."""
+    source = content()
+    assert 'button.setAttribute("aria-label", label)' in source
+    assert "button.title = label" in source
+
+
+def test_the_controls_sit_side_by_side_rather_than_stacked():
+    """They used to be two full-width buttons at bottom:16px and bottom:52px, and they overlapped."""
+    source = content()
+    dock = source[source.index("const dock = document.createElement"): source.index("const tip =")]
+    assert '"display:flex"' in dock
+    assert '"flex-direction:row"' in dock
+    assert '"gap:8px"' in dock
+    assert "bottom:52px" not in source, "the stacked layout is gone"
+
+
+def test_the_controls_are_round_and_small():
+    source = content()
+    for rule in ('"width:34px"', '"height:34px"', '"border-radius:50%"'):
+        assert rule in source
+
+
+def test_the_hover_label_is_anchored_to_the_dock_not_the_viewport():
+    """Anchored to the viewport it overlapped the button it labelled, and stayed put when the panel opened."""
+    source = content()
+    tip = source[source.index("const tip = document.createElement"): source.index("function showTip")]
+    assert '"position:absolute"' in tip
+    assert '"right:100%"' in tip
+    assert "dock.appendChild(tip);" in source
+
+
+def test_the_icons_are_built_through_the_dom_rather_than_written_as_markup():
+    """claude.ai enforces Trusted Types, and an innerHTML assignment throws there. The failure is total:
+    no buttons at all, on the one product this was screenshotted against."""
+    # Comments stripped first: the file explains why it avoids innerHTML, and naming the thing you are
+    # avoiding is not using it. Two passes, because one alternation with DOTALL makes `//` swallow the rest
+    # of the file, which then passes this test by having no code left in it.
+    source = re.sub(r"/\*.*?\*/", "", content(), flags=re.S)
+    source = re.sub(r"^\s*//.*$", "", source, flags=re.M)
+    assert "innerHTML" not in source
+    assert "createElementNS" in source
+    for name in ("CAPTURE_ICON", "AUDIT_ICON"):
+        assert name in source
+
+
+def test_the_panel_steps_the_controls_aside_instead_of_covering_them():
+    audit = (EXTENSION / "src" / "audit.js").read_text()
+    assert "function moveDock" in audit
+    assert 'document.getElementById("sayswho-dock")' in audit
+    assert audit.count("moveDock(") >= 3, "opened, closed, and defined"
