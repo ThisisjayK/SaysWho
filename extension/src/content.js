@@ -270,14 +270,41 @@
   captureButton.addEventListener("click", capture);
   auditButton.addEventListener("click", auditHere);
 
-  // The toolbar icon routes here too, so the icon and the in-page control do the same thing.
+  // The popup drives the same two paths, so hiding the dock costs a person nothing but the shortcut.
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type === "sayswho:capture-now") capture();
+    if (message?.type === "sayswho:audit-now") auditHere();
   });
+
+  // ---------------------------------------------------------------- mounting
+
+  // Shared with popup.js and background.js. A test compares the three files, because a typo in one of them
+  // silently breaks the toggle rather than raising anything.
+  const SHOW_DOCK_KEY = "sayswho.showDock";
 
   dock.appendChild(captureButton);
   dock.appendChild(auditButton);
   dock.appendChild(tip);
+
+  // The toast is mounted whatever the setting says. It is the only feedback a person gets when the buttons
+  // are hidden and they trigger a capture from the popup, and a capture that reports nothing looks failed.
   document.documentElement.appendChild(toast);
-  document.documentElement.appendChild(dock);
+
+  function mountDock(show) {
+    if (show) {
+      if (!dock.isConnected) document.documentElement.appendChild(dock);
+    } else {
+      dock.remove();
+    }
+  }
+
+  // Absent means shown. A fresh profile that has never opened the popup should still see the buttons.
+  chrome.storage.local.get(SHOW_DOCK_KEY, (stored) => mountDock(stored?.[SHOW_DOCK_KEY] !== false));
+
+  // Live, so the toggle in the popup takes effect on the open tab rather than on the next page load.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && SHOW_DOCK_KEY in changes) {
+      mountDock(changes[SHOW_DOCK_KEY].newValue !== false);
+    }
+  });
 })();

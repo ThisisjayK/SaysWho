@@ -1,0 +1,150 @@
+/* The popup: a control surface, not a result surface.
+ *
+ * Same palette as render.css so the two do not look like different products. Nothing here is injected into
+ * anyone's page, so bare element selectors are fine, which is not true of render.css.
+ */
+
+:root {
+  --sw-ink: #14140f;
+  --sw-paper: #faf9f5;
+  --sw-line: #d8d4c8;
+  --sw-dim: #6b6759;
+  --sw-ok: #1f6f43;
+  --sw-partial: #8a5a00;
+  --sw-off: #8f8b7e;
+  --sw-warn: #a1341c;
+}
+
+* { box-sizing: border-box; }
+
+/* A class setting `display` beats the browser's own rule for the hidden attribute, so the command line
+ * stayed on screen when the server was already running. Every section here toggles with `hidden`, so this
+ * is the one place to fix it. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  width: 340px;
+  background: var(--sw-paper);
+  color: var(--sw-ink);
+  font: 400 13px/1.45 system-ui, -apple-system, sans-serif;
+}
+
+.wrap { padding: 12px 14px 14px; }
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--sw-line);
+}
+.name { font-weight: 650; font-size: 14px; letter-spacing: 0.01em; }
+.version { color: var(--sw-dim); font-size: 11px; }
+
+.block {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sw-line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+.row .dot + .state { flex: 1; }
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sw-off);
+  flex: none;
+}
+.dot.ok { background: var(--sw-ok); }
+.dot.partial { background: var(--sw-partial); }
+
+.state { font-weight: 600; }
+.label { color: var(--sw-dim); }
+.value { font-weight: 600; text-align: right; }
+
+p { margin: 5px 0 0; }
+.dim { color: var(--sw-dim); font-size: 12px; }
+.tight { margin-top: 6px; }
+.mono { font: 400 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+.warn { color: var(--sw-warn); font-size: 12px; font-weight: 600; }
+
+.cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid var(--sw-line);
+  border-radius: 5px;
+}
+.cmd code {
+  flex: 1;
+  font: 400 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+}
+.actions button {
+  flex: 1;
+  padding: 8px 6px;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  color: var(--sw-ink);
+  background: #f0ede5;
+  border: 1px solid var(--sw-ink);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.actions button:hover:not(:disabled) { background: #fff; }
+.actions button:disabled { opacity: 0.45; cursor: default; }
+
+.link {
+  padding: 2px 6px;
+  font: 500 11px/1.2 system-ui, sans-serif;
+  color: var(--sw-dim);
+  background: none;
+  border: 1px solid var(--sw-line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.link:hover { color: var(--sw-ink); }
+
+.onboard {
+  margin: 10px 0 0;
+  padding: 10px;
+  background: #f2efe6;
+  border: 1px solid var(--sw-line);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.onboard p { margin: 0 0 6px; }
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sw-line);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.foot {
+  margin-top: 10px;
+  color: var(--sw-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}

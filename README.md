@@ -51,6 +51,12 @@ produced no verdict that stands. An unbound capture is audited and excluded from
 AI Overviews results never enter a cross-product aggregate, because the default judge is a Google model, a
 refusal enforced in `rates.aggregate` rather than in a paragraph.
 
+**The popup.** Clicking the toolbar icon shows whether the audit server is running, in three states rather
+than two, since a server running without a judge is up and cannot produce a verdict. It also shows whether
+the current page's adapter has ever been checked against a real page, and what the last capture found,
+including whether that capture held the whole answer. Both actions can be driven from there, and the in-page
+buttons can be turned off for people who would rather not have an overlay on someone else's product.
+
 **Without the terminal.** `python3 -m sayswho.server --judge` opens a loopback-only audit server, and the
 extension's second button posts the capture to it and draws the result in a panel over the page. The gates
 and the span guard stay in Python: the panel's script posts JSON and renders what comes back, and a test
@@ -62,7 +68,7 @@ every capture bound to a frozen query and writes four files: the run record, the
 an interval on every rate, `RUN_LOG.md`, and a per-number trace table generated from the run rather than
 typed alongside it.
 
-396 tests, all offline except a node process for the parity check. Two of them pin failures rather than
+453 tests, all offline except a node process for the parity check. Two of them pin failures rather than
 fixes: an injection that dictates its own span defeats the guard, and a judge can quote a real but irrelevant
 sentence. Deleting either test would delete the finding. `BREAK_ATTEMPTS.md` writes both up.
 

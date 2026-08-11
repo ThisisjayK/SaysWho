@@ -45,6 +45,9 @@ SCORE_ALLOWLIST = (
 )
 
 SURFACE_FILES = [
+    "extension/src/popup.html",
+    "extension/src/popup.css",
+    "extension/src/popup.js",
     "extension/src/render.js",
     "extension/src/render.css",
     "extension/src/report.html",

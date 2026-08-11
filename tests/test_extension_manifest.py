@@ -27,6 +27,8 @@ def listed_files() -> list[str]:
     files = [MANIFEST["background"]["service_worker"]]
     for entry in MANIFEST.get("content_scripts", []):
         files += entry.get("js", []) + entry.get("css", [])
+    if MANIFEST.get("action", {}).get("default_popup"):
+        files.append(MANIFEST["action"]["default_popup"])
     return files
 
 
@@ -163,3 +165,107 @@ def test_the_panel_steps_the_controls_aside_instead_of_covering_them():
     assert "function moveDock" in audit
     assert 'document.getElementById("sayswho-dock")' in audit
     assert audit.count("moveDock(") >= 3, "opened, closed, and defined"
+
+
+# ---------------------------------------------------------------- the popup
+
+
+POPUP = EXTENSION / "src" / "popup.html"
+
+
+def popup_js() -> str:
+    return (EXTENSION / "src" / "popup.js").read_text()
+
+
+def test_the_toolbar_icon_opens_the_popup():
+    assert MANIFEST["action"]["default_popup"] == "src/popup.html"
+
+
+def test_the_old_click_handler_is_gone():
+    """Chrome does not fire `action.onClicked` when a popup is set. Leaving the handler would be dead code
+    that reads exactly like working code, which is the worst kind to leave behind."""
+    # Comments stripped: background.js explains why the handler is absent, and saying so is not doing it.
+    background = re.sub(
+        r"/\*.*?\*/", "", (EXTENSION / "src" / "background.js").read_text(), flags=re.S
+    )
+    background = re.sub(r"^\s*//.*$", "", background, flags=re.M)
+    assert "chrome.action.onClicked" not in background
+
+
+@pytest.mark.parametrize("asset", ["popup.css", "popup.js", "adapters.js"])
+def test_everything_the_popup_loads_exists(asset):
+    assert asset in POPUP.read_text()
+    assert (EXTENSION / "src" / asset).is_file()
+
+
+def test_the_popup_loads_adapters_before_the_code_that_calls_it():
+    html = POPUP.read_text()
+    assert html.index('src="adapters.js"') < html.index('src="popup.js"')
+
+
+STORAGE_KEYS = ["sayswho.showDock", "sayswho.lastCapture", "sayswho.firstRun"]
+
+
+@pytest.mark.parametrize("key", STORAGE_KEYS)
+def test_the_storage_keys_agree_across_the_three_files_that_use_them(key):
+    """Three files share these strings. A typo in one silently breaks a toggle rather than raising, so the
+    only thing that can catch it is a comparison like this one."""
+    users = {
+        "popup.js": popup_js(),
+        "background.js": (EXTENSION / "src" / "background.js").read_text(),
+        "content.js": content(),
+    }
+    writers = [name for name, source in users.items() if f'"{key}"' in source]
+    assert writers, f"{key} is not used by any file, so it is dead"
+    if key == "sayswho.showDock":
+        assert set(writers) == {"popup.js", "background.js", "content.js"}
+    if key == "sayswho.lastCapture":
+        assert set(writers) == {"popup.js", "background.js"}
+
+
+def test_the_popup_decides_nothing():
+    """Same rule as audit.js. It reads a health endpoint and sends two messages."""
+    source = popup_js()
+    for token in ("SUPPORTED", "NOT_FOUND_IN_SOURCE", "CONTRADICTED", "span_verified"):
+        assert token not in source
+
+
+def test_the_popup_talks_to_the_same_endpoint_the_server_listens_on():
+    from sayswho.server import HOST, PORT
+
+    assert re.search(r'ENDPOINT = "([^"]+)"', popup_js()).group(1) == f"http://{HOST}:{PORT}"
+
+
+def test_the_indicator_has_three_states_rather_than_two():
+    """A server running without a judge is up and cannot produce a verdict. Painting that green would
+    collapse "we checked" into "we could not check", which is the error this whole project is about."""
+    source = popup_js()
+    assert "Audit server not running" in source
+    assert "Running, no judge" in source
+    assert "Audit server running" in source
+    assert "if (!state.judge)" in source
+
+
+def test_an_unset_dock_preference_means_shown():
+    """A fresh profile has never opened the popup, and an extension that installs invisibly reads as broken."""
+    assert "!== false" in content()
+    assert "!== false" in popup_js()
+
+
+def test_the_dock_toggle_takes_effect_without_a_reload():
+    assert "chrome.storage.onChanged.addListener" in content()
+
+
+def test_the_popup_can_trigger_both_paths():
+    source = popup_js()
+    assert "sayswho:capture-now" in source
+    assert "sayswho:audit-now" in source
+    assert "sayswho:audit-now" in content(), "the page has to answer what the popup sends"
+
+
+def test_the_toast_is_mounted_even_when_the_dock_is_hidden():
+    """With the buttons hidden, the toast is the only feedback a capture happened at all."""
+    source = content()
+    mount = source[source.index("dock.appendChild(tip);"):]
+    assert "document.documentElement.appendChild(toast);" in mount
+    assert mount.index("appendChild(toast)") < mount.index("function mountDock")

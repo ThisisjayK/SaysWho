@@ -55,6 +55,9 @@ Do not use it for:
 Load the extension: `chrome://extensions`, developer mode on, "Load unpacked", pick the `extension/`
 directory. It runs on claude.ai, chatgpt.com, perplexity.ai and Google search result pages.
 
+Click the toolbar icon once. The popup tells you whether the audit server is running and whether this page
+is one SaysWho understands, which is faster than finding out by clicking Audit and waiting.
+
 ## 4. Capture the answer
 
 Ask your question in the product as you normally would. When the answer is finished, click the SaysWho

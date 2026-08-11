@@ -4,7 +4,19 @@ Manifest V3. It captures an answer, and it renders a finished audit. It does not
 
 ## What it does today
 
-Two round buttons sit in the bottom-right corner, side by side. Hovering either one names it.
+**The popup.** Clicking the toolbar icon opens a control surface: whether the audit server is running,
+whether this page is one SaysWho understands, what the last capture found, and buttons for both actions. It
+is deliberately not a result surface. A popup closes the moment focus leaves it and an audit is something
+you read, so results go to the panel on the page.
+
+The server indicator has three states, not two. Grey is not running, and capture still works. Amber is
+running without `--judge`, which will fetch every cited page and cannot say whether any of them supports
+anything. Green is running with a judge. Collapsing amber into green would be the same error as calling an
+unfetchable page low-confidence, and this project does not get to make that one.
+
+Two round buttons also sit in the bottom-right corner of the page, side by side. Hovering either one names
+it. If you would rather not have them over the product's UI, turn them off in the popup and drive both
+actions from there instead.
 
 **Capture** (the viewfinder). Reads the last answer out of the DOM, extracts the citation markers and their
 URLs, hashes the answer text, and downloads a capture JSON.

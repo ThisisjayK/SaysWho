@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="name">SaysWho</span>
+    <span class="version" id="version"></span>
+  </header>
+
+  <section class="onboard" id="onboard" hidden>
+    <p><strong>Two things to know.</strong></p>
+    <p>
+      <b>Capture</b> works right now and needs nothing running. It saves the answer and its citations so the
+      harness can audit them later.
+    </p>
+    <p>
+      <b>Audit</b> needs the local server, because the gates and the quoted-passage check are Python and
+      there is deliberately only one implementation of them.
+    </p>
+    <button type="button" class="link" id="onboard-done">got it</button>
+  </section>
+
+  <section class="block" id="server">
+    <div class="row">
+      <span class="dot" id="dot"></span>
+      <span class="state" id="server-state">checking...</span>
+    </div>
+    <p class="dim" id="server-detail"></p>
+    <div class="cmd" id="cmd-wrap" hidden>
+      <code id="cmd">python3 -m sayswho.server --judge</code>
+      <button type="button" class="link" id="copy">copy</button>
+    </div>
+  </section>
+
+  <section class="block" id="site">
+    <div class="row">
+      <span class="label">this page</span>
+      <span class="value" id="site-product">checking...</span>
+    </div>
+    <p class="dim" id="site-detail"></p>
+  </section>
+
+  <div class="actions">
+    <button type="button" id="capture">Capture answer</button>
+    <button type="button" id="audit">Audit this answer</button>
+  </div>
+  <p class="dim tight" id="action-note"></p>
+
+  <section class="block" id="last" hidden>
+    <div class="row">
+      <span class="label">last capture</span>
+      <span class="value" id="last-when"></span>
+    </div>
+    <p class="mono" id="last-detail"></p>
+    <p class="warn" id="last-warning" hidden></p>
+  </section>
+
+  <label class="toggle">
+    <input type="checkbox" id="show-dock" checked>
+    <span>Show the buttons on the page</span>
+  </label>
+
+  <p class="foot">
+    Results open in a panel on the page, not here: this window closes as soon as you click away, and an
+    audit is something you read.
+  </p>
+
+</div>
+<script src="adapters.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

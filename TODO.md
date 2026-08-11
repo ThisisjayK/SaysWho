@@ -122,8 +122,15 @@ for three of the four products have never been checked field by field against a 
       payload carries offsets into the answer text and mapping those onto a live DOM that re-renders as you
       scroll is separate work whose worst failure is a verdict beside the wrong sentence. The panel is next
       to the page rather than on it
-- [ ] Exercise the browser leg. The server is tested and the package is checked as far as it can be without
-      a browser, but whether the panel renders correctly on claude.ai has never been seen. **Mine to do**
+- [x] The popup, so clicking the extension shows what is useful instead of firing a capture blind. Server
+      state in three colours rather than two, since running-without-a-judge is up and cannot produce a
+      verdict. The current page's adapter and whether it has ever been checked. The last capture's summary,
+      which until now lived in a toast that disappeared. Both actions. And a toggle to hide the in-page
+      buttons, live, without a reload
+- [x] Draw the line the popup is built on: control surface, not result surface. A popup closes on blur, so
+      an audit could never have lived in it
+- [ ] Exercise the browser leg. The server, the popup states and the dock layout are all tested or rendered,
+      but none of it has been run inside a real extension on claude.ai. **Mine to do**
 - [x] Span display quality, as far as display can fix it. `report.span_focus` marks the sentence inside the
       span that bears on the claim, by content-word overlap, deterministically. The whole span still ships
       and still scrolls, because a shortened span is not evidence, so this says where to look rather than
