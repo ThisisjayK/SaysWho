@@ -283,7 +283,13 @@ def strip_for_gate_check(payload: dict) -> dict:
     values, so this exists for tests that walk the whole structure.
     """
     clone = json.loads(json.dumps(payload))
-    for claim in clone.get("claims", []):
-        for row in claim.get("sources", []):
+    # Tolerant of both shapes it gets handed: the report payload, whose `claims` is a list, and the CLI's
+    # run record, whose `claims` is the ClaimSet dict. Raising here would mean the gate is skipped in
+    # whichever surface got the shape wrong, which is the opposite of what a gate is for.
+    claims = clone.get("claims")
+    if isinstance(claims, dict):
+        claims = claims.get("claims", [])
+    for claim in claims or []:
+        for row in (claim.get("sources") or []) if isinstance(claim, dict) else []:
             row.pop("span", None)
     return clone

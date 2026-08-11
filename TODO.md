@@ -162,18 +162,19 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [x] Re-run the ChatGPT capture and confirm the PubMed source now survives as auditable. Done. PubMed came
       back `DRIFT_PAGE_CHANGED` at containment 0.6210, the same number that used to exclude it, and stayed
       auditable. Auditable sources went from 6 of 9 to 7 of 9
-- [ ] Bind captures to the frozen query set. Every capture so far carries `query_id: UNASSIGNED`, so nothing
-      ties a verdict back to the query that produced it
+- [x] Bind captures to the frozen query set. `sayswho/queryset.py` plus `tools/bind_capture.py`. An unbound
+      capture is still audited and its per-claim verdicts still stand; it is excluded from every aggregate,
+      because a rate has to be able to say what it is a rate over. Three refusals rather than one, since
+      unbound, added-after-the-freeze and never-heard-of-it need three different actions
 - [x] **Decide whether Google AI Overviews stays in the audited set.** It stays, reported per-product with
       the conflict stated, and `rates.aggregate` raises rather than folding it into a cross-product number.
       The refusal is in the code because a disclosure in a paragraph does not survive being copied into a
       slide. The clean fix, judging those captures with the Anthropic client, needs a second gold set under
       G4 and was costed and not taken. §7 rewritten
-- [ ] **Fix the unit G1 skips in.** A table arrives from the DOM as one text block, so one skip decision
-      discarded about ninety checkable cells while a heading also counts as one. Split tables into rows
-      before the splitter sees them, or report the skip rate in a unit that is not block-based. Until then
-      the skip rate does not measure the share of the answer that went unchecked, and the writeup has to say
-      so. `FINDINGS.md` item 9
+- [x] **Fix the unit G1 skips in.** Taken the second way: `sayswho/skips.py` counts skipped content in
+      table rows, list items and sentences, and both rates are printed together, always. The answer text is
+      hashed and verbatim, so re-splitting it before the splitter sees it was never available. The gap
+      between the two numbers is the finding, so it is shown rather than closed. `FINDINGS.md` item 9
 - [x] **Pin the gold set to a stored split.** `sayswho/splits.py`, plus `--split` and `--save-split`. A
       stored split carries the `answer_sha256` it came from, the claim prompt version and a `split_sha256`
       over its own claims, and binding it to a different answer, a different prompt version or an edited
@@ -182,11 +183,12 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       silently relabelled rather than merely lost claims. G4's tuple is now judge, prompt version and split
 - [x] Measure the spread rather than guessing at it. `tools/split_spread.py`, Phase 1 only, five runs for
       nothing on the free tier. claims 15 to 21, skipped 104 to 156, uncited 0 to 9
-- [ ] Every published rate derived from a split states how many splits it is over. `uncited_claim_count`
-      especially: §7 offers it as the evidence about omission blindness and it ranged from 0 to 9 on one
-      answer
-- [ ] Count the uncited factual lines currently landing in the skip list, so `uncited_claim_count` is
-      reported as a floor with a measured gap rather than a floor with an unknown one
+- [x] Every published rate derived from a split states how many splits it is over. `Rate.splits` is a field
+      rather than a convention, and `Rate.render` is the only formatter, so no surface can print a bare
+      percentage without it
+- [x] Count the uncited factual lines currently landing in the skip list. `skips.uncited_floor` reports the
+      published count and, beside it, the skipped units carrying a number or two proper nouns. Still a
+      floor, and now with a measured distance under it instead of an unknown one
 - [x] **Stop publishing extraction failures as citation failures.** Every way the tool fails to read a page
       came out as `NOT_FOUND_IN_SOURCE`, the one verdict with no span and therefore no G3 check, and the one
       that accuses the product. Four stdlib mitigations: `SOURCE_NOT_HTML` with a `%PDF-` sniff, SVG and
@@ -241,11 +243,19 @@ than only on the test built to trip it. `FINDINGS.md` item 10.
 - [x] Rates carry what §5 promises: n, a Wilson interval, the unit, and how many splits they are over. The
       interval field is `interval_95` rather than `confidence_interval`, because the no-confidence-number
       gate walks keys and it is not getting an exception list
-- [ ] Test asserting no confidence number appears anywhere in any output surface
-- [ ] Headless harness runnable end to end over the frozen query set
-- [ ] `freeze_queries.py check` wired to run before every capture, so a tuned set fails the run. Partly
-      done: `tools/watch_captures.py` refuses to audit anything when the check fails, and records the
-      refusal. The interactive `sayswho.cli` path still does not run it
+- [x] Test asserting no confidence number appears anywhere in any output surface. Two checks per surface,
+      because either alone has a hole: the key gate over every structured payload, and a vocabulary scan of
+      every rendered surface. The word "score" survives in four sentences, all of which refuse to produce
+      one, and the allowlist is in the test so a fifth use has to be added on purpose
+- [x] Headless harness runnable end to end over the frozen query set. `sayswho/harness.py` and
+      `tools/run_stratum.py`, writing four artefacts: the run record, the metric readout, `RUN_LOG.md` and
+      the per-number trace table. Run today it prints an honest nothing and says which kind of nothing
+- [x] One pipeline, not two. `sayswho/pipeline.py` holds the loops and both the CLI and the harness drive
+      it, so the harness could not become a second orchestration that quietly disagrees about which sources
+      reach the judge
+- [x] `freeze_queries.py check` wired to run before every capture, so a tuned set fails the run. Now on all
+      three paths: the watcher, the interactive `sayswho.cli`, and the harness. `--skip-freeze-check` exists
+      for captures outside the frozen set and the run says so in its output
 
 Done means pytest with each gate failing on its target bug, not merely present.
 
@@ -281,10 +291,13 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] Break attempt 5, prompt injection through a fetched page. Report at the resolution the guard actually
       provides. An injected page can still supply a real on-page span, so the guard rules out a verdict with
       no textual basis, which is not the same as defeating injection
-- [ ] Break attempt 6, denominator contamination. Force unauditable claims into the denominator and confirm
-      the contract check fires
-- [ ] Parity check: the extension and the headless harness produce identical verdicts on identical inputs,
-      verified by test. If the interface disagrees with the audited pipeline, the interface is lying
+- [x] Break attempt 6, denominator contamination. Forced at both levels, sources and claim-source pairs,
+      and both raise. A third variant added while writing it: a voided verdict counted as standing, which
+      is the same contamination arriving through the judge rather than through the fetcher
+- [x] Parity check: the extension and the headless harness produce identical verdicts on identical inputs,
+      verified by test. `tests/test_parity.py` runs the real `render.js` in node over a payload the real
+      Python built and compares what appeared on screen, state by state, against what Python decided. Not a
+      test that the file contains no verdict logic, which would be a test about the shape of a file
 
 ## Day 7: the core is done
 
