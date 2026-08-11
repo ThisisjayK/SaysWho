@@ -291,9 +291,11 @@
       working(auditButton, null);
     }
 
-    // The audit did not happen, so nothing has stored this capture. Download it now: the promise that a
-    // capture is never lost to the server being down is kept here rather than by downloading every time.
-    if (!payload || payload.error) {
+    // Download only when nothing else has stored this capture, which is a different question from whether
+    // the audit succeeded. An audit can fail after the server has already written the capture to disk, and
+    // that was downloading a second copy: the server saves before it fetches anything, so a judge that
+    // could not be built still leaves the file. `saved_to` is the server saying where it put it.
+    if (!payload || !payload.saved_to) {
       chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record, download: true });
     }
   }

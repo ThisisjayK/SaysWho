@@ -149,6 +149,10 @@ class AuditService:
                     kind = "import" if isinstance(exc, ImportError) else "key"
                     return {
                         "error": "JUDGE_UNAVAILABLE",
+                        # Every answer sent after the capture was written says where it went. The extension
+                        # downloads a copy only when nothing else has stored it, and without this field an
+                        # error looked identical to a capture that was never saved.
+                        "saved_to": saved,
                         "detail": f"{exc}",
                         "note": JUDGE_ADVICE[kind]
                         + "\n\nThe capture was saved and the sources were fetched. Nothing here is a "

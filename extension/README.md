@@ -34,9 +34,12 @@ than surfacing as a traceback two minutes into the first audit while the popup s
 
 An audit does not download anything. The server writes the capture to the repo's `captures/` directory
 before it starts fetching, which is where `tools/run_stratum.py` and `tools/bind_capture.py` read captures
-from, so there is one copy and it is in the right place. If the audit does not happen, because the server is
-down or the request failed, the capture is downloaded after all: the promise that a capture is never lost is
-kept there rather than by downloading every single time.
+from, so there is one copy and it is in the right place.
+
+The browser downloads a copy only when nothing else has stored it, which is a narrower question than whether
+the audit worked. Every answer the server sends after writing the file carries `saved_to`, so an audit that
+fails on the judge, after the capture is already on disk, does not produce a second copy. Only an audit that
+never reached the server, or was refused before the save, downloads.
 
 A server that is not running is reported as a server that is not running, never as an audit that found
 nothing.

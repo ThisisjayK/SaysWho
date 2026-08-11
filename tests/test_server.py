@@ -420,3 +420,37 @@ def test_a_judge_that_breaks_while_running_is_reported_as_a_fact_about_this_mach
     assert payload["error"] == "JUDGE_UNAVAILABLE"
     assert "Nothing here is a finding about the answer" in payload["note"]
     assert list((tmp_path / "captures").glob("*.json")), "the capture was still saved"
+
+
+def test_every_answer_sent_after_the_capture_is_written_says_where_it_went(tmp_path, server, monkeypatch):
+    """The extension downloads a copy only when nothing else has stored the capture. Without `saved_to` on
+    the error paths, a failure after the save looks exactly like a capture that was never saved, and the
+    browser writes a second copy to ~/Downloads."""
+    import sayswho.gemini as gemini
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        ImportError("No module named 'google'")
+    ))
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=True, drift=False, captures_dir=tmp_path / "captures"
+    )
+    payload = service.audit(capture_payload(server))
+
+    written = sorted((tmp_path / "captures").glob("*.json"))
+    assert len(written) == 1
+    assert payload["error"] == "JUDGE_UNAVAILABLE"
+    assert payload["saved_to"] == str(written[0]), "the error has to carry the path too"
+
+
+def test_an_answer_refused_before_the_save_reports_no_path(tmp_path, server):
+    """G0 halts before anything is written, so there is nothing to point at and the browser should keep
+    its copy."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+    )
+    payload = capture_payload(server)
+    payload["citations"] = []
+    result = service.audit(payload)
+
+    assert result["error"] == "NO_CITATIONS"
+    assert "saved_to" not in result

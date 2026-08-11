@@ -107,12 +107,12 @@ def test_an_audit_does_not_also_download_a_copy():
     assert "capture({ download: false })" in audit
 
 
-def test_a_failed_audit_downloads_the_capture_after_all():
-    """The promise is that a capture is never lost to the server being down. It is now kept here rather
-    than by downloading every single time."""
+def test_an_audit_that_stored_nothing_downloads_the_capture_after_all():
+    """The promise is that a capture is never lost to the server being down. It is kept here rather than by
+    downloading every single time."""
     source = (EXTENSION / "src" / "content.js").read_text()
     audit = source[source.index("async function auditHere"):]
-    assert "if (!payload || payload.error)" in audit
+    assert "if (!payload || !payload.saved_to)" in audit
     assert audit.index("saysWhoAudit") < audit.index("download: true")
 
 
@@ -493,3 +493,13 @@ def test_the_url_helper_reads_an_attribute_when_there_is_no_href():
     assert plain == ""
     assert relative == "", "a relative value is not a citation URL"
     assert unconfigured == "", "an adapter that declares no attribute reads none"
+
+
+def test_the_download_depends_on_whether_the_capture_was_stored_not_on_success():
+    """An audit can fail after the server has already written the capture: the server saves before it
+    fetches anything, so a judge that cannot be built still leaves the file on disk. Keying the download
+    off `payload.error` downloaded a second copy of exactly that case."""
+    source = content()
+    audit = source[source.index("async function auditHere"):]
+    assert "if (!payload || !payload.saved_to)" in audit
+    assert "payload.error" not in audit, "success is not the question; storage is"
