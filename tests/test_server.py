@@ -8,6 +8,7 @@ able to make it fetch.
 from __future__ import annotations
 
 import json
+import pathlib
 import threading
 import urllib.error
 import urllib.request
@@ -523,3 +524,67 @@ def test_a_port_held_by_something_else_gets_different_advice(tmp_path):
     assert "Something else is already listening" in advice
     assert "--port" in advice
     assert "the extension has to change with it" in advice
+
+
+# ---------------------------------------------------------------- the audit, on disk
+
+
+def test_every_audit_is_written_as_html_and_json(tmp_path, server):
+    """The panel used to be the only copy: an audit rendered and closing the panel was the end of it."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False,
+        captures_dir=tmp_path / "captures", reports_dir=tmp_path / "reports",
+    )
+    payload = service.audit(capture_payload(server))
+
+    html = tmp_path / "reports" / pathlib.Path(payload["report_saved_to"]).name
+    js = tmp_path / "reports" / pathlib.Path(payload["report_json"]).name
+    assert html.exists() and js.exists()
+    assert html.suffix == ".html" and js.suffix == ".json"
+    assert "saysWhoRender" in html.read_text(), "the standalone report embeds the renderer"
+    assert json.loads(js.read_text())["answer"] == ANSWER
+
+
+def test_the_saved_report_opens_without_the_extension_or_the_server(tmp_path, server):
+    """That is what a writeup needs, and what someone marking this needs."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False,
+        captures_dir=tmp_path / "captures", reports_dir=tmp_path / "reports",
+    )
+    payload = service.audit(capture_payload(server))
+    html = pathlib.Path(payload["report_saved_to"]).read_text()
+
+    assert html.startswith("<!doctype html>")
+    assert "<style>" in html, "the stylesheet is embedded, not linked"
+    # Nothing external: no linked stylesheet and no sourced script. A cited URL appearing in the payload is
+    # data, not a dependency, which is why this checks for references rather than for a hostname.
+    assert "<link" not in html
+    assert "<script src=" not in html
+
+
+def test_two_audits_of_one_capture_are_two_reports(tmp_path, server):
+    """Re-running an audit next week is a different record: the pages may have changed."""
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False,
+        captures_dir=tmp_path / "captures", reports_dir=tmp_path / "reports",
+    )
+    service.audit(capture_payload(server))
+    service.audit(capture_payload(server))
+    assert len(sorted((tmp_path / "reports").glob("*.html"))) == 2
+
+
+def test_the_no_confidence_gate_runs_before_the_report_is_written(tmp_path, server, monkeypatch):
+    """A file on disk must not be able to carry something the wire refuses."""
+    import sayswho.server as server_module
+
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=False, drift=False,
+        captures_dir=tmp_path / "captures", reports_dir=tmp_path / "reports",
+    )
+    monkeypatch.setattr(
+        server_module, "assert_no_confidence_number",
+        lambda payload: (_ for _ in ()).throw(AssertionError("confidence-like field")),
+    )
+    with pytest.raises(AssertionError):
+        service.audit(capture_payload(server))
+    assert not list((tmp_path / "reports").glob("*")), "nothing was written"

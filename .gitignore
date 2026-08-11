@@ -26,6 +26,11 @@ pages/
 # the professional stratum is real work. They are inputs to the harness, not published artifacts.
 captures/
 
+# audits written by the local server. They embed the answer text and quoted spans from the pages fetched,
+# which DATA_CONTRACT.md §9 keeps local. The writeup publishes verdicts and spans it has chosen, not a
+# directory of everything ever run.
+reports/
+
 # fetched pages. DATA_CONTRACT.md §9: the repo publishes verdicts and quoted spans, not copies of the
 # pages it fetched.
 .cache/

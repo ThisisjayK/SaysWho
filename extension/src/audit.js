@@ -184,10 +184,13 @@
       body.insertBefore(note, body.firstChild);
     }
 
-    if (payload.saved_to) {
+    if (payload.saved_to || payload.report_saved_to) {
       const where = document.createElement("p");
       where.className = "sw-panel-note";
-      where.textContent = `capture saved to ${payload.saved_to}`;
+      where.textContent = [
+        payload.report_saved_to ? `audit saved to ${payload.report_saved_to}` : "",
+        payload.saved_to ? `capture saved to ${payload.saved_to}` : "",
+      ].filter(Boolean).join("\n");
       body.appendChild(where);
     }
     return payload;

@@ -76,8 +76,9 @@ class AuditService:
 
     def __init__(self, cache_dir: Path, judge: bool = False, provider: str | None = None,
                  budget: int = 2_000_000, drift: bool = True,
-                 captures_dir: Path | None = None) -> None:
+                 captures_dir: Path | None = None, reports_dir: Path | None = None) -> None:
         self.captures_dir = Path(captures_dir) if captures_dir else Path("captures")
+        self.reports_dir = Path(reports_dir) if reports_dir else Path("reports")
         self.fetcher = Fetcher(FetchCache(cache_dir))
         self.checker = DriftChecker(self.fetcher) if drift else None
         self.judge = judge
@@ -108,6 +109,31 @@ class AuditService:
             n += 1
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         return str(path)
+
+    def save_report(self, report, capture: Capture) -> tuple[str, str]:
+        """Write the audit beside the capture it came from.
+
+        The panel used to be the only copy: an audit rendered, and closing the panel was the end of it.
+        That is wrong for the same reason the capture is saved rather than downloaded. An audit is a record
+        of what the sources said at a particular minute, several of the pages will have changed by next
+        week, and the archived comparison that would let you notice is itself part of the record.
+
+        Two files. The HTML opens in any browser with no extension and no server, which is what a writeup
+        or a marker needs. The JSON is what the extension's report viewer and the parity check read.
+        """
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
+        stamp = capture.captured_at.replace(":", "").replace("-", "").replace("+", "")
+        base = f"report-{capture.product}-{stamp}"
+        html = self.reports_dir / f"{base}.html"
+        n = 1
+        while html.exists():
+            html = self.reports_dir / f"{base}-{n}.html"
+            n += 1
+        json_path = html.with_suffix(".json")
+
+        report.save(html)
+        json_path.write_text(report.to_json(), encoding="utf-8")
+        return str(html), str(json_path)
 
     def audit(self, payload: dict) -> dict:
         capture = Capture.from_dict(payload)
@@ -181,8 +207,14 @@ class AuditService:
         report.payload["judged"] = self.judge
         report.payload["saved_to"] = saved
 
-        # The gate runs over exactly what is about to be sent, not over a sample of it.
+        # The gate runs over exactly what is about to be sent, not over a sample of it. It runs before the
+        # report is written as well as before it is returned, so a file on disk cannot carry something the
+        # wire refuses.
         assert_no_confidence_number(strip_for_gate_check(report.payload))
+
+        html, json_path = self.save_report(report, capture)
+        report.payload["report_saved_to"] = html
+        report.payload["report_json"] = json_path
         return report.payload
 
 
@@ -369,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--captures", type=Path, default=Path("captures"),
                         help="where posted captures are written. This is where tools/run_stratum.py and "
                              "tools/bind_capture.py read them from")
+    parser.add_argument("--reports", type=Path, default=Path("reports"),
+                        help="where each audit is written, as a standalone HTML file and a JSON payload")
     parser.add_argument("--judge", action="store_true",
                         help="run Phase 1 and Phase 3. Needs a key in this shell's environment")
     parser.add_argument("--judge-provider", choices=["gemini", "anthropic"], default=None)
@@ -398,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
     service = AuditService(
         cache_dir=args.cache, judge=args.judge, provider=args.judge_provider,
         budget=args.budget, drift=not args.no_drift, captures_dir=args.captures,
+        reports_dir=args.reports,
     )
     try:
         httpd = serve(service, HOST, args.port)
@@ -412,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"SaysWho audit server on http://{HOST}:{args.port}")
     print(f"  judge      {'on' if args.judge else 'off, fetch and liveness only'}")
     print(f"  captures   {args.captures}/  (posted captures are written here, never overwritten)")
+    print(f"  reports    {args.reports}/   (every audit, as HTML you can open and JSON the viewer reads)")
     print(f"  origins    {', '.join(sorted(ALLOWED_ORIGINS))}")
     print("  bound to 127.0.0.1 only. Stop it when you are done; it is not something to leave running.")
     print()

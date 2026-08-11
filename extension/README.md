@@ -44,6 +44,11 @@ An audit does not download anything. The server writes the capture to the repo's
 before it starts fetching, which is where `tools/run_stratum.py` and `tools/bind_capture.py` read captures
 from, so there is one copy and it is in the right place.
 
+**Where the audit goes.** The panel is a view, not the copy. Every audit is written to `reports/` as a
+standalone HTML file you can open in any browser with no extension and no server running, plus the JSON the
+report viewer reads. The panel prints both paths at the bottom. The capture that produced it is in
+`captures/`, under a matching timestamp.
+
 The browser downloads a copy only when nothing else has stored it, which is a narrower question than whether
 the audit worked. Every answer the server sends after writing the file carries `saved_to`, so an audit that
 fails on the judge, after the capture is already on disk, does not produce a second copy. Only an audit that

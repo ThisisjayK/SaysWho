@@ -137,6 +137,16 @@ record, the metric readout, `RUN_LOG.md` and the per-number trace table.
 Add `--save-split runs/PR-07.split.json` if you plan to label a gold set. Phase 1 is a model call and does
 not return the same split twice, so a stored split is what makes a label mean anything later.
 
+Both paths are printed at the bottom of the panel, and both are relative to wherever the server was
+started:
+
+| Where | What |
+|---|---|
+| `reports/report-<product>-<stamp>.html` | The audit. Opens in any browser with nothing running |
+| `reports/report-<product>-<stamp>.json` | The same audit as data, for the extension's viewer |
+| `captures/capture-<product>-<stamp>.json` | The answer and its citations, hashed. The harness reads these |
+| `.cache/fetch/` | Every page that was fetched, so a rerun audits the same bytes |
+
 ## 7. Read the output
 
 Open `report.html`, or hover a marked sentence in the extension's viewer. Both go through the same renderer,
