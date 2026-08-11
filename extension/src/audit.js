@@ -51,6 +51,9 @@
 
     node = document.createElement("div");
     node.id = PANEL_ID;
+    node.className = "sw-panel";
+    // Structure only. Colour, border and the close control are in render.css, which is the only place a
+    // dark-mode variant can live, and this panel sits on products that are usually dark.
     node.style.cssText = [
       "position:fixed",
       "top:0",
@@ -62,22 +65,48 @@
       // A hard stop. The renderer wraps long strings itself, and this is the backstop that keeps a missed
       // one from giving the whole page a horizontal scrollbar.
       "overflow-x:hidden",
-      "background:#faf9f6",
-      "border-left:1px solid #111",
-      "box-shadow:-6px 0 24px rgba(0,0,0,0.12)",
-      "padding:16px 18px 40px",
+      // Thin. The panel's own padding sits between its background and the rendered content's, so anything
+      // generous here reads as a wide frame around the audit rather than as breathing room.
+      "padding:8px 10px 28px",
     ].join(";");
 
-    const close = document.createElement("button");
-    close.type = "button";
-    close.textContent = "close";
-    close.style.cssText =
-      "position:sticky;top:0;float:right;font:500 12px system-ui,sans-serif;cursor:pointer;" +
-      "background:#f5f3ee;border:1px solid #111;border-radius:6px;padding:4px 8px";
-    close.addEventListener("click", () => {
+    function dismiss() {
       node.remove();
       moveDock(false);
+      document.removeEventListener("keydown", onKey);
+    }
+
+    function onKey(event) {
+      if (event.key === "Escape") dismiss();
+    }
+
+    // An icon, not the word "close": the word was a light pill inheriting the host page's white text, so on
+    // claude.ai it was white on near-white. Escape works too, which is what a panel is expected to do.
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "sw-panel-close";
+    close.title = "Close the audit panel (Esc)";
+    close.setAttribute("aria-label", "Close the audit panel");
+
+    const NS = "http://www.w3.org/2000/svg";
+    const cross = document.createElementNS(NS, "svg");
+    cross.setAttribute("viewBox", "0 0 24 24");
+    cross.setAttribute("width", "14");
+    cross.setAttribute("height", "14");
+    cross.setAttribute("fill", "none");
+    cross.setAttribute("stroke", "currentColor");
+    cross.setAttribute("stroke-width", "2");
+    cross.setAttribute("stroke-linecap", "round");
+    cross.setAttribute("aria-hidden", "true");
+    ["M6 6 18 18", "M18 6 6 18"].forEach((d) => {
+      const line = document.createElementNS(NS, "path");
+      line.setAttribute("d", d);
+      cross.appendChild(line);
     });
+    close.appendChild(cross);
+
+    close.addEventListener("click", dismiss);
+    document.addEventListener("keydown", onKey);
     node.appendChild(close);
 
     const body = document.createElement("div");

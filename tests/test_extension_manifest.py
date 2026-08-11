@@ -334,3 +334,65 @@ def test_the_no_judge_warning_comes_before_the_counts():
     audit = (EXTENSION / "src" / "audit.js").read_text()
     assert "body.insertBefore(note, body.firstChild)" in audit
     assert "not because nothing checked out" in audit
+
+
+# ---------------------------------------------------------------- the panel's own chrome
+
+
+def audit_js() -> str:
+    return (EXTENSION / "src" / "audit.js").read_text()
+
+
+def test_the_close_control_is_an_icon_with_a_name():
+    """The word "close" was a light pill inheriting the host page's text colour, so on claude.ai it was
+    white on near-white."""
+    source = audit_js()
+    assert 'close.textContent = "close"' not in source
+    assert 'close.className = "sw-panel-close"' in source
+    assert 'close.setAttribute("aria-label", "Close the audit panel")' in source
+    assert "Close the audit panel (Esc)" in source
+    assert "createElementNS" in source, "the icon is built, not written, for the same Trusted Types reason"
+
+
+def test_every_injected_control_sets_both_a_colour_and_a_background():
+    """The rule the close button broke. A background with no colour inherits whatever the product uses,
+    and half the products this runs on are dark."""
+    css = (EXTENSION / "src" / "render.css").read_text()
+    block = css[css.index(".sw-panel-close {"): css.index(".sw-panel-close:hover")]
+    assert "color:" in block and "background:" in block
+
+    content_js = content()
+    for name in ("roundButton", "const tip ="):
+        chunk = content_js[content_js.index(name): content_js.index(name) + 1200]
+        assert "color:" in chunk and "background:" in chunk, f"{name} sets one colour and not the other"
+
+
+def test_the_panel_chrome_has_a_dark_variant():
+    """It sits on claude.ai and chatgpt.com, which are dark by default."""
+    css = (EXTENSION / "src" / "render.css").read_text()
+    dark = css[css.index("@media (prefers-color-scheme: dark)"):]
+    assert ".sw-panel {" in dark
+    assert ".sw-panel-close {" in dark
+
+
+def test_the_panel_frame_is_thin():
+    """The panel's padding sits between its background and the content's, so anything generous reads as a
+    wide border around the audit rather than as breathing room."""
+    padding = re.search(r'"padding:([^"]+)"', audit_js()).group(1)
+    values = [int(v.replace("px", "")) for v in padding.split()]
+    assert max(values[:2]) <= 10, f"the frame is {padding}, which shows as a border"
+
+
+def test_the_panel_closes_on_escape():
+    source = audit_js()
+    assert 'event.key === "Escape"' in source
+    assert 'document.addEventListener("keydown", onKey)' in source
+    assert 'document.removeEventListener("keydown", onKey)' in source, "or every audit leaves a listener"
+
+
+def test_the_close_control_cannot_be_painted_over():
+    """It used to be a sticky float, and the rendered content's own backgrounds covered it."""
+    css = (EXTENSION / "src" / "render.css").read_text()
+    block = css[css.index(".sw-panel-close {"): css.index(".sw-panel-close:hover")]
+    assert "position: fixed" in block
+    assert "z-index: 2147483647" in block

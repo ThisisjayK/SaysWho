@@ -195,6 +195,44 @@
 
 .sw-foot { margin-top: 34px; color: var(--sw-dim); font-size: 12px; border-top: 1px solid var(--sw-line); padding-top: 12px; }
 
+/* ---- the in-page panel's own chrome ---- */
+
+/* The panel and its close control live here rather than in inline styles for one specific reason: an
+ * injected control that sets a background and no colour inherits the host page's text colour. The close
+ * button did exactly that and came out white on near-white against claude.ai's dark theme. Both colours,
+ * always, and a stylesheet is the only place a dark-mode variant can live. */
+.sw-panel {
+  background: #faf9f5;
+  border-left: 1px solid #d8d4c8;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+}
+
+.sw-panel-close {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 2147483647;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #14140f;
+  background: #f0ede5;
+  border: 1px solid #14140f;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.sw-panel-close:hover { background: #fff; }
+
+@media (prefers-color-scheme: dark) {
+  .sw-panel { background: #17171a; border-left-color: #3a3a40; box-shadow: -6px 0 24px rgba(0, 0, 0, 0.5); }
+  .sw-panel-close { color: #eeece4; background: #2a2a30; border-color: #6c6a64; }
+  .sw-panel-close:hover { background: #3a3a42; }
+}
+
 @media (prefers-color-scheme: dark) {
   .sw { --sw-ink: #eeece4; --sw-paper: #17171a; --sw-line: #3a3a40; --sw-dim: #a09c92; }
   .sw-answer, .sw-card, .sw-list, .sw-banner { background: #1e1e22; }
