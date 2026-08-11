@@ -9,6 +9,13 @@ reports it either way.
 
 ## Where things actually stand
 
+Day 5 of ten. Days 2, 3, 4 and 6 are done; days 1, 5 and 7 are blocked on the same thing.
+
+**Everything still open is either mine to do by hand or waits on something that is.** The professional
+stratum has to be transcribed out of my own AI history and scrubbed, and it is the input to the gold set,
+the honest run and every published number. Items below marked **mine to do** are the ones no amount of
+building moves forward.
+
 Day 1, partially done.
 
 - [x] Consumer stratum written, 24 questions across four domains, each with a cost of error
@@ -40,12 +47,14 @@ Day 1, partially done.
 - [x] Write down the model call metering and logging policy before any calls are made
 - [x] `SOURCE_ROBOTS_EXCLUDED` added to the G2 outcome table in `SCOPE.md` §3. Writing the contract surfaced
       it: unreachable means we tried and could not, robots-excluded means we chose not to try
-- [ ] Implement the contract in the fetch layer on day 2, and write the tests that prove the enforced half of
-      §10 is actually enforced rather than merely written down
+- [x] Implement the contract in the fetch layer, and write the tests that prove the enforced half of §10 is
+      actually enforced rather than merely written down. `tests/test_fetch.py` runs against a real local HTTP
+      server, so the politeness rules are asserted on what went over the wire
 
 ## Day 2: capture and fetch
 
-Python side done, browser side not started.
+Python side done. Browser side captures, and now audits in place through the local server, but the selectors
+for three of the four products have never been checked field by field against a real page.
 
 - [x] Fetch layer implementing the data contract. `sayswho/fetch.py`, stdlib only
 - [x] Phase 0 gate G0: zero inline citations returns `NO_CITATIONS` and halts. An uncited answer is a
@@ -86,10 +95,11 @@ Python side done, browser side not started.
       nothing about the other
 - [x] Parity check demonstrated on a real page. The extension's JS extraction and the Python extraction from
       the stored markup agree on container and citations
-- [ ] Claude `.font-claude-response` verified. The chat path has never been exercised
-- [ ] ChatGPT selectors verified. The capture works but has not been checked field by field
+- [ ] Claude `.font-claude-response` verified. The chat path has never been exercised. **Mine to do:** it needs a real answer on a real page
+- [ ] ChatGPT selectors verified. The capture works but has not been checked field by field. **Mine to do**
 - [ ] Perplexity: four source chips carry no anchor at all, so roughly a third of its citations are not in
-      the DOM as links. Needs a probe of what those chips actually are before the adapter can be trusted
+      the DOM as links. Needs a probe of what those chips actually are before the adapter can be trusted.
+      **Mine to do**
 - [x] Auto-scroll before capture, and `rendered_chars` against `dom_chars` so unrendered text is reported
       rather than silently missing
 - [x] `extension_version` stamped into every capture, so a stale content script announces itself
@@ -98,7 +108,7 @@ Python side done, browser side not started.
       cannot arrive together and be mistaken for each other
 - [x] Stored pages gitignored. A full claude.ai page carries the sidebar and therefore the titles of every
       other conversation
-- [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk
+- [ ] Google AI Overviews adapter verified through the same code path, no separate asterisk. **Mine to do**
 - [x] Remove the terminal step without running anything all day. `tools/install_watcher.sh` installs a
       launchd agent using `WatchPaths`, so the job starts on a change to the capture directory and exits
       when its queue is empty. No daemon, no polling, no port. The key is sourced from the shell profile
@@ -291,7 +301,7 @@ The machinery is built and tested. What is left on this list is the labelling it
       if any blind label postdates the run it is being compared against
 - [x] Per-class precision and recall, plus Cohen's kappa with its confidence interval. Each class carries
       its own n, and perfect agreement on a single class reports no interval rather than a flattering one
-- [ ] Try to recruit a classmate to double-label 10 to 15 claims. If nobody is available, say so plainly and
+- [ ] Try to recruit a classmate to double-label 10 to 15 claims. **Mine to do.** If nobody is available, say so plainly and
       treat my labels as a single-rater ceiling rather than ground truth
 
 ## Day 6: break attempts and parity
@@ -310,7 +320,9 @@ The machinery is built and tested. What is left on this list is the labelling it
 
 ## Day 7: the core is done
 
-- [ ] Honest run over the frozen professional stratum, terminal transcript pasted
+- [ ] Honest run over the frozen professional stratum, terminal transcript pasted. The command is
+      `python3 tools/run_stratum.py --captures captures/ --judge --goldset <set> --out runs/day7`, and it
+      writes the transcript, the readout, `RUN_LOG.md` and the trace table. **Blocked on the stratum**
 - [ ] Metric readout: citation support rate, unauditable rate, judge-fabricated-span rate, judge-human
       agreement, source drift rate. Every one with its n and a confidence interval
 - [ ] Label every rate as single-stratum. Not a rate for AI citations generally
@@ -386,14 +398,15 @@ The machinery is built and tested. What is left on this list is the labelling it
       honesty gate output
 - [ ] The honest run, 35 points. Terminal output, plausibility audit, the two core break attempts, metric
       readout, §7 limitations
-- [ ] GitHub PR, 25 points. `contrib/jayanth-says-who` branch with a maintainer-ready description. Confirm
-      which repo this targets before writing it
+- [ ] GitHub PR, 25 points. `contrib/jayanth-says-who` branch with a maintainer-ready description.
+      **Mine to do first:** confirm which repo this targets. Nothing else about it can be written until
+      that is known, since a maintainer-ready description is addressed to a specific maintainer
 - [x] Portfolio piece, 35 points: the case study. `CASE_STUDY.md`, for a technical reader, with the four
       load-bearing decisions and what each cost. The "what I would do differently" section is longer than
       the results section, which is the accurate shape on day 5
 - [ ] Portfolio piece, the other half: an extension a reader can install in about thirty seconds. The
       install works today; the thirty-second claim needs someone who is not me to try it
-- [ ] Explainer video, 20 points. Three to six minutes, one uncut segment showing a real answer marked live,
+- [ ] Explainer video, 20 points. **Mine to do.** Three to six minutes, one uncut segment showing a real answer marked live,
       including a claim it refuses to score
 - [ ] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named, the §5a failure condition
       declared before the data existed, the §0a status table

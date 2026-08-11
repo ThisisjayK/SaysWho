@@ -38,12 +38,12 @@ Queries that survived scrubbing. The redactions are summarized here and repeated
 
 Reasons use one of these codes:
 
-- `UNSCRUBBABLE` — the identifying detail was the question. Removing it left a generic question I would not
+- `UNSCRUBBABLE`: the identifying detail was the question. Removing it left a generic question I would not
   actually have asked.
-- `NO_CITATIONS_EXPECTED` — a question the tools answer without citing anything, so it produces no claim to
+- `NO_CITATIONS_EXPECTED`: a question the tools answer without citing anything, so it produces no claim to
   audit. Not a failure of the query, just out of scope for a citation auditor.
-- `DUPLICATE` — substantively the same question as one already kept.
-- `THIRD_PARTY_DATA` — the question contained information belonging to someone other than me. Dropped
+- `DUPLICATE`: substantively the same question as one already kept.
+- `THIRD_PARTY_DATA`: the question contained information belonging to someone other than me. Dropped
   regardless of whether scrubbing was technically possible.
 
 ## Note on what this log cannot prove
