@@ -12,8 +12,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from sayswho.crossref import (
     CITATION_AMBIGUOUS,
     CITATION_LOOKUP_FAILED,

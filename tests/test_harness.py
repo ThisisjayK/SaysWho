@@ -12,7 +12,6 @@ import json
 
 import pytest
 
-
 from sayswho.harness import readout, run_stratum, save, trace_table
 from sayswho.judge import NOT_FOUND_IN_SOURCE, SUPPORTED
 from sayswho.records import Capture, Citation
