@@ -8,10 +8,21 @@ Manifest V3. It captures an answer, and it renders a finished audit. It does not
 reads the last answer out of the DOM, extracts the citation markers and their URLs, hashes the answer text,
 and downloads a capture JSON.
 
+**Audit here.** A second button posts that same record to the local server and draws the result in a panel
+over the page. No terminal step in the loop:
+
+```bash
+python3 -m sayswho.server --judge
+```
+
+The capture is downloaded before anything is posted, so if the server is not running the record still
+exists and nothing is lost. A server that is not running is reported as a server that is not running, never
+as an audit that found nothing.
+
 **Render.** `src/report.html` opens a report JSON and shows the answer with every claim marked. Hovering a
 marked sentence gives the cited page's own words, the ones the span guard confirmed are really on that page.
 
-The three steps in between are the harness:
+The steps in between, if you would rather run them yourself:
 
 ```bash
 python3 -m sayswho.cli ~/Downloads/sayswho/capture-chatgpt-20260808T001618.json \
@@ -23,14 +34,22 @@ loads. Both go through `src/render.js`, so the two views cannot disagree.
 
 ## What it does not do
 
-**It does not mark claims on claude.ai itself**, and it does not produce verdicts on its own. Producing a
-verdict needs the fetch layer, the gates and the span guard, which are Python. Reimplementing them here
-would create a second implementation of exactly what the §9 parity check exists to compare, and the two
-would drift apart under maintenance.
+**It does not produce verdicts on its own**, and it never will. The fetch layer, the gates and the span
+guard are Python and stay Python. Reimplementing them here would create a second implementation of exactly
+what the §9 parity check exists to compare, and the two would drift apart under maintenance. `audit.js`
+posts JSON and draws what comes back; there is a test asserting it does not so much as mention a verdict
+name.
 
-So the honest description is capture and render, with a local run in between. `SCOPE.md` §1a used to promise
-one click and has been corrected. Closing the gap means a local server the extension can talk to. That is a
-real build and it is not done.
+**It does not mark the product's own sentences in place.** The payload carries character offsets into the
+answer text, and mapping those onto a live DOM that re-renders as you scroll is separate work with its own
+failure modes, the worst of which is putting a verdict beside the wrong sentence. The panel shows the marked
+answer next to the page instead.
+
+**The browser leg is not covered by tests.** The server is, thoroughly, and so are the things about this
+package that can be checked without a browser: every file the manifest names exists, every script parses,
+the stylesheet cannot restyle the product's page, and the host permission matches the endpoint the code
+calls. Whether the panel looks right on claude.ai is not something the suite knows, and `STATUS.md` says so
+rather than counting it as working.
 
 ## Skipping the terminal step
 

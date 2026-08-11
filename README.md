@@ -51,16 +51,22 @@ produced no verdict that stands. An unbound capture is audited and excluded from
 AI Overviews results never enter a cross-product aggregate, because the default judge is a Google model, a
 refusal enforced in `rates.aggregate` rather than in a paragraph.
 
+**Without the terminal.** `python3 -m sayswho.server --judge` opens a loopback-only audit server, and the
+extension's second button posts the capture to it and draws the result in a panel over the page. The gates
+and the span guard stay in Python: the panel's script posts JSON and renders what comes back, and a test
+asserts it never mentions a verdict name. It does not mark the product's own sentences in place, and the
+reason is in `extension/README.md`.
+
 **The headless run.** `python3 tools/run_stratum.py --captures captures/ --judge --out runs/today` audits
 every capture bound to a frozen query and writes four files: the run record, the metric readout with an n and
 an interval on every rate, `RUN_LOG.md`, and a per-number trace table generated from the run rather than
 typed alongside it.
 
-343 tests, all offline except a node process for the parity check. Two of them pin failures rather than
+396 tests, all offline except a node process for the parity check. Two of them pin failures rather than
 fixes: an injection that dictates its own span defeats the guard, and a judge can quote a real but irrelevant
 sentence. Deleting either test would delete the finding. `BREAK_ATTEMPTS.md` writes both up.
 
-**Not built yet:** marking on the product page itself, the gold set labels, and the head-to-head. The
+**Not built yet:** marking the product's own sentences in place, the gold set labels, and the head-to-head. The
 professional query stratum is empty by design until real queries are scrubbed into it, and that is what
 everything producing a number is waiting on.
 

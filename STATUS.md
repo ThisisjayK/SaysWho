@@ -68,7 +68,8 @@ answer" are different claims and only one of them is currently true.
 | ChatGPT selectors verified field by field | **not done** | The capture works; it has not been checked |
 | Perplexity adapter trusted | **not done** | Four source chips carry no anchor at all, so roughly a third of its citations are not in the DOM as links |
 | Google AI Overviews adapter verified | **not done** | And its results never enter a cross-product aggregate: the default judge is a Google model |
-| Marking on the product page itself | **not done** | Needs a local server the extension can talk to. A JavaScript reimplementation of the gates would be the second implementation the parity check exists to compare. `SCOPE.md` §1a was corrected to say capture and render |
+| Audit without a terminal step | **done, browser leg unexercised** | `python3 -m sayswho.server` plus an "audit here" button. The server is tested over real HTTP; whether the panel renders correctly on claude.ai has never been seen |
+| Marking the product's own sentences in place | **not done** | Narrower reason than before: mapping payload offsets onto a live DOM that re-renders is separate work whose worst failure is a verdict beside the wrong sentence. The panel sits next to the page |
 
 ## What this table is for
 

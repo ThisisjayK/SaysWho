@@ -89,6 +89,18 @@ is a rate over.
 
 ## 6. Run the audit
 
+**The short path.** Start the server once, in a terminal:
+
+```bash
+python3 -m sayswho.server --judge
+```
+
+Then click "SaysWho: audit here" on the answer. The marked result appears in a panel over the page. The
+capture is downloaded first either way, so if the server is not running nothing is lost, and you get told
+the server is not running rather than told the audit found nothing.
+
+**The long path**, which needs nothing running and is what the honest run uses:
+
 ```bash
 python3 -m sayswho.cli ~/Downloads/sayswho/capture-chatgpt-20260812T101500.json \
   --judge --report report.html

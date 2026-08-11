@@ -5,11 +5,16 @@
  * verdicts to show. There are verdicts now, and they are rendered by `report.html` in this extension using
  * the same `render.js` the harness embeds in its standalone report.
  *
- * What is not here is marking on claude.ai itself, and that is a limitation rather than a decision made and
- * finished. Producing a verdict needs the fetch layer, the gates and the span guard, all of which are Python
- * and stay Python: a JavaScript reimplementation would be a second implementation of the thing the parity
- * check in `SCOPE.md` §9 exists to compare. So the extension captures and renders, and the audit runs
- * locally in between.
+ * Two buttons now. "Capture answer" downloads the record for the harness, which is the path that has always
+ * worked and needs nothing running. "Audit here" posts the same record to the local server and draws the
+ * result in a panel over the page, which removes the terminal step from the loop.
+ *
+ * Producing a verdict still needs the fetch layer, the gates and the span guard, all of which are Python and
+ * stay Python: a JavaScript reimplementation would be a second implementation of the thing the parity check
+ * in `SCOPE.md` §9 exists to compare. The second button moves where the audit is *triggered*, not where it
+ * is decided.
+ *
+ * What is still not here is marking the product's own sentences in place. See `audit.js`.
  */
 
 (() => {
@@ -35,6 +40,12 @@
     "border-radius:6px",
     "cursor:pointer",
   ].join(";");
+
+  const auditButton = document.createElement("button");
+  auditButton.id = "sayswho-audit-button";
+  auditButton.type = "button";
+  auditButton.textContent = "SaysWho: audit here";
+  auditButton.style.cssText = button.style.cssText.replace("bottom:16px", "bottom:52px");
 
   const toast = document.createElement("div");
   toast.style.cssText = [
@@ -112,9 +123,27 @@
 
     button.textContent = "SaysWho: capture answer";
     chrome.runtime.sendMessage({ type: "sayswho:capture", capture: record });
+    return record;
+  }
+
+  async function auditHere() {
+    // The capture is downloaded either way, before anything is posted. If the server is not running, or
+    // the audit fails, the record still exists on disk and nothing has been lost.
+    const record = await capture();
+    if (!record) return;
+
+    auditButton.textContent = "SaysWho: auditing...";
+    try {
+      await window.saysWhoAudit(record, (status) => {
+        auditButton.textContent = `SaysWho: ${status}`;
+      });
+    } finally {
+      auditButton.textContent = "SaysWho: audit here";
+    }
   }
 
   button.addEventListener("click", capture);
+  auditButton.addEventListener("click", auditHere);
 
   // The toolbar icon routes here too, so the icon and the in-page button do the same thing.
   chrome.runtime.onMessage.addListener((message) => {
@@ -123,4 +152,5 @@
 
   document.documentElement.appendChild(toast);
   document.documentElement.appendChild(button);
+  document.documentElement.appendChild(auditButton);
 })();

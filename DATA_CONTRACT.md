@@ -174,6 +174,31 @@ timestamp, and the sha256 of the body.
 - Quoted spans in published output are single sentences used as evidence for a verdict. No page is
   reproduced at length
 
+## 9a. The local audit server
+
+`python3 -m sayswho.server` opens a port on this machine so the extension can get an audit back without a
+terminal step. A local server is a real surface, so its rules are here rather than in a docstring.
+
+- **Loopback only.** It binds `127.0.0.1`, never `0.0.0.0`. A test asserts the bind address, because that
+  is the single line where a mistake puts an audit endpoint on the network.
+- **Origin allowlist.** A request must carry an `Origin` header naming one of the audited products, and the
+  response echoes only that origin in `Access-Control-Allow-Origin`. Never a wildcard: an audit payload
+  contains the answer text, and a wildcard would let any page in the browser read it.
+- **The freeze check runs first.** The server refuses to start if the query set has moved, same as every
+  other path into the pipeline.
+- **No key anywhere but the environment.** The server reads its API key from the shell that started it. It
+  is never in a file, a plist, a request or a response, per §8.
+- **A cap on what one request can cause.** A capture is a list of URLs the server will then fetch, so a
+  posted capture carrying more than sixty citations is refused before anything is fetched.
+- **One audit at a time.** Concurrent audits would interleave requests to the same host and break the
+  one-request-per-second rule in §2, which is a promise made to the sites being fetched, so the service
+  serialises them.
+
+**The residual risk, written down rather than left implicit.** Any process on this machine can post to that
+port. The mitigations above bound what a foreign *web page* can do and do not bound what a local process can
+do. This is a research tool, started by hand for as long as an audit takes. It is not something to leave
+running, and the startup banner says so.
+
 ## 10. What is enforced by code, and what is not
 
 Being honest about this is the point of the section.
@@ -187,7 +212,9 @@ Being honest about this is the point of the section.
 - Unauditable claims excluded from every denominator
 - No judge call on a non-`SOURCE_OK` source
 - Budget cap halting the run
-- Query set freeze verified before capture
+- Query set freeze verified before capture, on all three paths: the watcher, the interactive CLI and the
+  headless harness, and the local server refuses to start without it
+- The local server's loopback bind, origin allowlist and citation cap (§9a)
 
 **Enforced by discipline, not by code:**
 

@@ -103,10 +103,17 @@ Python side done, browser side not started.
       launchd agent using `WatchPaths`, so the job starts on a change to the capture directory and exits
       when its queue is empty. No daemon, no polling, no port. The key is sourced from the shell profile
       rather than written into the plist, per `DATA_CONTRACT.md` §8
-- [ ] Marking on the product page itself, rather than only in the report view. Needs a local server the
-      extension can talk to, because the gates and the span guard are Python and a JavaScript
-      reimplementation would be the second implementation §9's parity check exists to compare. `SCOPE.md`
-      §1a has been corrected to say capture and render rather than install and watch
+- [x] The local server, so the audit happens without leaving the page. `python3 -m sayswho.server`, and an
+      "audit here" button that posts the capture and draws the result in a panel. The gates and the span
+      guard stay in Python, which is the point: `audit.js` posts JSON and draws what comes back, and a test
+      asserts it does not mention a verdict name. Loopback bind, origin allowlist, no wildcard CORS, freeze
+      check at startup, citation cap. `DATA_CONTRACT.md` §9a
+- [ ] Marking the product's own sentences in place. Still not done, and now for a narrower reason: the
+      payload carries offsets into the answer text and mapping those onto a live DOM that re-renders as you
+      scroll is separate work whose worst failure is a verdict beside the wrong sentence. The panel is next
+      to the page rather than on it
+- [ ] Exercise the browser leg. The server is tested and the package is checked as far as it can be without
+      a browser, but whether the panel renders correctly on claude.ai has never been seen. **Mine to do**
 - [x] Span display quality, as far as display can fix it. `report.span_focus` marks the sentence inside the
       span that bears on the claim, by content-word overlap, deterministically. The whole span still ships
       and still scrolls, because a shortened span is not evidence, so this says where to look rather than
