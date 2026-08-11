@@ -336,9 +336,20 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] Break attempt 4, shared-vocabulary contradiction
 - [ ] Per-domain reporting
 - [ ] Gold set expansion beyond 40
-- [ ] **Existence check for named citations, via Crossref.** Does "LeClair et al., Supportive Care in Cancer,
-      2022" correspond to a real paper? Free API, no key, so it fits the budget. Catches fabricated
-      references, which is a real and well-documented failure mode
+- [x] **Existence check for named citations, via Crossref.** `sayswho/crossref.py`, behind
+      `--check-existence`, off by default because it makes requests to a third party. Four outcomes, not
+      three: `CITATION_LOOKUP_FAILED` was added because reporting our own network failure as
+      `CITATION_NOT_FOUND` would turn our outage into a finding about somebody's citation.
+
+      Built before the core landed, which §0a said not to do, and the reason is that the core is blocked on
+      transcription rather than on build time. It cannot corrupt anything: a resolution enters no
+      denominator, `rates.py` does not import it, and there is a test asserting `rates.py` does not contain
+      the word
+
+      Matching requires both the first-author surname and the year within one. Two matches is
+      `CITATION_AMBIGUOUS` and neither is named, because naming one would be a choice rather than a
+      resolution. Not-found says in its own detail that Crossref does not index everything, so it is a
+      prompt to look by hand rather than a finding that a citation was fabricated
 
       The line that makes this safe, and it is not negotiable if it gets built: **check existence, never
       check support.** Judging a claim against a paper we selected ourselves would be inventing the evidence,

@@ -94,6 +94,13 @@ def main(argv: list[str] | None = None) -> int:
         "being calibrated, and says so",
     )
     parser.add_argument(
+        "--check-existence",
+        action="store_true",
+        help="look up every named-but-unlinked citation in Crossref. Existence only, never support: a "
+        "resolved citation enters no denominator, and no claim is judged against anything found here. "
+        "Off by default because it makes network requests to a third party",
+    )
+    parser.add_argument(
         "--skip-freeze-check",
         action="store_true",
         help="run without checking the query freeze. For auditing a capture that is not part of the frozen "
@@ -158,6 +165,16 @@ def main(argv: list[str] | None = None) -> int:
         print("                 A floor, not a total. These are not unsupported and not unauditable.")
         print("                 They are uncheckable, and they enter no denominator.")
         print()
+
+    if args.check_existence and named.named_count:
+        from .crossref import check_named
+
+        print("Crossref     existence checking, one request per second   [external-source]")
+        existence = check_named(capture)
+        print(existence.render())
+        print()
+    else:
+        existence = None
 
     gate0 = g0_has_citations(capture)
     if not gate0.passed:
@@ -370,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
             payload["uncited"] = uncited_floor(claim_set)
         if run_rates is not None:
             payload["rates"] = run_rates.to_dict()
+        if existence is not None:
+            payload["named_citation_existence"] = existence.to_dict()
 
         # The gate runs over what is about to be printed, not over a sample of it. It walks keys, and a
         # fetched span can contain the word "score" in ordinary prose, so spans come out first.

@@ -54,7 +54,7 @@ answer" are different claims and only one of them is currently true.
 | 8 | Break attempts 1 to 4 | **not done** | Itemised with expected failure directions in `BREAK_ATTEMPTS.md` rather than left as a blank |
 | 9 | Per-domain reporting | **not done** | At the core's n the per-domain cells would be near-empty, which is why it was stretch |
 | 9 | Gold set expansion beyond 40 | **not done** | Depends on the first 40 |
-| (extra) | Crossref existence check for named citations | **not done** | Roughly half a day, and only if the core lands on time. The constraint if it is built: check existence, never support |
+| (extra) | Crossref existence check for named citations | **done** | Built ahead of its window because the core is blocked on transcription rather than on build time. The constraint is enforced rather than intended: no document text in any record, `rates.py` does not import it, and a test asserts the word does not appear there |
 | (extra) | Split `SOURCE_UNREACHABLE` into dead-link and bot-blocked | **done** | `SOURCE_DEAD_LINK` and `SOURCE_BOT_BLOCKED`. Done ahead of the stretch window because §5a's dead-link stratum cannot report a dead-link rate until the code distinguishing one exists |
 | (extra) | Widen `CITATION_NOT_LINKED` patterns and measure their recall | **half done** | Patterns widened as far as is safe without knowing recall (PMID, PMC, arXiv). The measurement harness is built; marking an answer by hand is mine to do, and until then the count is a floor of unknown depth |
 
