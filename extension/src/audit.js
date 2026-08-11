@@ -125,8 +125,9 @@
     const body = document.getElementById(`${PANEL_ID}-body`);
     body.textContent = "";
     const p = document.createElement("pre");
-    p.style.cssText =
-      "font:400 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;color:#111";
+    // Class, not an inline style. An inline colour cannot have a dark variant, and this panel spends most
+    // of its life on a dark product.
+    p.className = "sw-panel-message";
     p.textContent = text;
     body.appendChild(p);
   }
@@ -164,7 +165,7 @@
     }
 
     if (payload.error) {
-      message(`${payload.error}\n\n${payload.detail || ""}\n\n${payload.note || ""}`);
+      message(`${payload.error}\n\n${payload.detail || ""}\n\n${payload.note || ""}`.trim());
       return payload;
     }
 
@@ -176,9 +177,7 @@
       // First, not last. Underneath this sit five counters reading zero, and a reader who meets those
       // before the explanation reads them as "nothing checked out" rather than "nothing was checked".
       const note = document.createElement("p");
-      note.style.cssText =
-        "font:600 12.5px/1.5 system-ui,sans-serif;color:#8a5a00;margin:0 0 12px;padding:9px 11px;" +
-        "background:#fdf1dc;border:1px solid #e5cf9d;border-radius:5px";
+      note.className = "sw-panel-warn";
       note.textContent =
         "No verdicts in this run. The server is running without --judge, so the counts below are zero " +
         "because nothing was judged, not because nothing checked out. Restart it with --judge.";
@@ -187,7 +186,7 @@
 
     if (payload.saved_to) {
       const where = document.createElement("p");
-      where.style.cssText = "font:400 11.5px/1.5 ui-monospace,Menlo,monospace;color:#6b6759;margin-top:14px";
+      where.className = "sw-panel-note";
       where.textContent = `capture saved to ${payload.saved_to}`;
       body.appendChild(where);
     }

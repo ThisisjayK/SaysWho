@@ -367,6 +367,27 @@ def test_every_injected_control_sets_both_a_colour_and_a_background():
         assert "color:" in chunk and "background:" in chunk, f"{name} sets one colour and not the other"
 
 
+def test_no_injected_text_carries_a_hardcoded_colour_in_an_inline_style():
+    """The general form of the same mistake, which I made twice: once on the close button and once on the
+    panel's message text. An inline colour cannot have a dark-mode variant, and every one of these surfaces
+    sits on a product that is dark by default. Colours belong in render.css.
+
+    The dock is the deliberate exception, and it is exempt by name rather than by accident: it sits on the
+    product's own background rather than on one of ours, so it carries its own light chip colours and sets
+    both halves of every pair.
+    """
+    exempt = ("content.js",)
+    for path in sorted((EXTENSION / "src").glob("*.js")):
+        if path.name in exempt or path.name == "popup.js":
+            continue
+        source = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
+        source = re.sub(r"^\s*//.*$", "", source, flags=re.M)
+        for style in re.findall(r'cssText\s*=\s*([^;]*?"[^"]*");', source, flags=re.S):
+            assert "color:#" not in style.replace(" ", ""), (
+                f"{path.name} hardcodes a text colour in an inline style: {style[:120]}"
+            )
+
+
 def test_the_panel_chrome_has_a_dark_variant():
     """It sits on claude.ai and chatgpt.com, which are dark by default."""
     css = (EXTENSION / "src" / "render.css").read_text()

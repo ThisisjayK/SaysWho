@@ -44,6 +44,10 @@
  * and 24px on top of it wastes a quarter of a narrow column. */
 .sw-in-panel .sw, .sw.sw-in-panel { padding: 4px 0 40px; }
 
+/* The close control is pinned to the top-right corner, so nothing starts in that corner. Without this a
+ * full-width first element, which is what an error or a warning is, runs underneath it. */
+.sw-in-panel { padding-top: 26px; }
+
 .sw h1 { font-size: 19px; margin: 0 0 4px; }
 .sw h2 { font-size: 14px; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sw-dim); }
 
@@ -202,9 +206,36 @@
  * button did exactly that and came out white on near-white against claude.ai's dark theme. Both colours,
  * always, and a stylesheet is the only place a dark-mode variant can live. */
 .sw-panel {
+  color: #14140f;
   background: #faf9f5;
   border-left: 1px solid #d8d4c8;
   box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Everything the panel prints outside the rendered audit: an error, a note, a warning. These were inline
+ * styles with hardcoded colours, which was fine while the panel was always light and became invisible the
+ * moment it followed the colour scheme. Same fault as the close button, one level down. */
+.sw-panel-message {
+  margin: 26px 0 0;
+  font: 400 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #14140f;
+}
+.sw-panel-note {
+  margin-top: 14px;
+  font: 400 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+  color: #6b6759;
+}
+.sw-panel-warn {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  font: 600 12.5px/1.5 system-ui, -apple-system, sans-serif;
+  color: #6d4700;
+  background: #fdf1dc;
+  border: 1px solid #e5cf9d;
+  border-radius: 5px;
 }
 
 .sw-panel-close {
@@ -228,7 +259,11 @@
 .sw-panel-close:hover { background: #fff; }
 
 @media (prefers-color-scheme: dark) {
-  .sw-panel { background: #17171a; border-left-color: #3a3a40; box-shadow: -6px 0 24px rgba(0, 0, 0, 0.5); }
+  .sw-panel { color: #eeece4; background: #17171a; border-left-color: #3a3a40;
+              box-shadow: -6px 0 24px rgba(0, 0, 0, 0.5); }
+  .sw-panel-message { color: #eeece4; }
+  .sw-panel-note { color: #a09c92; }
+  .sw-panel-warn { color: #f0d9a8; background: #2a2110; border-color: #5c4a22; }
   .sw-panel-close { color: #eeece4; background: #2a2a30; border-color: #6c6a64; }
   .sw-panel-close:hover { background: #3a3a42; }
 }

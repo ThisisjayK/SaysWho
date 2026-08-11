@@ -95,8 +95,11 @@ is a rate over.
 **The short path.** Start the server once, in a terminal:
 
 ```bash
-python3 -m sayswho.server --judge
+.venv/bin/python -m sayswho.server --judge
 ```
+
+That has to be a Python with `google-genai` installed, which the repo's virtualenv has. The server will not
+start with `--judge` if it cannot build a judge, and it prints which of the two problems it is.
 
 Then click the magnifier on the answer, or Audit in the popup. The marked result appears in a panel over the
 page, and the capture is written to `captures/` by the server, which is where the harness reads them from.

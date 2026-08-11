@@ -141,7 +141,19 @@ class AuditService:
                 from .gemini import build_judge
                 from .model import BudgetExceeded, Meter
 
-                client = build_judge(self.provider, meter=Meter(budget_tokens=self.budget))
+                try:
+                    client = build_judge(self.provider, meter=Meter(budget_tokens=self.budget))
+                except (ImportError, RuntimeError) as exc:
+                    # Startup checks this, so reaching here means the environment changed under a running
+                    # server. Reported as a fact about this machine, never as a fact about the sources.
+                    kind = "import" if isinstance(exc, ImportError) else "key"
+                    return {
+                        "error": "JUDGE_UNAVAILABLE",
+                        "detail": f"{exc}",
+                        "note": JUDGE_ADVICE[kind]
+                        + "\n\nThe capture was saved and the sources were fetched. Nothing here is a "
+                        "finding about the answer.",
+                    }
                 claim_set, _ = phase1(capture, client)
                 try:
                     judgements = list(judge_claims(claim_set, records, drifts, client))
@@ -167,6 +179,48 @@ class AuditService:
         # The gate runs over exactly what is about to be sent, not over a sample of it.
         assert_no_confidence_number(strip_for_gate_check(report.payload))
         return report.payload
+
+
+#: What a judge failing to build actually means, in the two ways it fails. Both used to surface as a raw
+#: exception in the middle of an audit, after the server had already reported itself ready and the popup had
+#: already painted a green light.
+JUDGE_ADVICE = {
+    "import": (
+        "The judge needs the `google-genai` package and the Python running this server does not have it.\n"
+        "  Either run the server with this repo's virtualenv:\n"
+        "      .venv/bin/python -m sayswho.server --judge\n"
+        "  or install it into whichever Python you are using:\n"
+        "      python3 -m pip install google-genai"
+    ),
+    "key": (
+        "The judge needs an API key in this shell's environment:\n"
+        "      export GEMINI_API_KEY=...\n"
+        "  A free key comes from aistudio.google.com. DATA_CONTRACT.md §8: the key is read from the\n"
+        "  environment and never written to a file."
+    ),
+}
+
+
+def check_judge(provider: str | None = None) -> tuple[bool, str]:
+    """Build a judge and throw it away, to find out whether one can be built.
+
+    Called before the server starts listening. Without it the failure arrives two minutes into the first
+    audit, having already fetched every cited page, and the extension shows a green light the whole time.
+    A server that reports itself ready and is not is the same error this project is about, committed by
+    the tool rather than by the thing it audits.
+    """
+    from .gemini import build_judge
+    from .model import Meter
+
+    try:
+        build_judge(provider, meter=Meter())
+    except ImportError as exc:
+        return False, f"{exc}\n\n{JUDGE_ADVICE['import']}"
+    except RuntimeError as exc:
+        return False, f"{exc}\n\n{JUDGE_ADVICE['key']}"
+    except Exception as exc:  # pragma: no cover - provider-specific failures
+        return False, f"{type(exc).__name__}: {exc}"
+    return True, ""
 
 
 def make_handler(service: AuditService):
@@ -281,6 +335,16 @@ def main(argv: list[str] | None = None) -> int:
             print("FREEZE CHECK FAILED. The server will not start.")
             print()
             print(why)
+            return 2
+
+    if args.judge:
+        ok, why = check_judge(args.judge_provider)
+        if not ok:
+            print("THE JUDGE CANNOT BE BUILT. The server will not start with --judge.")
+            print()
+            print(why)
+            print()
+            print("Run without --judge to fetch and check sources only. That needs no key and no packages.")
             return 2
 
     service = AuditService(

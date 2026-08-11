@@ -348,3 +348,75 @@ def test_an_uncitable_answer_is_not_written(tmp_path, server):
     result = service.audit(payload)
     assert result["error"] == "NO_CITATIONS"
     assert not (tmp_path / "captures").exists() or not list((tmp_path / "captures").glob("*.json"))
+
+
+# ---------------------------------------------------------------- the judge, checked before it is needed
+
+
+def test_a_missing_judge_dependency_is_caught_before_the_server_starts(monkeypatch):
+    """It used to surface as a raw ModuleNotFoundError two minutes into the first audit, after every cited
+    page had been fetched, with the extension showing a green light the whole time."""
+    import sayswho.gemini as gemini
+    from sayswho.server import check_judge
+
+    def missing(provider=None, meter=None):
+        raise ImportError("No module named 'google'")
+
+    monkeypatch.setattr(gemini, "build_judge", missing)
+    ok, why = check_judge("gemini")
+
+    assert not ok
+    assert "No module named 'google'" in why
+    assert ".venv/bin/python -m sayswho.server --judge" in why, "it has to say how to fix it"
+    assert "pip install google-genai" in why
+
+
+def test_a_missing_key_is_caught_the_same_way_and_says_something_different(monkeypatch):
+    """Two failures, two fixes. Collapsing them would send someone to install a package they already have."""
+    import sayswho.gemini as gemini
+    from sayswho.server import check_judge
+
+    def nokey(provider=None, meter=None):
+        raise RuntimeError("set GEMINI_API_KEY")
+
+    monkeypatch.setattr(gemini, "build_judge", nokey)
+    ok, why = check_judge("gemini")
+
+    assert not ok
+    assert "export GEMINI_API_KEY" in why
+    assert "never written to a file" in why
+    assert "pip install" not in why
+
+
+def test_the_server_refuses_to_start_with_a_judge_it_cannot_build(monkeypatch, capsys, tmp_path):
+    import sayswho.gemini as gemini
+    from sayswho.server import main
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        ImportError("No module named 'google'")
+    ))
+    code = main(["--judge", "--skip-freeze-check", "--captures", str(tmp_path)])
+
+    assert code == 2, "it must not start and report itself ready"
+    out = capsys.readouterr().out
+    assert "THE JUDGE CANNOT BE BUILT" in out
+    assert "Run without --judge" in out, "the working half of the tool is still available"
+
+
+def test_a_judge_that_breaks_while_running_is_reported_as_a_fact_about_this_machine(
+    tmp_path, server, monkeypatch
+):
+    """Not as a fact about the sources. The capture is saved and the fetches still happened."""
+    import sayswho.gemini as gemini
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        ImportError("No module named 'google'")
+    ))
+    service = AuditService(
+        cache_dir=tmp_path / "cache", judge=True, drift=False, captures_dir=tmp_path / "captures"
+    )
+    payload = service.audit(capture_payload(server))
+
+    assert payload["error"] == "JUDGE_UNAVAILABLE"
+    assert "Nothing here is a finding about the answer" in payload["note"]
+    assert list((tmp_path / "captures").glob("*.json")), "the capture was still saved"

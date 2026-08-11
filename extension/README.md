@@ -25,8 +25,12 @@ URLs, hashes the answer text, and downloads a capture JSON.
 the page, stepping aside so the panel does not open on top of it. No terminal step in the loop:
 
 ```bash
-python3 -m sayswho.server --judge
+.venv/bin/python -m sayswho.server --judge
 ```
+
+Use the repo's virtualenv, or any Python that has `google-genai` in it. The server checks it can build a
+judge before it starts listening: a missing package or a missing key stops it there, with the fix, rather
+than surfacing as a traceback two minutes into the first audit while the popup shows a green light.
 
 An audit does not download anything. The server writes the capture to the repo's `captures/` directory
 before it starts fetching, which is where `tools/run_stratum.py` and `tools/bind_capture.py` read captures
