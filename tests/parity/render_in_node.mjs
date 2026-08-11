@@ -113,7 +113,8 @@ const cards = marks.map((_, i) => {
     heading: card.children[0].textContent,
     verdicts: find(card, (n) => n.className === "sw-verdict").map((n) => n.textContent),
     voids: find(card, (n) => n.className === "sw-void").map((n) => n.textContent),
-    spans: find(card, (n) => n.className === "sw-span").map((n) => n.textContent),
+    spans: find(card, (n) => n.className === "sw-span").map(text),
+    focus: find(card, (n) => n.className === "sw-focus").map((n) => n.textContent),
     // The card is removed again on mouseleave, so its notes are not in the page text afterwards. They are
     // the only place the reader is told why a verdict was thrown out, so they get captured here.
     notes: find(card, (n) => n.className === "sw-note").map((n) => n.textContent),

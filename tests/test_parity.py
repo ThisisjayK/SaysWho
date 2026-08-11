@@ -248,3 +248,44 @@ def test_the_standalone_html_report_embeds_the_same_renderer():
     marker = "window.saysWhoRender = function (root, payload)"
     assert marker in html, "the report embeds something other than the extension's renderer"
     assert marker in (REPO / "extension" / "src" / "render.js").read_text()
+
+
+@needs_node
+def test_the_span_focus_is_marked_and_nothing_is_hidden(tmp_path):
+    """The reader gets the whole verified span and a pointer at the part that matters.
+
+    Both halves are the test. Truncating would be tidier and would mean the evidence a reader is shown is
+    not the evidence the guard checked.
+    """
+    report = a_payload()
+    payload = report.payload
+    span = "Home About Subscribe. Extending therapy reduced recurrence in the cohort. Like us on Facebook."
+    focus = "Extending therapy reduced recurrence in the cohort."
+    for claim in payload["claims"]:
+        for row in claim["sources"]:
+            if row["verdict"] == SUPPORTED:
+                row["span"] = span
+                row["span_focus"] = [span.index(focus), span.index(focus) + len(focus)]
+
+    shown = render(payload, tmp_path)
+    marked = [f for card in shown["cards"] for f in card["focus"]]
+    assert focus in marked, "the relevant sentence was not marked"
+
+    quoted = " ".join(s for card in shown["cards"] for s in card["spans"])
+    for fragment in ("Home About Subscribe.", "Like us on Facebook."):
+        assert fragment in quoted, f"{fragment!r} was dropped from the quoted span"
+
+
+@needs_node
+def test_a_span_with_no_focus_still_renders_whole(tmp_path):
+    report = a_payload()
+    payload = report.payload
+    for claim in payload["claims"]:
+        for row in claim["sources"]:
+            if row["verdict"] == SUPPORTED:
+                row["span"] = "Recurrence fell in the extended arm."
+                row["span_focus"] = None
+
+    shown = render(payload, tmp_path)
+    assert not [f for card in shown["cards"] for f in card["focus"]]
+    assert any("Recurrence fell in the extended arm." in s for card in shown["cards"] for s in card["spans"])

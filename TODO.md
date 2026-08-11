@@ -107,10 +107,11 @@ Python side done, browser side not started.
       extension can talk to, because the gates and the span guard are Python and a JavaScript
       reimplementation would be the second implementation §9's parity check exists to compare. `SCOPE.md`
       §1a has been corrected to say capture and render rather than install and watch
-- [ ] Span display quality. The judge quotes generously and mass general's page furniture is not inside a
-      `nav`, so one verified span ran to about 500 characters including "Like us on Facebook". The card
-      scrolls rather than truncates, since a shortened span is not evidence, but the underlying problem is
-      extraction quality
+- [x] Span display quality, as far as display can fix it. `report.span_focus` marks the sentence inside the
+      span that bears on the claim, by content-word overlap, deterministically. The whole span still ships
+      and still scrolls, because a shortened span is not evidence, so this says where to look rather than
+      deciding what counts. Two parity tests: the focus is marked, and "Like us on Facebook" is still there.
+      The underlying problem is still extraction quality and this does not touch it
 - [x] Marking UI. Built once there were verdicts behind it. `sayswho/report.py` computes every state,
       `extension/src/render.js` draws it, and the harness embeds that same file in a standalone HTML report
       via `--report`, so the extension and the harness cannot show different things. Five states, because

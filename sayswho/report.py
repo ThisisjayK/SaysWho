@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -99,6 +100,56 @@ def _find_collapsed(answer: str, needle: str) -> tuple[int, int] | None:
     return start, end_char + 1
 
 
+#: Words that carry no evidence about which sentence of a span is the relevant one.
+_STOPWORDS = frozenset(
+    """a an and are as at be been but by for from had has have in is it its of on or that the their there
+    these they this to was were which will with would""".split()
+)
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def span_focus(span: str, claim_text: str) -> tuple[int, int] | None:
+    """Offsets, inside the span, of the sentence that actually bears on the claim.
+
+    The judge quotes generously and the extractor keeps page furniture that is not inside a `nav`, so one
+    verified span on a real run ran to about 500 characters and included "Like us on Facebook". A reader
+    given 500 characters has been handed the checking job back.
+
+    Truncating is not available: a shortened span is not evidence, and the span the guard verified is the
+    span the reader is entitled to see. So the whole span is still shown and this marks where to look
+    inside it, by content-word overlap with the claim. Deterministic, no model involved.
+
+    Returns None when nothing overlaps, in which case the view shows the span unmarked rather than
+    guessing.
+    """
+    if not span.strip() or not claim_text.strip():
+        return None
+
+    wanted = {w for w in re.findall(r"[a-z0-9]+", claim_text.casefold()) if w not in _STOPWORDS}
+    if not wanted:
+        return None
+
+    best: tuple[int, int, int] | None = None
+    at = 0
+    for sentence in _SENTENCE_SPLIT.split(span):
+        start = span.find(sentence, at)
+        if start < 0:
+            continue
+        at = start + len(sentence)
+        found = {w for w in re.findall(r"[a-z0-9]+", sentence.casefold()) if w not in _STOPWORDS}
+        overlap = len(wanted & found)
+        if overlap and (best is None or overlap > best[0]):
+            best = (overlap, start, at)
+
+    if best is None:
+        return None
+    # A span that is one sentence long needs no focus: marking all of it says nothing.
+    if best[1] == 0 and best[2] >= len(span.rstrip()):
+        return None
+    return best[1], best[2]
+
+
 def claim_state(rows: list[dict], has_citation: bool) -> str:
     """The single label shown against a claim, derived from its per-source rows.
 
@@ -163,6 +214,11 @@ def build(capture, records, claim_set, judgements, drifts=None, split_sha256="")
                     "source_detail": record.detail if record else "",
                     "verdict": match.verdict if match else "",
                     "span": match.span if match else "",
+                    # Where to look inside a long span. The whole span is still shown; see span_focus.
+                    "span_focus": (
+                        list(focus)
+                        if match and (focus := span_focus(match.span, claim.text)) else None
+                    ),
                     "voided": bool(match.voided) if match else False,
                     "void_reason": match.void_reason if match else "",
                     # None means no archived snapshot, and stays None: unknown is not the same as fine.

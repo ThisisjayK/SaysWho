@@ -82,7 +82,21 @@
     if (row.span) {
       // The span guard already confirmed this string is present in the fetched page, so quoting it here
       // cannot show the reader a sentence the source does not contain.
-      wrap.appendChild(el("blockquote", "sw-span", row.span));
+      //
+      // The whole span is always shown. `span_focus` arrives from report.py and marks the sentence that
+      // bears on the claim, because the judge quotes generously and a 500-character span with "Like us on
+      // Facebook" in it hands the checking job back to the reader. Nothing is truncated: a shortened span
+      // is not evidence.
+      const quote = el("blockquote", "sw-span");
+      const focus = row.span_focus;
+      if (focus && focus.length === 2) {
+        quote.appendChild(document.createTextNode(row.span.slice(0, focus[0])));
+        quote.appendChild(el("b", "sw-focus", row.span.slice(focus[0], focus[1])));
+        quote.appendChild(document.createTextNode(row.span.slice(focus[1])));
+      } else {
+        quote.textContent = row.span;
+      }
+      wrap.appendChild(quote);
       if (row.span_predates_generation === null) {
         wrap.appendChild(
           el("div", "sw-note", "No archived copy of this page from around the time the answer was written, " +

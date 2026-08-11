@@ -214,3 +214,72 @@ def test_a_paywalled_source_renders_as_unverifiable_rather_than_unsupported():
 
     assert report.payload["claims"][0]["state"] == COULD_NOT_VERIFY
     assert report.payload["claims"][0]["sources"][0]["source_code"] == SOURCE_PAYWALLED
+
+
+# ---------------------------------------------------------------- span focus
+
+
+def test_the_focus_marks_the_sentence_that_bears_on_the_claim():
+    """`TODO.md` day 2: one verified span ran to about 500 characters and included "Like us on Facebook".
+
+    The whole span still ships, because a shortened span is not evidence. This says where to look in it.
+    """
+    from sayswho.report import span_focus
+
+    span = (
+        "Home About Subscribe Donate. "
+        "Extending adjuvant endocrine therapy beyond five years reduced recurrence in the trial cohort. "
+        "Like us on Facebook."
+    )
+    lo, hi = span_focus(span, "Extending therapy reduced recurrence")
+    assert span[lo:hi].startswith("Extending adjuvant")
+    assert span[lo:hi].endswith("trial cohort.")
+
+
+def test_a_single_sentence_span_gets_no_focus():
+    """Marking all of it would say nothing, and would look like a decision that was made."""
+    from sayswho.report import span_focus
+
+    assert span_focus("Recurrence fell in the extended arm.", "recurrence fell") is None
+
+
+def test_a_span_with_no_overlap_gets_no_focus_rather_than_a_guess():
+    from sayswho.report import span_focus
+
+    assert span_focus("Home. About. Subscribe.", "adjuvant endocrine therapy recurrence") is None
+
+
+def test_stopwords_alone_never_choose_a_sentence():
+    """Otherwise the furniture sentence with the most "the" in it wins."""
+    from sayswho.report import span_focus
+
+    span = "The and of the. Recurrence fell in the extended arm of the trial."
+    assert span_focus(span, "the of and") is None
+
+
+def test_the_focus_offsets_reach_the_payload():
+    from sayswho.claims import Claim, ClaimSet
+    from sayswho.judge import SUPPORTED, Judgement
+    from sayswho.records import SOURCE_OK, Capture, Citation, FetchRecord
+    from sayswho.report import build
+
+    span = "Home About. Extending therapy reduced recurrence in the cohort. Like us on Facebook."
+    capture = Capture(
+        query_id="PR-01", product="chatgpt", model_id="test",
+        generated_at="2026-08-11T00:00:00+00:00", captured_at="2026-08-11T00:00:01+00:00",
+        answer_text="Extending therapy reduced recurrence [1].",
+        citations=[Citation(marker="[1]", url="https://a.example/1")],
+    )
+    claim_set = ClaimSet(
+        claims=[Claim(id="c1", text="Extending therapy reduced recurrence", markers=["[1]"],
+                      urls=["https://a.example/1"])],
+        skipped=[],
+    )
+    records = [FetchRecord(url="https://a.example/1", code=SOURCE_OK, fetched_at="t", text=span)]
+    judgements = [Judgement(claim_id="c1", url="https://a.example/1", verdict=SUPPORTED,
+                            span=span, span_verified=True)]
+
+    row = build(capture, records, claim_set, judgements).payload["claims"][0]["sources"][0]
+    lo, hi = row["span_focus"]
+    assert span[lo:hi] == "Extending therapy reduced recurrence in the cohort."
+    assert row["span"] == span, "the whole span still ships"

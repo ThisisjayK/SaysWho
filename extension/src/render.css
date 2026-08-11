@@ -151,6 +151,15 @@
 .sw-span::before { content: "\201C"; }
 .sw-span::after { content: "\201D"; }
 
+/* The sentence inside the span that bears on the claim, chosen deterministically by word overlap in
+ * report.py. The rest of the span stays visible and readable: this marks where to look, it does not decide
+ * what counts. Weight and background rather than a colour, so it does not read as a verdict. */
+.sw-focus {
+  font-weight: 600;
+  background: var(--sw-focus-bg, rgba(255, 214, 102, 0.35));
+  border-radius: 2px;
+}
+
 .sw-note { color: var(--sw-dim); font-size: 12px; margin-top: 5px; }
 
 /* ---- skipped lines and sources ---- */
@@ -172,4 +181,5 @@
   .sw { --sw-supported-bg: #16281d; --sw-not-supported-bg: #2c1712; --sw-mixed-bg: #2a2110;
         --sw-unverified-bg: #1a1d2e; --sw-unchecked-bg: #232326; }
   .sw-span { color: #cfcbc1; }
+  .sw-focus { background: rgba(255, 214, 102, 0.22); }
 }
