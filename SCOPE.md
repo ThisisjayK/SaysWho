@@ -323,7 +323,20 @@ every output surface. It is never printed bare next to a record-derived number.
 
 Each of these comes from a script over records. None is estimated.
 
-- **Citation support rate**: `SUPPORTED / auditable claims`. Denominator excludes unauditable, always.
+- **Citation support rate**: `SUPPORTED / claim-source pairs whose verdict stands`. Denominator excludes
+  unauditable, always.
+
+  **The unit is the claim-source pair, decided on day 4 and pinned by a test.** This section previously said
+  "SUPPORTED / auditable claims", which did not say whether a claim citing three sources is one item or
+  three, and the two readings give different numbers on the same evidence: claim #009 in the day 3 run came
+  back SUPPORTED by one source and NOT_FOUND_IN_SOURCE by two, which is 1/3 counted in pairs and 1/1 counted
+  in claims. The pair is the unit because it is the question the tool exists to answer, does *this* cited
+  page say what *this* sentence claims, and because it is the unit a human labels in, so the gold set and
+  the rate count the same objects.
+
+  What that costs: a claim citing five sources weighs five times as much as a claim citing one. The
+  claim-level rate is published beside it as a secondary figure so a reader can see what the choice did, and
+  neither is reported without the other.
 - **Unauditable rate**: the skip rate. A high value is a finding about the web, not a tool failure.
 - **Judge-fabricated-span rate**: how often the entailment model invented its own evidence.
 - **Judge–human agreement**: Cohen's kappa on the gold set, reported as a caveat band on every rate above.
@@ -460,10 +473,21 @@ rest test how good the judge is, which matters less than whether the guard rails
   Google AI Overviews alongside Claude, ChatGPT and Perplexity, so for that one product the judge and the
   audited system come from the same vendor.
 
-  This is stated rather than resolved. For the other three products a judge from outside all of them is
-  arguably *more* independent than one built by any of their makers. For AI Overviews it is the opposite, and
-  the per-product result carries the conflict beside it. Dropping AI Overviews from the audited set would
-  also be honest; quietly reporting it as though the conflict were not there would not be.
+  **Resolved on day 4: AI Overviews stays in, reported per-product, and never enters a cross-product
+  aggregate.** For the other three products a judge from outside all of them is arguably *more* independent
+  than one built by any of their makers. For AI Overviews it is the opposite, so its result is published on
+  its own with the conflict stated next to it. Dropping it from the audited set would also have been honest
+  and would have thrown away evidence; quietly reporting it as though the conflict were not there would not
+  have been.
+
+  The part that is not left to prose: `rates.CONFLICTED_PRODUCTS` names the affected products and
+  `rates.aggregate` raises `ConflictedAggregate` when one of them is folded into a cross-product number.
+  A disclosure in a paragraph does not survive being copied into a slide, and an aggregate carries the
+  conflict into every figure derived from it. The refusal is in the code and there is a test for it.
+
+  The clean fix, judging the Google captures with the Anthropic client, was costed and not taken: gate G4
+  ties the gold set to the judge, so it would need a second set of 30 to 40 hand labels. It is recorded here
+  as the option that was available rather than presented as impossible.
 
   The span guard is unaffected either way. It is a substring check against the fetched document and knows
   nothing about which model produced the span.

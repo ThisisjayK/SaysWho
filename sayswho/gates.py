@@ -63,6 +63,58 @@ def auditable_denominator(records: list[FetchRecord]) -> int:
     return sum(1 for record in records if record.auditable)
 
 
+#: Gate G4 failure code. No gold set exists for the judge, prompt version and split this run used.
+NO_CALIBRATION = "NO_CALIBRATION"
+
+
+def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
+                          judge_prompt_version: str, claim_prompt_version: str,
+                          split_sha256: str) -> GateResult:
+    """Gate G4. Aggregate rates are refused unless a gold set was labelled for this exact configuration.
+
+    Per-claim verdicts still emit. `SCOPE.md` §3: an uncalibrated judge can produce useful individual
+    audits; it cannot produce a trustworthy percentage.
+
+    The tuple includes `split_sha256` because Phase 1 does not return the same split twice, so "the gold set
+    for this judge and prompt version" did not identify a fixed set of claims. `FINDINGS.md` item 8.
+
+    Every mismatch is reported separately rather than as one "no calibration" answer, because the four
+    reasons need four different actions: relabel, revert the prompt, re-pin the split, or swap the judge back.
+    """
+    if goldset is None:
+        return GateResult(
+            False, NO_CALIBRATION,
+            "no gold set has been labelled for this judge and prompt version, so no aggregate rate may be "
+            "printed. Per-claim verdicts still emit.",
+        )
+
+    mismatches = []
+    if goldset.judge_class != judge_class or goldset.judge_model != judge_model:
+        mismatches.append(
+            f"gold set was labelled against {goldset.judge_class} {goldset.judge_model}, this run used "
+            f"{judge_class} {judge_model}"
+        )
+    if goldset.judge_prompt_version != judge_prompt_version:
+        mismatches.append(
+            f"gold set was labelled under judge prompt {goldset.judge_prompt_version}, this run used "
+            f"{judge_prompt_version}"
+        )
+    if goldset.claim_prompt_version != claim_prompt_version:
+        mismatches.append(
+            f"gold set was labelled under claim prompt {goldset.claim_prompt_version}, this run used "
+            f"{claim_prompt_version}"
+        )
+    if goldset.split_sha256 != split_sha256:
+        mismatches.append(
+            f"gold set was labelled against split {goldset.split_sha256[:16]}, this run judged split "
+            f"{split_sha256[:16]}. A gold set is valid for the split it was labelled against and no other"
+        )
+
+    if mismatches:
+        return GateResult(False, NO_CALIBRATION, "; ".join(mismatches))
+    return GateResult(True)
+
+
 def assert_no_confidence_number(payload) -> None:
     """`SCOPE.md` §1b: no numeric confidence anywhere, enforced by a test rather than by intention.
 

@@ -144,11 +144,11 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [x] Ran end to end against a real ChatGPT capture on `gemini-3.5-flash-lite`. 20 claims, 13 judgements,
       0 fabricated spans out of 7 span-bearing verdicts. Model pinned rather than aliased, because
       `gemini-flash-latest` would move underneath the gold set and G4 would never notice
-- [ ] **Define the unit of the support rate.** A claim citing three sources currently produces three
-      judgements, and nothing combines them. Claim #009 came back SUPPORTED by one source and
-      NOT_FOUND_IN_SOURCE by two. §5 says "SUPPORTED / auditable claims" without saying whether the unit is
-      a claim or a claim-source pair, and the two give different numbers. Decide before day 5, because the
-      gold set is labelled in whichever unit is chosen
+- [x] **Define the unit of the support rate.** The claim-source pair, decided and pinned by a test in
+      `sayswho/rates.py`. It is the question the tool asks (does this cited page say what this sentence
+      says) and the unit a human labels in, so the gold set and the rate count the same objects. The cost is
+      that a claim citing five sources weighs five times as much, so `claim_level_rate` publishes the other
+      unit beside it. Claim #009 is 1/3 in pairs and 1/1 in claims, and both numbers ship. §5 rewritten
 - [x] **Look at the 139 skipped lines.** Dumped and read. `--dump-skipped` added, because the run had been
       publishing the skip count and discarding the text, so the check was impossible rather than merely
       undone. The split is now carried in the `--json` record too. Three things came out of reading them,
@@ -164,9 +164,11 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       auditable. Auditable sources went from 6 of 9 to 7 of 9
 - [ ] Bind captures to the frozen query set. Every capture so far carries `query_id: UNASSIGNED`, so nothing
       ties a verdict back to the query that produced it
-- [ ] **Decide before day 5 whether Google AI Overviews stays in the audited set.** A Gemini judge scoring a
-      Google product is a vendor grading its own homework. Recorded in `SCOPE.md` §7. Either drop it or
-      report its per-product result with the conflict stated beside it
+- [x] **Decide whether Google AI Overviews stays in the audited set.** It stays, reported per-product with
+      the conflict stated, and `rates.aggregate` raises rather than folding it into a cross-product number.
+      The refusal is in the code because a disclosure in a paragraph does not survive being copied into a
+      slide. The clean fix, judging those captures with the Anthropic client, needs a second gold set under
+      G4 and was costed and not taken. §7 rewritten
 - [ ] **Fix the unit G1 skips in.** A table arrives from the DOM as one text block, so one skip decision
       discarded about ninety checkable cells while a heading also counts as one. Split tables into rows
       before the splitter sees them, or report the skip rate in a unit that is not block-based. Until then
@@ -204,9 +206,10 @@ against a handwritten fixture. It does not yet work against a real answer, becau
       site furniture as well as scripts, and both cases are regression tests. `FINDINGS.md` item 11
 - [ ] Exercise `SOURCE_NOT_HTML` and the thin-page flag on live data. Both are tested and neither has fired
       on a real capture, because this answer cites no PDFs. The Claude research report cites one
-- [ ] Label extraction failures separately in the gold set. As designed they will fold into the judge's error
-      rate, since a hand-labeller reading the real page marks supported where the pipeline said not-found.
-      A bad extractor and a bad judge are different problems with the same symptom
+- [x] Label extraction failures separately in the gold set. Solved with a deterministic check rather than a
+      second opinion: the labeller pastes the passage they found, and if it is on the page and missing from
+      what `extract.py` produced, `goldset.attribution` assigns that disagreement to the extractor and
+      reports a second kappa with those pairs removed. A floor on both counts, and it says so
 - [ ] Decide on a real extractor. `sayswho/extract.py` is behind a function boundary so trafilatura or
       readability-lxml is a one-line swap, and it would fix tables, images and article-body detection at
       once. Cost is the stdlib-only property of the extraction layer. Not taken yet
@@ -225,10 +228,19 @@ than only on the test built to trip it. `FINDINGS.md` item 10.
 
 ## Day 4: gates and the contract check
 
-- [ ] Unauditable claims excluded from every denominator, enforced by a hard contract check
-- [ ] `INSUFFICIENT_EVIDENCE` when more than half an answer's claims are unauditable, and no number printed
-- [ ] Gate G4: refuse to print aggregate rates when no gold set exists for the current judge and prompt
-      version. Per-claim verdicts still emit
+- [x] Unauditable claims excluded from every denominator, enforced by a hard contract check. Two levels now:
+      `gates.auditable_denominator` counts sources, `rates.standing_denominator` counts claim-source pairs,
+      and both raise rather than warn. A voided verdict leaves the numerator and the denominator together,
+      so a fabricated span cannot become evidence against a product
+- [x] `INSUFFICIENT_EVIDENCE` when more than half an answer's claims are unauditable, and no number printed.
+      Counted in claims rather than pairs, because the question is how much of the answer could be checked
+      and a reader thinks in sentences. The boundary is inclusive: exactly half is still insufficient
+- [x] Gate G4: refuse to print aggregate rates when no gold set exists for the current judge and prompt
+      version. Per-claim verdicts still emit. The tuple is judge, judge prompt, claim prompt and
+      `split_sha256`, and each mismatch is reported separately because the four need four different actions
+- [x] Rates carry what §5 promises: n, a Wilson interval, the unit, and how many splits they are over. The
+      interval field is `interval_95` rather than `confidence_interval`, because the no-confidence-number
+      gate walks keys and it is not getting an exception list
 - [ ] Test asserting no confidence number appears anywhere in any output surface
 - [ ] Headless harness runnable end to end over the frozen query set
 - [ ] `freeze_queries.py check` wired to run before every capture, so a tuned set fails the run. Partly
@@ -239,11 +251,28 @@ Done means pytest with each gate failing on its target bug, not merely present.
 
 ## Day 5: the gold set
 
-- [ ] Label 30 to 40 claims by hand, before looking at any judge output
-- [ ] Stratify across products and across verdict classes. Fill `UNAUDITABLE` and `CONTRADICTED` first, since
-      a class the set never contains cannot be calibrated
-- [ ] Commit the labels with a timestamp that precedes the judge run
-- [ ] Per-class precision and recall, plus Cohen's kappa with its confidence interval
+The machinery is built and tested. What is left on this list is the labelling itself, which is mine to do.
+
+- [x] Gold set file format, its four refusals, and the arithmetic. `sayswho/goldset.py`: bound to one
+      `split_sha256`, tamper-evident over every field of every label, blind labels refused if they postdate
+      the judge run, and labels outside the vocabulary rejected on load
+- [x] The labelling tool. `tools/label_goldset.py`, which refuses to open a file carrying judge output,
+      draws a reproducible seeded sample stratified across products and G2 codes, and saves after every
+      single label
+- [x] Ask the labeller for the passage they found, and check it against our own extraction. A passage that
+      is on the page and missing from `extract.py`'s output makes the resulting disagreement the extractor's
+      rather than the judge's, which is the one way to separate two problems with the same symptom
+- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** Blocked on the
+      professional stratum existing
+- [x] Stratification, as far as blind labelling permits. Products and G2 codes are knowable before any model
+      runs and are stratified on, with `UNAUDITABLE` reached first. Verdict classes are the judge's output,
+      so a blind sample cannot stratify on them and a sample that did would not be blind. If `CONTRADICTED`
+      comes back empty the answer is a supplement labelled afterwards, excluded from kappa and reported
+      separately. This is a correction to §3 Phase 4 as written, not a shortcut around it
+- [x] Commit the labels with a timestamp that precedes the judge run. Enforced: `goldset.agreement` raises
+      if any blind label postdates the run it is being compared against
+- [x] Per-class precision and recall, plus Cohen's kappa with its confidence interval. Each class carries
+      its own n, and perfect agreement on a single class reports no interval rather than a flattering one
 - [ ] Try to recruit a classmate to double-label 10 to 15 claims. If nobody is available, say so plainly and
       treat my labels as a single-rater ceiling rather than ground truth
 
