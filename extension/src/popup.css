@@ -22,15 +22,25 @@
  * is the one place to fix it. */
 [hidden] { display: none !important; }
 
+/* The width goes on `html`, not only on `body`.
+ *
+ * Chrome sizes a popup from the root element, and `html` with no width fills to the 800px maximum. Setting
+ * it on `body` alone gave a 780px window with 340px of content sitting in the corner of it, which is why
+ * this looked enormous and mostly empty.
+ */
+html,
 body {
   margin: 0;
-  width: 340px;
+  width: 360px;
+}
+
+body {
   background: var(--sw-paper);
   color: var(--sw-ink);
   font: 400 13px/1.45 system-ui, -apple-system, sans-serif;
 }
 
-.wrap { padding: 12px 14px 14px; }
+.wrap { padding: 10px 14px 12px; }
 
 header {
   display: flex;
@@ -43,7 +53,7 @@ header {
 .version { color: var(--sw-dim); font-size: 11px; }
 
 .block {
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--sw-line);
 }
 
@@ -95,7 +105,7 @@ p { margin: 5px 0 0; }
 .actions {
   display: flex;
   gap: 8px;
-  padding-top: 12px;
+  padding-top: 10px;
 }
 .actions button {
   flex: 1;
@@ -122,28 +132,28 @@ p { margin: 5px 0 0; }
 .link:hover { color: var(--sw-ink); }
 
 .onboard {
-  margin: 10px 0 0;
-  padding: 10px;
+  margin: 8px 0 0;
+  padding: 9px 10px;
   background: #f2efe6;
   border: 1px solid var(--sw-line);
   border-radius: 6px;
   font-size: 12px;
 }
-.onboard p { margin: 0 0 6px; }
+.onboard p { margin: 0 0 5px; }
 
 .toggle {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 9px;
   border-top: 1px solid var(--sw-line);
   font-size: 12px;
   cursor: pointer;
 }
 
 .foot {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--sw-dim);
   font-size: 11px;
   line-height: 1.45;

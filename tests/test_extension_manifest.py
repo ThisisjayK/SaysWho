@@ -540,5 +540,30 @@ def test_hidden_citations_and_truncated_text_are_separate_warnings():
     popup = content_of("popup.js")
     assert "record.text_incomplete" in popup
     assert "record.citations_hidden" in popup
-    assert "Scroll the answer" in popup
+    assert "Scroll to the end" in popup
     assert "Expand them and capture again" in popup
+
+
+# ---------------------------------------------------------------- the popup's size
+
+
+def test_the_popup_width_is_set_on_the_root_element():
+    """Chrome sizes a popup from `html`, not from `body`. With no width on the root it fills to the 800px
+    maximum, which gave a 780px window with 340px of content sitting in the corner of it.
+
+    Easy to reintroduce by "tidying" the selector list, so it is asserted rather than remembered."""
+    css = content_of("popup.css")
+    rule = re.search(r"(html,\s*\n?body\s*\{[^}]*\})", css)
+    assert rule, "html and body must share the width rule"
+    assert re.search(r"width:\s*\d+px", rule.group(1)), "the shared rule must carry the width"
+
+
+def test_the_popup_declares_one_width_and_not_two():
+    """Two different widths on html and body is the same bug with extra steps: the window would size to one
+    and the content to the other."""
+    css = content_of("popup.css")
+    rule = re.search(r"html,\s*\n?body\s*\{([^}]*)\}", css).group(1)
+    # Not preceded by a comma, so this finds the standalone `body {` rule rather than the shared one.
+    body_only = re.search(r"(?<!,)\nbody\s*\{([^}]*)\}", css).group(1)
+    assert "width" not in body_only, "a second width on body would size the content differently"
+    assert len(set(re.findall(r"width:\s*(\d+)px", rule))) == 1

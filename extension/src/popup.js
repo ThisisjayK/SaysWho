@@ -51,8 +51,7 @@
 
     if (state === null) {
       $("server-state").textContent = "Audit server not running";
-      $("server-detail").textContent =
-        "Capture still works and needs nothing. Start the server in a terminal for verdicts:";
+      $("server-detail").textContent = "Capture still works. For verdicts, start the server:";
       $("cmd-wrap").hidden = false;
       $("audit").disabled = true;
       $("action-note").textContent = "Audit is unavailable until the server is running.";
@@ -63,8 +62,8 @@
       dot.classList.add("partial");
       $("server-state").textContent = "Running, no judge";
       $("server-detail").textContent =
-        "It will fetch every cited page and report which ones could be read. It cannot say whether any of " +
-        "them supports anything. Restart it with --judge for verdicts:";
+        "It will report which cited pages could be read, and nothing about whether they support anything. " +
+        "For verdicts:";
       $("cmd-wrap").hidden = false;
       $("audit").disabled = false;
       $("action-note").textContent = "Audit will check the sources are reachable, and stop there.";
@@ -73,7 +72,7 @@
 
     dot.classList.add("ok");
     $("server-state").textContent = "Audit server running";
-    $("server-detail").textContent = "Fetch, claim splitting, judge and the quoted-passage check are all on.";
+    $("server-detail").textContent = "Fetch, claim splitting, judge and quoted-passage check all on.";
     $("cmd-wrap").hidden = true;
     $("audit").disabled = false;
     $("action-note").textContent = "";
@@ -112,10 +111,10 @@
     $("site-product").textContent = adapter.id;
     $("site-detail").textContent =
       verified === 0
-        ? `No selector for this product has been checked against a real page. A capture from it may be ` +
-          `missing citations, and it will be labelled unverified.`
-        : `${verified} of ${total} selectors checked against a real page. A capture made through an ` +
-          `unchecked one is labelled unverified rather than quietly trusted.`;
+        ? "No selector here has been checked against a real page, so a capture may be missing citations " +
+          "and is labelled unverified."
+        : `${verified} of ${total} selectors checked against a real page. A capture through an unchecked ` +
+          `one is labelled unverified rather than quietly trusted.`;
     $("capture").disabled = false;
   }
 
@@ -135,20 +134,17 @@
       warnings.push("No citations. G0 halts on this answer: it is a different object, not a zero result.");
     }
     if (record.text_incomplete) {
-      warnings.push(
-        "Part of this answer was never laid out, so the capture is short of it. Scroll the answer to the " +
-        "end and capture again."
-      );
+      warnings.push("Part of this answer was never laid out. Scroll to the end and capture again.");
     }
     if (record.citations_hidden) {
       // Not the same problem as truncated text, and not the same fix.
       warnings.push(
         `${record.expanders_seen} "+N" control(s) hide at least ${record.citations_hidden} more ` +
-        "citation(s), so this audit covers a subset of the sources. Expand them and capture again."
+        "citation(s), so this covers a subset of the sources. Expand them and capture again."
       );
     }
     if (!record.adapter_verified) {
-      warnings.push("Made with a selector that has never been checked against a real page.");
+      warnings.push("Made with an unchecked selector.");
     }
     $("last-warning").hidden = warnings.length === 0;
     $("last-warning").textContent = warnings.join(" ");
