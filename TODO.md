@@ -353,8 +353,16 @@ The machinery is built and tested. What is left on this list is the labelling it
       two. Same class of distinction as `SOURCE_ROBOTS_EXCLUDED`, and all three stay `UNAUDITABLE`, so the
       arithmetic is unchanged and only the sentence beside the number moves. Done early because it is small
       and because the dead-link stratum in §5a needs the distinction to exist before it can report one
-- [ ] Widen the `CITATION_NOT_LINKED` patterns and measure their recall against a hand-marked answer. The
-      current count is a floor and the writeup has to keep saying so until that is measured
+- [x] Widen the `CITATION_NOT_LINKED` patterns, as far as widening is safe before recall is known. PMID,
+      PMC and arXiv identifiers: all three are identifiers and nothing else, so they cost no precision, and
+      prose mentioning the systems by name is tested not to match. Anything looser than that trades away the
+      precision the published count depends on, on a guess
+- [x] Build the recall measurement. `tools/measure_named_recall.py` compares the patterns against a
+      hand-marked answer and reports recall and precision with intervals, matching a short hand-written form
+      against a long matched one by identifying tokens rather than by substring
+- [ ] Mark an answer by hand and run it. **Mine to do.** `--template` will start the file, and the tool says
+      out loud that starting from its own answers will anchor the marking. Until this runs the count stays a
+      floor of unknown depth
 
 ## Deliverables, by rubric row
 

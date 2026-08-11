@@ -22,6 +22,11 @@ even if it lands, a resolved citation still never enters a support-rate denomina
 **Precision over recall, deliberately.** The count of unverifiable citations is a number that gets published,
 so a false positive inflates a finding. The patterns below are narrow. They will miss real named citations,
 and the writeup says the count is a floor rather than a total.
+
+**How far under the total, measured rather than guessed.** `tools/measure_named_recall.py` compares what
+these patterns find against an answer marked by hand. Until that has been run the count stays "a floor of
+unknown depth", which is a weaker sentence than the writeup wants and the true one. The marking is human
+work; the comparison is one command.
 """
 
 from __future__ import annotations
@@ -37,6 +42,11 @@ TRIAL_ID = "TRIAL_ID"
 DOI = "DOI"
 PUBLISHED_IN = "PUBLISHED_IN"
 YEAR_JOURNAL_STUDY = "YEAR_JOURNAL_STUDY"
+
+#: A bare publication identifier: PMID, PMC or arXiv. Added on day 5 alongside the recall harness. These
+#: three are identifiers and nothing else, so widening into them costs no precision, which is the only kind
+#: of widening available before recall has actually been measured against a hand-marked answer.
+PUBLICATION_ID = "PUBLICATION_ID"
 
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     # "LeClair et al., Supportive Care in Cancer, 2022"
@@ -68,6 +78,12 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (TRIAL_ID, re.compile(r"\bNCT\d{8}\b")),
     # A bare DOI. Also unambiguous.
     (DOI, re.compile(r"\b10\.\d{4,9}/[^\s,;)\]]+")),
+    # "PMID 34567890", "PMID: 34567890". An identifier and nothing else, so it cannot match prose.
+    (PUBLICATION_ID, re.compile(r"\bPMID:?\s*\d{7,8}\b")),
+    # "PMC7891234", the other identifier the same literature uses.
+    (PUBLICATION_ID, re.compile(r"\bPMC\d{6,8}\b")),
+    # "arXiv:2401.12345" and the older "arXiv:cs.CL/0112017".
+    (PUBLICATION_ID, re.compile(r"\barXiv:\s?(?:\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+(?:\.[A-Z]{2})?/\d{7})\b")),
     # "published in Nature Health (Nov 2025)"
     (
         PUBLISHED_IN,

@@ -116,3 +116,69 @@ def test_results_come_back_in_document_order():
     text = "First (Alpha et al., Journal, 2020). Later NCT12345678 appears."
     found = find_named_citations(text)
     assert [c.start for c in found] == sorted(c.start for c in found)
+
+
+# ---------------------------------------------------------------- publication identifiers
+
+
+import pytest
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("See PMID: 34567890 for the trial.", "PMID: 34567890"),
+        ("See PMID 34567890 for the trial.", "PMID 34567890"),
+        ("Full text at PMC7891234.", "PMC7891234"),
+        ("Preprint arXiv:2401.12345 reports this.", "arXiv:2401.12345"),
+        ("Preprint arXiv:2401.12345v2 reports this.", "arXiv:2401.12345v2"),
+    ],
+)
+def test_a_bare_publication_identifier_is_a_named_citation(text, expected):
+    """An identifier and nothing else, so widening into these costs no precision."""
+    from sayswho.named_citations import PUBLICATION_ID, find_named_citations
+
+    found = find_named_citations(text)
+    assert [c.text for c in found] == [expected]
+    assert found[0].kind == PUBLICATION_ID
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "The PMID system indexes medical literature.",
+        "arXiv publishes preprints.",
+        "We reviewed PMC guidance on funding.",
+    ],
+)
+def test_prose_mentioning_those_systems_is_not_a_citation(text):
+    """Precision first. This count is published, so a false positive inflates a finding."""
+    from sayswho.named_citations import find_named_citations
+
+    assert find_named_citations(text) == []
+
+
+# ---------------------------------------------------------------- the recall harness
+
+
+def test_the_recall_harness_counts_a_miss_and_a_loose_match(tmp_path):
+    """The comparison is deliberately loose: a person writes the citation shorter than the pattern matched
+    it, and calling those different would measure typing conventions rather than recall."""
+    import sys
+
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent / "tools"))
+    import measure_named_recall as harness
+
+    assert harness.overlaps("LeClair et al. 2022", "LeClair et al., Supportive Care in Cancer, 2022")
+    assert not harness.overlaps("Rajabiun et al., Cancer, 2025", "LeClair et al., 2022")
+
+
+def test_the_marked_file_ignores_comments_and_blanks(tmp_path):
+    import sys
+
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent / "tools"))
+    import measure_named_recall as harness
+
+    path = tmp_path / "marked.txt"
+    path.write_text("# a comment\n\nLeClair et al., 2022\n\n# another\nRajabiun et al., 2025\n")
+    assert harness.read_marked(path) == ["LeClair et al., 2022", "Rajabiun et al., 2025"]
