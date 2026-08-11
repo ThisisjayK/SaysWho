@@ -417,3 +417,79 @@ def test_the_close_control_cannot_be_painted_over():
     block = css[css.index(".sw-panel-close {"): css.index(".sw-panel-close:hover")]
     assert "position: fixed" in block
     assert "z-index: 2147483647" in block
+
+
+# ---------------------------------------------------------------- citations that are not links
+
+
+def adapters_js() -> str:
+    return (EXTENSION / "src" / "adapters.js").read_text()
+
+
+def test_both_sides_look_for_the_same_citation_attributes():
+    """`SCOPE.md` §9: a citation the extension records and the Python cannot re-extract is a parity
+    failure. These two lists are the rule, written twice in two languages, so they get compared."""
+    from sayswho.reextract import CITATION_URL_ATTRS
+
+    in_js = set(re.findall(r'citationUrlAttrs:\s*\[([^\]]*)\]', adapters_js()))
+    attrs = {a.strip().strip('"\'') for group in in_js for a in group.split(",") if a.strip()}
+    assert attrs, "no adapter declares a citation URL attribute"
+    assert attrs == set(CITATION_URL_ATTRS)
+
+
+def test_the_url_of_a_citation_is_read_in_one_place():
+    """Container selection ranks containers by citation count, so the counter and the extractor disagreeing
+    about what a citation is would pick the wrong container and then extract from it."""
+    js = adapters_js()
+    assert "function saysWhoCitationUrl" in js
+    assert "saysWhoCitationUrl(node, adapter)" in js, "the counter uses it"
+    assert "saysWhoCitationUrl(anchor, adapter)" in (EXTENSION / "src" / "capture.js").read_text()
+
+
+def test_the_extractor_no_longer_reads_href_directly():
+    """`anchor.href` is undefined on a span, which is what every Perplexity citation is."""
+    capture = (EXTENSION / "src" / "capture.js").read_text()
+    assert "const url = anchor.href;" not in capture
+
+
+def test_perplexity_looks_for_the_attribute_it_actually_uses():
+    js = adapters_js()
+    block = js[js.index('id: "perplexity"'): js.index('id: "perplexity"') + 1400]
+    assert '"[data-pplx-citation-url]"' in block
+    assert '"data-pplx-citation-url"' in block
+    assert "verifiedSelectors: []" in block, "the citation path is evidence-based; the capture is not verified yet"
+
+
+@pytest.mark.skipif(node is None, reason="node is not installed")
+def test_the_url_helper_reads_an_attribute_when_there_is_no_href():
+    """Run the real function, in node, rather than asserting about the shape of the file."""
+    script = """
+      const vm = require("node:vm");
+      const fs = require("node:fs");
+      const box = { console };
+      vm.createContext(box);
+      vm.runInContext(fs.readFileSync(process.argv[1], "utf8"), box);
+      const adapter = { citationUrlAttrs: ["data-pplx-citation-url"] };
+      const span = { getAttribute: (n) => n === "data-pplx-citation-url" ? "https://example.org/a" : null };
+      const anchor = { href: "https://example.org/b", getAttribute: () => null };
+      const plain = { getAttribute: () => null };
+      const relative = { getAttribute: () => "/not-absolute" };
+      console.log(JSON.stringify([
+        box.saysWhoCitationUrl(span, adapter),
+        box.saysWhoCitationUrl(anchor, adapter),
+        box.saysWhoCitationUrl(plain, adapter),
+        box.saysWhoCitationUrl(relative, adapter),
+        box.saysWhoCitationUrl(span, {}),
+      ]));
+    """
+    done = subprocess.run(
+        [node, "-e", script, str(EXTENSION / "src" / "adapters.js")],
+        capture_output=True, text=True, cwd=REPO,
+    )
+    assert done.returncode == 0, done.stderr
+    span, anchor, plain, relative, unconfigured = json.loads(done.stdout)
+    assert span == "https://example.org/a"
+    assert anchor == "https://example.org/b", "a real anchor still wins"
+    assert plain == ""
+    assert relative == "", "a relative value is not a citation URL"
+    assert unconfigured == "", "an adapter that declares no attribute reads none"

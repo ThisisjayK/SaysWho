@@ -188,14 +188,41 @@ def _is_chrome(url: str) -> bool:
         return True
 
 
+#: Attributes that carry a citation's URL when the citation is not a link.
+#:
+#: Perplexity renders every inline citation as a span with `data-pplx-citation-url` and puts no anchor on
+#: the page at all, so an anchors-only rule finds none of its citations and reports a clean capture with
+#: zero of them. This list is the Python half of the same rule the extension applies, and `SCOPE.md` §9
+#: requires the two to agree: a citation the extension records and this cannot re-extract is a parity
+#: failure, not a detail.
+CITATION_URL_ATTRS = ("data-pplx-citation-url",)
+
+
+def _citation_url(node: Node) -> str:
+    """The URL a citation node points at, whether or not it is a link."""
+    href = node.attrs.get("href", "")
+    if href:
+        return href
+    for attr in CITATION_URL_ATTRS:
+        value = node.attrs.get(attr, "")
+        if value.lower().startswith(("http://", "https://")):
+            return value
+    return ""
+
+
 def citations_in(node: Node) -> list[dict[str, str]]:
-    """External anchors under a node, page furniture excluded, deduplicated by normalised URL and marker."""
+    """External citations under a node, page furniture excluded, deduplicated by normalised URL and marker.
+
+    A citation is an anchor, or any element carrying one of `CITATION_URL_ATTRS`. Nested matches are
+    skipped: Perplexity wraps its chip in a second element of the same class, and counting both would
+    double every citation on the page.
+    """
     out: list[dict[str, str]] = []
     seen = set()
     for candidate in node.walk():
-        if candidate.tag != "a":
+        if candidate.tag != "a" and not any(a in candidate.attrs for a in CITATION_URL_ATTRS):
             continue
-        href = candidate.attrs.get("href", "")
+        href = _citation_url(candidate)
         if not href.lower().startswith(("http://", "https://")) or _is_chrome(href):
             continue
         marker = re.sub(r"\s*\+\d+\s*$", "", " ".join(candidate.text_content().split())).strip()

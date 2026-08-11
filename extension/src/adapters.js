@@ -63,10 +63,21 @@ const SAYSWHO_ADAPTERS = [
   },
   {
     id: "perplexity",
+    // Still unverified, and now for a much narrower reason than before. The citation mechanism is
+    // established: probed against a live answer page on 2026-08-11, `.prose` was the only match on the
+    // page and held all five citations, every one of them a span carrying an absolute URL in
+    // `data-pplx-citation-url`, and the document contained no `<a href>` at all.
+    //
+    // What has not been done is the rest of what verification means here: reading a captured answer end to
+    // end against the screen on a logged-in page, and seeing what the "+N" chip does when one sentence
+    // cites several sources. Until both, a capture from this adapter is labelled unverified.
     verifiedSelectors: [],
     hosts: ["www.perplexity.ai", "perplexity.ai"],
     answerSelectors: [".prose", '[class*="answer"]'],
-    citationSelectors: ['a[href^="http"]'],
+    // Anchors first, because Perplexity may go back to them, and a real anchor is better evidence than an
+    // attribute. The data attribute is the fallback that actually fires today.
+    citationSelectors: ['a[href^="http"]', "[data-pplx-citation-url]"],
+    citationUrlAttrs: ["data-pplx-citation-url"],
     excludeHosts: SAYSWHO_CHROME_HOSTS,
   },
   {
@@ -107,17 +118,40 @@ function saysWhoIsChrome(url, excludeHosts) {
   }
 }
 
+/**
+ * The URL a citation element points at, whether or not it is a link.
+ *
+ * Perplexity renders every inline citation as
+ * `<span class="citation inline" data-pplx-citation-url="https://...">`, with no anchor anywhere on the
+ * page. Probed against a live answer on 2026-08-11: five citations in the answer, five spans carrying the
+ * attribute, zero `<a href>` elements in the entire document. So an extractor that only knows about
+ * anchors does not find "roughly a third" of Perplexity's citations. It finds none of them, and reports a
+ * clean capture with zero citations, which G0 then treats as an uncited answer.
+ *
+ * One function, used by the counter below and by the extractor in capture.js, because container selection
+ * ranks containers by citation count and the two disagreeing would pick the wrong container.
+ */
+function saysWhoCitationUrl(element, adapter) {
+  if (element.href) return element.href;
+  for (const attr of adapter.citationUrlAttrs || []) {
+    const value = element.getAttribute && element.getAttribute(attr);
+    if (value && /^https?:\/\//i.test(value)) return value;
+  }
+  return "";
+}
+
 function saysWhoCountCitations(element, adapter) {
   let count = 0;
   for (const selector of adapter.citationSelectors) {
-    let anchors;
+    let found;
     try {
-      anchors = element.querySelectorAll(selector);
+      found = element.querySelectorAll(selector);
     } catch {
       continue;
     }
-    for (const a of anchors) {
-      if (a.href && !saysWhoIsChrome(a.href, adapter.excludeHosts)) count += 1;
+    for (const node of found) {
+      const url = saysWhoCitationUrl(node, adapter);
+      if (url && !saysWhoIsChrome(url, adapter.excludeHosts)) count += 1;
     }
     if (count) break;
   }

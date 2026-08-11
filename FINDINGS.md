@@ -374,3 +374,39 @@ A confidence interval and a confidence score are genuinely different objects, so
 have been defensible. It was not taken. A gate with an exception list is a gate that will eventually be
 argued past, and the argument will be made by whoever wants the exception. The field is called
 `interval_95`, the gate stayed blunt, and there is a test asserting a rate passes the gate unmodified.
+
+## 16. Perplexity puts no links in its answers at all
+
+The adapter note said four source chips carried no anchor, so roughly a third of Perplexity's citations were
+not in the DOM as links. Probing a live answer page on 2026-08-11 gave a different number: zero of them are.
+
+Every inline citation is
+
+```html
+<span class="citation inline" data-pplx-citation data-pplx-citation-url="https://www.boston.gov/...pdf">
+```
+
+and `document.querySelectorAll("a[href]")` over the whole page returns nothing. Five citations in the
+answer, five spans carrying an absolute URL in an attribute, no anchors anywhere.
+
+**What that produced.** The extension looked for `a[href^="http"]`, found none, and emitted a capture with
+`citations: []`. That capture is not obviously broken. It parses, it hashes, its character counts are
+right, and its adapter is reported honestly as unverified. What happens next is worse than a crash: G0 sees
+an answer with no citations and halts it as `NO_CITATIONS`, which the tool defines as *a different object,
+not a zero percent answer*. So a Perplexity answer with five real citations would have been filed as an
+answer that cited nothing, by a gate whose entire purpose is to protect that distinction.
+
+**Why the estimate was wrong in the first place.** "Roughly a third" came from counting visible chips
+against captured citations on one screen, by eye. The right instrument was two lines of JavaScript, and it
+was available the whole time. An estimate arrived at by looking at a screen is not evidence about a DOM.
+
+**The fix had to land in three places.** The extension's citation counter, which ranks candidate containers
+by how many citations each holds; the extension's extractor; and `sayswho/reextract.py`, which re-runs
+selection over stored markup. Any one of them left behind would break something specific: the counter would
+pick the wrong container, the extractor would drop the citations, or the §9 parity check would report a
+disagreement between the two implementations. There is now one helper per side and a test comparing the two
+attribute lists across the language boundary.
+
+**One thing this does not fix.** The first Perplexity citation on that page is a PDF, which is
+`SOURCE_NOT_HTML` downstream: a code that is tested, has never fired on real data, and is listed in
+`STATUS.md` as unexercised. It could not fire while the citations never reached the fetch layer.

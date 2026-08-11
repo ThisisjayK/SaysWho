@@ -97,9 +97,15 @@ for three of the four products have never been checked field by field against a 
       the stored markup agree on container and citations
 - [ ] Claude `.font-claude-response` verified. The chat path has never been exercised. **Mine to do:** it needs a real answer on a real page
 - [ ] ChatGPT selectors verified. The capture works but has not been checked field by field. **Mine to do**
-- [ ] Perplexity: four source chips carry no anchor at all, so roughly a third of its citations are not in
-      the DOM as links. Needs a probe of what those chips actually are before the adapter can be trusted.
-      **Mine to do**
+- [x] Perplexity: probed, and it was worse than the note said. Not "roughly a third" of its citations are
+      missing from the DOM as links: **none** of them are links. Every inline citation is
+      `<span class="citation inline" data-pplx-citation-url="https://...">` and a live answer page contained
+      no `<a href>` at all, so the anchors-only rule found zero citations and produced a clean capture that
+      G0 would read as an uncited answer. Fixed in three places at once, because the counter that ranks
+      containers, the extractor, and the Python re-extractor all have to agree about what a citation is
+- [ ] Perplexity, the rest of verification: read a captured answer end to end against the screen on a
+      logged-in page, and find out what the "+N" chip does when one sentence cites several sources. Until
+      both, captures from this adapter stay labelled unverified. **Mine to do**
 - [x] Auto-scroll before capture, and `rendered_chars` against `dom_chars` so unrendered text is reported
       rather than silently missing
 - [x] `extension_version` stamped into every capture, so a stale content script announces itself

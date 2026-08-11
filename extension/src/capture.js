@@ -31,14 +31,17 @@ function saysWhoExtractCitations(adapter, element) {
   const seen = new Set();
 
   for (const selector of adapter.citationSelectors) {
-    let anchors;
+    let found;
     try {
-      anchors = element.querySelectorAll(selector);
+      found = element.querySelectorAll(selector);
     } catch {
       continue;
     }
-    for (const anchor of anchors) {
-      const url = anchor.href;
+    for (const anchor of found) {
+      // Not `anchor.href`: on Perplexity a citation is a span carrying the URL in an attribute, and there
+      // is no anchor on the page at all. One helper, shared with the counter that ranks containers, so the
+      // two cannot disagree about what a citation is. See adapters.js.
+      const url = saysWhoCitationUrl(anchor, adapter);
       if (!url || !/^https?:/i.test(url)) continue;
 
       // Page furniture: the "Claude is AI and can make mistakes" link, product help pages, same-origin
@@ -50,7 +53,7 @@ function saysWhoExtractCitations(adapter, element) {
 
       // "Massachusetts Government\n+1" is one visible chip plus a control meaning "and 1 more source".
       // The newline and the +1 are UI, not part of the marker the reader sees beside the sentence.
-      const label = (anchor.innerText || "")
+      const label = (anchor.innerText || anchor.textContent || "")
         .replace(/\s*\+\d+\s*$/, "")
         .replace(/\s+/g, " ")
         .trim();

@@ -66,7 +66,7 @@ answer" are different claims and only one of them is currently true.
 | Claude `.bg-surface-3 .standard-markdown` verified | **done** | Read end to end against the screen, corroborated by a DOM probe |
 | Claude `.font-claude-response` verified | **not done** | The chat path has never been exercised |
 | ChatGPT selectors verified field by field | **not done** | The capture works; it has not been checked |
-| Perplexity adapter trusted | **not done** | Four source chips carry no anchor at all, so roughly a third of its citations are not in the DOM as links |
+| Perplexity adapter trusted | **citations fixed, capture not verified** | The mechanism is established by probe: every citation is a span carrying `data-pplx-citation-url` and the page has no anchors at all, so the old rule found none of them. Reading a capture against the screen on a logged-in page is still outstanding |
 | Google AI Overviews adapter verified | **not done** | And its results never enter a cross-product aggregate: the default judge is a Google model |
 | Popup: server state, adapter provenance, last capture, both actions, hide-the-dock toggle | **done, browser leg unexercised** | Four states rendered and checked in a browser through a shim. Never run as a real extension |
 | Audit without a terminal step | **done, browser leg unexercised** | `python3 -m sayswho.server` plus an "audit here" button. The server is tested over real HTTP; whether the panel renders correctly on claude.ai has never been seen |
