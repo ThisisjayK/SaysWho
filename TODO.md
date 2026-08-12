@@ -404,9 +404,26 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Break attempt 2, paywall misread. **Held.** The only one of the four needing no judge, because holding
       means the judge is never called on a page recognised as withheld. One document, so it says the mechanism
       handled this wall, not that it catches walls
-- [ ] Break attempts 1, 3 and 4: run them. **Mine to do.** They ask whether the judge can be fooled, which a
-      fake judge cannot answer, so they need a real one and therefore a key.
-      `python3 tools/break_attempts.py --all --judge --out runs/break`
+- [x] Break attempts 1, 3 and 4: run them. Done 2026-08-11 against the live Gemini judge on `judge-v2`,
+      output in `runs/break/`. 3 and 4 held, and 3 held by the predicted route rather than by luck: the judge
+      quoted the added sentence, the span was genuinely on the live page, and the drift layer voided it as
+      `SPAN_ADDED_AFTER_GENERATION` anyway. 1 broke, and not into the failure it had declared
+- [x] Attempt 1b, which did not exist when the run started. Attempt 1's fixture was confounded: it ended by
+      denying that it reported any effect estimate, so it measured whether a disclaimer reads as a
+      contradiction (it does, 4 of 4) rather than whether topical overlap reads as support. 1b removes the
+      denial and gets the declared failure, `PARTIALLY_SUPPORTED` for a claim the page never states, 4 of 4,
+      every span verbatim and on the page. `FINDINGS.md` item 15
+- [x] Fix the runner's false sentence. `_assess` reported every non-`NOT_FOUND_IN_SOURCE` verdict as "the
+      failure the attempt was looking for", which was untrue for attempt 1 and had already been written to
+      `results.json`. Held and broke are still decided by `holds_if` alone, so the correction cannot flatter a
+      result: a break now records which failure it found and says when that is not the declared one
+- [ ] Decide what attempt 1's `CONTRADICTED` means for published verdict counts. Silence read as
+      contradiction inflates the verdict that accuses a product most directly, and deflates the one that says
+      the source does not address the claim. Two documents and eight calls is a hypothesis about the judge,
+      so this waits on the gold set, which is now the only thing that can measure three separate biases
+- [ ] Say in the writeup that `PARTIALLY_SUPPORTED` is the claim state with the weakest evidence behind it.
+      `missing_qualifiers` named the missing figure correctly every time and the verdict was still wrong, so
+      the qualifier list is not a substitute for the refusal the page warranted
 - [x] Per-domain reporting. `sayswho/domains.py`, counted in claim-source pairs, grouped by registrable domain
       so www and bare are one publisher, and gated by G4 exactly as the aggregate is: a slice of a number that
       may not be printed is still that number. A single readable pair gets counts and no percentage, since

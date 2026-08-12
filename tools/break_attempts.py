@@ -23,6 +23,12 @@ afterwards is not an attempt. The script prints that line above every result.
 **A pass here is not proof of anything.** Each attempt is one document. Confirming the tool survives one
 adversarial page says the mechanism handles that page, and `BREAK_ATTEMPTS.md` reports it in exactly those
 words.
+
+**Failing the criterion and committing the declared failure are two different results.** The first run of
+attempt 1 returned `CONTRADICTED`: not `NOT_FOUND_IN_SOURCE`, so it did not hold, and not the
+support-a-claim-the-page-never-states failure it declared either. `_assess` reports those separately, because
+an attempt that credits itself with finding the failure it went looking for, when something else happened, is
+worth less than one that says which failure it actually found.
 """
 
 from __future__ import annotations
@@ -55,7 +61,10 @@ from sayswho.records import Capture, Citation
 class Attempt:
     """One adversarial document, the claim cited to it, and the failure being looked for."""
 
-    number: int
+    #: A string rather than an int, because attempt 1's fixture turned out to be confounded and the
+    #: de-confounded version is 1b rather than 5: it asks attempt 1's question, and 5 is taken by a core
+    #: attempt that lives in the test suite.
+    id: str
     name: str
     #: The failure mode, declared before the run. Printed above every result.
     looking_for: str
@@ -74,7 +83,7 @@ class Attempt:
 
 ATTEMPTS: list[Attempt] = [
     Attempt(
-        number=1,
+        id="1",
         name="topical-match false positive",
         looking_for=(
             "SUPPORTED or PARTIALLY_SUPPORTED. The page is entirely about this subject, shares most of the "
@@ -102,11 +111,56 @@ for the Boston cohort or for any other.</p>
 </article></body></html>""",
         notes=(
             "Every content word in the claim appears on the page: navigation, time to diagnosis, Boston "
-            "cohort, days, reduced. The number 21 does not, and neither does any effect estimate."
+            "cohort, days, reduced. The number 21 does not, and neither does any effect estimate. "
+            "Confounded, discovered on the first run: the closing paragraph denies making the estimate in "
+            "so many words, so the page announces its own silence rather than merely being silent. See 1b."
         ),
     ),
     Attempt(
-        number=2,
+        id="1b",
+        name="topical-match false positive, de-confounded",
+        looking_for=(
+            "SUPPORTED or PARTIALLY_SUPPORTED, the same failure attempt 1 declared and did not produce. "
+            "Attempt 1's page ended by denying that it reported any effect estimate, and the judge read "
+            "that denial as CONTRADICTED, so the declared question was never asked: does a page that is "
+            "merely silent about the claim, while sharing its whole vocabulary, get read as supporting it. "
+            "This fixture removes the denial and nothing else."
+        ),
+        holds_if=(
+            "NOT_FOUND_IN_SOURCE. Topical overlap is not support, which the prompt says in those words. "
+            "CONTRADICTED would also fail the criterion, and on this page it would be a stronger finding "
+            "than it was on attempt 1: there is no sentence here for a contradiction to rest on."
+        ),
+        claim="Patient navigation reduced time to diagnosis by 21 days in the Boston cohort.",
+        document="""<html><body><article>
+<h1>Patient navigation and time to diagnosis in urban cohorts</h1>
+<p>Patient navigation programmes have become a standard component of cancer care delivery in Boston and in
+comparable metropolitan areas. This review discusses time to diagnosis, the Boston cohort, and the design of
+navigation interventions at length.</p>
+<p>Time to diagnosis is widely used as an outcome measure in navigation research. Reported intervals vary
+considerably across cohorts, and the Boston cohort has been described in several publications examining
+navigation and diagnostic delay.</p>
+<p>The literature on patient navigation and diagnostic timeliness is extensive. Studies differ in how they
+define the diagnostic interval, in whether navigation begins before or after an abnormal result, and in the
+populations enrolled. Days elapsed between abnormal screening and diagnostic resolution is the most common
+formulation of the outcome, and effect estimates in this literature are expressed as a reduction in that
+interval, in days, relative to usual care.</p>
+</article></body></html>""",
+        notes=(
+            "Attempt 1's document with the closing paragraph removed. The page now says nothing either way "
+            "about whether navigation reduced anything, which is how an ordinary topically-related page "
+            "behaves; a page that announces what it does not report is rare enough that testing against one "
+            "measured something other than what the attempt claimed to measure.\n\n"
+            "One sentence was added rather than only removed, and the reason is a second thing wrong with "
+            "attempt 1. Deleting the denial deleted the claim's verb with it: 'reduc' appeared nowhere else "
+            "on that page, so the vocabulary overlap attempt 1 asserts in its own notes was partly supplied "
+            "by the confound. The replacement states how effect estimates are expressed in this field, in "
+            "the claim's words, without asserting that any reduction occurred here or anywhere. A judge "
+            "reading it as support is reading a description of a unit of measurement as a finding."
+        ),
+    ),
+    Attempt(
+        id="2",
         name="paywall misread",
         looking_for=(
             "NOT_FOUND_IN_SOURCE. A paywall teaser carries the article's title and abstract-shaped opening "
@@ -134,7 +188,7 @@ resolution as the primary outcome and enrolment across eleven participating site
         ),
     ),
     Attempt(
-        number=3,
+        id="3",
         name="post-hoc drift",
         looking_for=(
             "A standing SUPPORTED resting on a sentence that was added to the page after the answer was "
@@ -166,7 +220,7 @@ navigators working to a shared protocol agreed at the outset.</p>
         ),
     ),
     Attempt(
-        number=4,
+        id="4",
         name="shared-vocabulary contradiction",
         looking_for=(
             "SUPPORTED. The page states the opposite of the claim using almost exactly the claim's words, "
@@ -189,7 +243,7 @@ authors attribute to scheduling capacity rather than to navigation itself.</p>
     ),
 ]
 
-BY_NUMBER = {a.number: a for a in ATTEMPTS}
+BY_ID = {a.id: a for a in ATTEMPTS}
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -233,7 +287,7 @@ def run_attempt(attempt: Attempt, cache_dir: Path, use_judge: bool, provider: st
         record = fetcher.fetch(url)
 
         result = {
-            "attempt": attempt.number,
+            "attempt": attempt.id,
             "name": attempt.name,
             "looking_for": attempt.looking_for,
             "holds_if": attempt.holds_if,
@@ -249,10 +303,10 @@ def run_attempt(attempt: Attempt, cache_dir: Path, use_judge: bool, provider: st
             # For attempt 2 this is the whole result and a good one: the judge is never asked about a
             # source the pipeline could not read.
             result["outcome"] = "source not auditable, judge never called"
-            result["held"] = attempt.number == 2
+            result["held"] = attempt.id == "2"
             result["why"] = (
                 "the wall was detected, so the claim is UNAUDITABLE and out of every denominator"
-                if attempt.number == 2
+                if attempt.id == "2"
                 else "the document could not be read, so this attempt did not reach the judge and has no "
                      "result. That is a fixture problem, not a finding."
             )
@@ -268,7 +322,7 @@ def run_attempt(attempt: Attempt, cache_dir: Path, use_judge: bool, provider: st
         from sayswho.model import Meter
 
         client = build_judge(provider, meter=Meter())
-        claim = Claim(id=f"BREAK-{attempt.number}", text=attempt.claim, markers=["[1]"], urls=[url])
+        claim = Claim(id=f"BREAK-{attempt.id}", text=attempt.claim, markers=["[1]"], urls=[url])
 
         # Attempt 3 needs the drift layer, and the drift layer normally finds its archived copy through
         # Wayback. Depending on Wayback here would make the attempt's result depend on whether a third
@@ -317,22 +371,34 @@ def _assess(attempt: Attempt, judgement) -> tuple[bool, str]:
 
     Deliberately mechanical. The criterion is `holds_if` and it is not reinterpreted here in the light of
     what actually happened.
+
+    Held and broke are decided by `holds_if` alone. The sentence attached to a break additionally says
+    whether the failure was the one `looking_for` declared, because those are separate facts and the first
+    version of this function asserted the second whenever the first was false.
     """
     verdict = judgement.verdict
-    if attempt.number == 1:
+    if attempt.id in ("1", "1b"):
         if verdict == NOT_FOUND_IN_SOURCE:
             return True, "topical overlap was not read as support"
+        if verdict in (SUPPORTED, PARTIALLY_SUPPORTED):
+            return False, (
+                f"the judge returned {verdict} for a claim the page never states. This is the failure the "
+                "attempt was looking for, and the span guard cannot catch it: the quoted passage is really "
+                "on the page."
+            )
         return False, (
-            f"the judge returned {verdict} for a claim the page never states. This is the failure the "
-            "attempt was looking for, and the span guard cannot catch it: the quoted passage is really "
-            "on the page."
+            f"the criterion was NOT_FOUND_IN_SOURCE and the judge returned {verdict}, so the attempt did "
+            "not hold. It is not the failure the attempt declared either: the page was not read as "
+            "supporting a claim it never states. Reported as broke, into a different failure, because an "
+            "attempt that credits itself with the failure it went looking for when something else happened "
+            "is worth less than one that says which failure it found."
         )
-    if attempt.number == 2:
+    if attempt.id == "2":
         return False, (
             "the paywall was not detected, so the judge was asked about a teaser as though it were the "
             f"article, and returned {verdict}. A missed wall produces exactly the wrong verdict."
         )
-    if attempt.number == 3:
+    if attempt.id == "3":
         if judgement.voided:
             return True, f"voided as {judgement.void_reason}"
         if judgement.span_predates_generation is None:
@@ -343,7 +409,7 @@ def _assess(attempt: Attempt, judgement) -> tuple[bool, str]:
         if judgement.span_predates_generation is False:
             return False, "the span postdates the answer and the verdict was allowed to stand"
         return False, "the span was treated as predating the answer"
-    if attempt.number == 4:
+    if attempt.id == "4":
         if verdict == CONTRADICTED:
             return True, "the polarity of the sentence was read, not just its vocabulary"
         if verdict in (SUPPORTED, PARTIALLY_SUPPORTED):
@@ -386,7 +452,8 @@ def render(results: list[dict]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--attempt", type=int, action="append", default=[], choices=sorted(BY_NUMBER))
+    parser.add_argument("--attempt", action="append", default=[], choices=sorted(BY_ID),
+                        help="attempt id: 1, 1b, 2, 3 or 4")
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--judge", action="store_true",
@@ -398,14 +465,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.list:
         for attempt in ATTEMPTS:
-            print(f"{attempt.number}. {attempt.name}")
+            print(f"{attempt.id}. {attempt.name}")
             print(f"   looking for: {attempt.looking_for}")
             print(f"   holds if   : {attempt.holds_if}")
             print()
         return 0
 
-    numbers = sorted(set(args.attempt)) or (sorted(BY_NUMBER) if args.all else [])
-    if not numbers:
+    chosen = sorted(set(args.attempt)) or (sorted(BY_ID) if args.all else [])
+    if not chosen:
         parser.error("choose --attempt N, or --all, or --list")
 
     if args.judge:
@@ -419,7 +486,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     results = [
-        run_attempt(BY_NUMBER[n], args.cache, args.judge, args.judge_provider) for n in numbers
+        run_attempt(BY_ID[n], args.cache, args.judge, args.judge_provider) for n in chosen
     ]
     readout = render(results)
     print(readout)

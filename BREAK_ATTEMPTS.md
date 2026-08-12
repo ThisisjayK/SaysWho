@@ -83,7 +83,7 @@ leaving an absence for a reader to fill in.
 
 ---
 
-## Attempts 1 to 4, stretch: built, one run
+## Attempts 1 to 4, stretch: run against a live judge on 2026-08-11
 
 `tools/break_attempts.py`. Each attempt serves a purpose-built adversarial document over real HTTP through
 the real fetch layer, and asks the configured judge. One command:
@@ -97,23 +97,83 @@ the script prints that line above every result. An attempt whose success criteri
 output is not an attempt, and `_assess` reads the declared criterion mechanically rather than reinterpreting
 it in the light of what happened.
 
-**Three of the four need a live judge and have not had one yet.** These attempts ask whether the *judge* can
-be fooled by a document built to fool it. A fake judge cannot answer that: it returns whatever the fixture
-author expected, which measures the author's assumption and calls it a result. So they are reported as
-no-result rather than as passes, and the runner counts "no result" separately from "held" for exactly that
-reason.
+All four ran against the default Gemini judge on `judge-v2`, output in `runs/break/`. Three held, two broke,
+and the second break is a fixture that did not exist before the first run.
 
-| # | Attempt | Status |
+| # | Attempt | Result |
 |---|---|---|
-| 1 | Topical-match false positive: a page discussing the subject at length that never states the claim | **Fixture built, no result.** Needs a judge. The fixture contains every content word of the claim, navigation, time to diagnosis, Boston cohort, days, reduced, and does not contain the number 21 or any effect estimate. Asserted by test, since a fixture that failed to share the vocabulary would test nothing. Partially anticipated by attempt 5's related hole, which shows the guard passes a real but irrelevant span |
-| 2 | Paywall misread: does a paywalled article return unauditable, or wrongly `NOT_FOUND_IN_SOURCE` | **Held.** The one of the four that needs no judge, because holding means the judge is never called. The teaser carries a title and an abstract-shaped opening; `detect_wall` returned `SOURCE_PAYWALLED`, the claim became unauditable, and `judge_claim` refuses to run on a non-`SOURCE_OK` source at all. One document, so this says the mechanism handled this wall, not that it catches walls |
-| 3 | Post-hoc drift: a citation pointing at a page that changed after generation | **Fixture built, no result.** Needs a judge. The archived text is supplied directly rather than fetched from Wayback, because a result that depends on whether a third party happens to hold a snapshot of a local fixture is not a result. Containment 0.62, and the sentence the claim rests on exists only in the live copy. Also asserted by test |
-| 4 | Shared-vocabulary contradiction: a source stating the opposite in the same words | **Fixture built, no result.** Needs a judge. Claim and contradicting sentence share every content word; the only difference is the negation |
+| 1 | Topical-match false positive: a page discussing the subject at length that never states the claim | **Broke, into a different failure than the one declared.** `CONTRADICTED`, span verified on the page. Not `NOT_FOUND_IN_SOURCE`, so it failed its criterion, and not the `SUPPORTED` the attempt declared it was hunting. See below: the fixture was confounded and this result is mostly about the confound |
+| 1b | The same page with the confound removed | **Broke, into exactly the declared failure.** `PARTIALLY_SUPPORTED` for a claim the page never states, span verified. 4 of 4 calls |
+| 2 | Paywall misread: does a paywalled article return unauditable, or wrongly `NOT_FOUND_IN_SOURCE` | **Held.** The one of the four needing no judge, because holding means the judge is never called. `detect_wall` returned `SOURCE_PAYWALLED`, the claim became unauditable, and `judge_claim` refuses to run on a non-`SOURCE_OK` source at all. One document, so this says the mechanism handled this wall, not that it catches walls |
+| 3 | Post-hoc drift: a citation pointing at a page that changed after generation | **Held**, and by the route the design predicts rather than by accident. The judge found the added sentence, quoted it, and the span was really on the live page, so the span guard passed it. The drift layer voided it anyway as `SPAN_ADDED_AFTER_GENERATION`. The guard that caught this is the one that checks the span against the archived copy, which is the guard built after the day 3 false positive |
+| 4 | Shared-vocabulary contradiction: a source stating the opposite in the same words | **Held.** `CONTRADICTED`, quoting the negated sentence. The judge read polarity rather than vocabulary overlap |
 
-**What the one result is worth.** Attempt 2 held, and the honest reading is narrow: the pipeline refused to
-judge a claim against a page it had recognised as withheld. The failure direction that would matter is a wall
-*missed*, and one detected wall is not evidence about how often that happens. The detector is a list of
-phrases and it is described that way in `DATA_CONTRACT.md` §5.
+### Attempt 1: the fixture was confounded, and the confound was load-bearing
+
+The page ended with a paragraph denying it reported any effect estimate: *"This paper does not report an
+effect size... it makes no estimate of any reduction in time to diagnosis for the Boston cohort or for any
+other."* The judge quoted that sentence and returned `CONTRADICTED`, stably, on 4 of 4 calls.
+
+So attempt 1 measured whether a disclaimer is read as a contradiction. It is. The question it declared it was
+asking, whether topical overlap alone is read as support, was never put.
+
+**That is still a finding, and it is not a small one.** Denying that you report a figure is not asserting the
+opposite of it. `CONTRADICTED` is the harshest verdict the tool has and the one that most directly accuses a
+product's citation, and here it was returned against a page that is merely silent. Absence of evidence
+published as evidence of absence. If this generalises, `CONTRADICTED` is inflated and `NOT_FOUND_IN_SOURCE`
+deflated in any published run. It is one document and four calls, so it is a hypothesis about the judge and
+not a rate.
+
+**A second thing was wrong with the fixture, found by the test written to check the first.** Deleting the
+denial deleted the claim's verb along with it: `reduc` appeared nowhere else on the page. The vocabulary
+overlap attempt 1 asserts in its own notes was partly supplied by the confound, which means the fixture was
+weaker than its own documentation claimed even before the judge saw it.
+
+### Attempt 1b: the declared failure, on the fourth try to ask for it
+
+1b is attempt 1 with the denial paragraph removed and one sentence added to restore the verb, stating how
+effect estimates are expressed in this field without asserting that any occurred. The page now says nothing
+either way about whether navigation reduced anything.
+
+The judge returned `PARTIALLY_SUPPORTED` on 4 of 4 calls. Every span was really on the page, so the span guard
+passed all four, which is the point: this is the failure attempt 5 anticipated structurally, now observed on
+an ordinary page with no injection in it.
+
+**The added sentence is not what did it.** Three of the four calls quoted *"the Boston cohort has been
+described in several publications examining navigation and diagnostic delay"*, a sentence carried over
+unchanged from attempt 1. Only the first quoted the sentence 1b added. The false positive does not depend on
+the edit, which is the objection that would otherwise sink the result.
+
+`missing_qualifiers` came back honest every time, naming the 21-day figure as absent from the source. That is
+the day 5 work doing what it was built for, and it does not rescue the verdict: a claim whose number the
+source never states, cited to that source, is not partially supported by it. The reader gets a partial-support
+card with a caveat attached rather than the refusal the page warrants.
+
+**What this changes.** The gold set is now the only thing that can say how often this happens, and this is a
+second, independent reason it is the bottleneck. Until it exists, `PARTIALLY_SUPPORTED` is the verdict class
+with the weakest evidence behind it, and the writeup says so.
+
+### What the paywall result is worth
+
+Narrow, unchanged from the earlier run: the pipeline refused to judge a claim against a page it had recognised
+as withheld. The failure direction that would matter is a wall *missed*, and one detected wall is not evidence
+about how often that happens. The detector is a list of phrases and it is described that way in
+`DATA_CONTRACT.md` §5.
+
+### The runner said something false, and it is fixed
+
+`_assess` had one message for every verdict that was not `NOT_FOUND_IN_SOURCE`: "This is the failure the
+attempt was looking for." Attempt 1 returned `CONTRADICTED`, which is not that failure, and the sentence went
+into `results.json` as though it were.
+
+Held and broke are decided by `holds_if` alone and neither changed: `CONTRADICTED` failed the criterion before
+the fix and fails it after. What changed is that a break now records *which* failure it found, and says so
+when that is not the declared one. Pinned by
+`test_breaking_into_a_different_failure_is_not_reported_as_the_declared_one`.
+
+Editing the assessment code after seeing the output is the move this file warns against, so the boundary is
+worth stating: the criterion and the verdict were untouched, only the description of what happened. Recorded
+here rather than left in a commit message because it is the same class of error as `FINDINGS.md` item 13.
 
 ---
 
@@ -122,3 +182,9 @@ phrases and it is described that way in `DATA_CONTRACT.md` §5.
 Both core attempts ended somewhere more interesting than "the guard held". One found a structural limit and
 narrowed a published claim; the other found a third contamination path while the second was being written.
 Neither result would have appeared from a clean run, which is `SCOPE.md` §6's argument for doing them at all.
+
+The stretch four repeated the pattern in a way worth naming. The attempts that held, 3 and 4, took an hour to
+write up between them. The one that broke cost most of the day, produced a fixture that did not exist when the
+run started, and found two errors in the attempt itself before it found anything about the judge. An attempt
+that holds tells you about the tool. An attempt that breaks tells you about the attempt first, and only then
+about the tool, and skipping the first half is how a break gets published as something it is not.

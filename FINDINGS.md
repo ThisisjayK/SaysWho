@@ -530,3 +530,59 @@ the judge's name.
 because someone asked whether the number was real. The suite had 627 passing tests at the time and every one
 of them agreed with the bug, for the same reason the Perplexity adapter's tests agreed with its bug: they
 asserted the rule the code implemented.
+
+---
+
+## 15. The judge reads a page's silence as a contradiction, and its topical overlap as partial support
+
+Break attempts 1 to 4 ran against a live judge for the first time on 2026-08-11. Three held. The one that
+broke broke twice, and the second time only after the attempt itself was corrected.
+
+**The first break was not the failure the attempt was hunting.** Attempt 1 serves a page that discusses the
+claim's subject at length and never states the claim, and it declared before running that it was looking for
+`SUPPORTED` or `PARTIALLY_SUPPORTED`. It got `CONTRADICTED`, on 4 of 4 calls, with the judge quoting the
+page's closing sentence: that the paper makes no estimate of any reduction for this cohort or any other.
+
+Denying that you report a figure is not asserting the opposite of it. `CONTRADICTED` is the harshest verdict
+the tool has and the one that accuses a product's citation most directly, and it came back against a page that
+is silent on the claim. If that generalises, `CONTRADICTED` is inflated and `NOT_FOUND_IN_SOURCE` deflated in
+every run this tool will ever publish, and the two are not equivalent errors: one says the source disagrees,
+the other says the source does not address it.
+
+**But the fixture was confounded, so attempt 1 could not have asked its own question.** A page that announces
+what it does not report is rare. Real pages are silent by omission. The attempt therefore measured whether a
+disclaimer reads as a contradiction, which is a real question, and not the one written at the top of the file.
+Attempt 1b removes the denial.
+
+**A second fault in the fixture, found by the test written to check the first.** Removing the denial removed
+the claim's verb with it: `reduc` appeared nowhere else on the page. The vocabulary overlap that attempt 1
+asserts in its own notes, and that a test asserts on its behalf, was partly supplied by the confounding
+sentence. The test passed the whole time. It checked that the words were on the page and not that they were on
+the page for the right reason, which is the same shape as the Perplexity adapter's tests and the span guard's:
+an assertion that agrees with the bug because it encodes the same assumption.
+
+**With both faults fixed, the declared failure appeared immediately.** Attempt 1b returned
+`PARTIALLY_SUPPORTED` on 4 of 4 calls for a claim its page never states. Every span was verbatim and on the
+page, so the span guard passed all four. This is attempt 5's structural hole, "the guard checks presence and
+not relevance", observed on an ordinary page with no injection anywhere in it.
+
+Three of the four calls quoted a sentence carried over unchanged from attempt 1 rather than the one 1b added,
+which rules out the obvious objection that the finding was planted by the edit.
+
+**`missing_qualifiers` behaved well and did not save it.** Every call named the 21-day figure as absent from
+the source. The day 5 work is doing its job. It does not rescue the verdict: a claim whose central number the
+source never states is not partially supported by that source, and the reader gets a partial-support card with
+a caveat instead of the refusal the page warrants. Of the six claim states, `PARTIALLY_SUPPORTED` now has the
+weakest evidence behind it.
+
+**What it costs to know this.** Nothing published changes today, because nothing aggregate is published yet.
+What changes is the gold set's job description. It was already the only thing that could measure
+`EXTRACTION_SUSPECT` and the PDF garbling; it is now also the only thing that can measure how often the judge
+converts silence into a verdict in either direction. Four calls on two documents is a hypothesis about a judge,
+not a rate about one, and this file is the only place it is allowed to appear until that changes.
+
+**And the runner said something false while reporting it.** `_assess` printed "This is the failure the attempt
+was looking for" for any verdict that was not `NOT_FOUND_IN_SOURCE`, so attempt 1's `CONTRADICTED` was recorded
+as the declared failure when it was not one. The held and broke decision was correct and is unchanged; the
+sentence beside it was wrong and went into `runs/break/results.json` before anyone read it. Third time this
+project has published a true number with a false sentence attached, after items 13 and 14.

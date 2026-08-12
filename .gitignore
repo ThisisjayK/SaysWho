@@ -35,6 +35,12 @@ reports/
 # pages it fetched.
 .cache/
 
+# run artefacts: results.json, readout.txt, the run record and the trace table. Same rule as reports/. The
+# writeup publishes the numbers it has chosen and traced, not a directory of every run that ever happened,
+# and a run over the professional stratum carries the answer text behind it. Written by the runner on every
+# invocation, so leaving them untracked rather than ignored is how they end up in a git add -A.
+runs/
+
 # correspondence with the professor and the TA. Kept locally, not published.
 email-to-professor.md
 reply-to-professor.md
