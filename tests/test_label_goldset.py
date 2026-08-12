@@ -275,3 +275,54 @@ def test_the_banner_claims_only_what_the_tool_can_check(tmp_path, monkeypatch, c
     supplemental = capsys.readouterr().out
     assert "SUPPLEMENTAL" in supplemental
     assert "excluded from kappa" in supplemental
+
+
+# ---------------------------------------------------------------- when there is nobody at the keyboard
+
+
+def test_no_terminal_stops_cleanly_instead_of_a_traceback(tmp_path, monkeypatch, capsys):
+    """Found in the rehearsal, which is what a rehearsal is for. Launched without a terminal, from a Run
+    button or a pipe, the tool used to reach the first prompt and raise EOFError. A traceback at that moment
+    reads as "the tool is broken" rather than "there is nobody here to label", and a labeller who has just
+    been told to run this would have no way to tell the two apart."""
+    a = split(product="chatgpt", n=6)
+    path = tmp_path / "split.json"
+    a.save(path)
+    out = tmp_path / "gold.json"
+
+    def no_input(*_):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", no_input)
+
+    assert label_goldset.main(["--split", str(path), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "5"]) == 0
+
+    printed = capsys.readouterr().out
+    assert "Labelling needs a person at a terminal" in printed
+    assert not out.exists(), "nothing was labelled, so nothing should have been written"
+
+
+def test_an_interrupt_keeps_the_labels_already_made(tmp_path, monkeypatch, capsys):
+    """A labelling session is an hour of irreplaceable human work. Ctrl-C after three labels keeps three."""
+    a = split(product="chatgpt", n=6)
+    path = tmp_path / "split.json"
+    a.save(path)
+    out = tmp_path / "gold.json"
+
+    answers = iter(["S", "", ""])
+
+    def then_interrupt(*_):
+        try:
+            return next(answers)
+        except StopIteration:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr("builtins.input", then_interrupt)
+    assert label_goldset.main(["--split", str(path), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "5"]) == 0
+
+    from sayswho.goldset import GoldSet
+
+    assert "1 label(s) kept" in capsys.readouterr().out
+    assert GoldSet.load(out).labels, "the label made before the interrupt was lost"

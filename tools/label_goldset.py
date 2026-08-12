@@ -155,9 +155,25 @@ def stratify(pool: list[dict], target: int, seed: int) -> list[dict]:
     return picked
 
 
+class NoLabeller(Exception):
+    """Raised when there is nobody at the keyboard. Not an error: a session that cannot happen."""
+
+
 def ask(prompt: str, options: tuple[str, ...] | None = None) -> str:
+    """Read one answer, or raise NoLabeller when input has run out.
+
+    EOF is the normal case rather than a broken one: it means this was launched without a terminal, from a
+    Run button or a pipe. The labels are the one field classified `your-input` and no amount of tooling
+    substitutes for a person, so the honest response is to say so and stop rather than emit a traceback that
+    looks like the tool is broken.
+    """
     while True:
-        answer = input(prompt).strip()
+        try:
+            answer = input(prompt).strip()
+        except EOFError as exc:
+            raise NoLabeller("no input available") from exc
+        except KeyboardInterrupt as exc:
+            raise NoLabeller("interrupted") from exc
         if options is None or answer in options:
             return answer
         print(f"  one of: {', '.join(options)}")
@@ -246,7 +262,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  claim:  {' '.join(row['text'].split())}")
         print()
 
-        choice = ask("  label [S/P/N/C/U/?/q]: ", tuple(keys) + ("q",))
+        try:
+            choice = ask("  label [S/P/N/C/U/?/q]: ", tuple(keys) + ("q",))
+        except NoLabeller as stop:
+            print()
+            print(f"  stopped: {stop}. Labelling needs a person at a terminal, so run this in a shell")
+            print(f"  rather than through anything that pipes input. {len(labels)} label(s) kept.")
+            break
         if choice == "q":
             break
 
@@ -254,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
         passage = ""
         missed = None
         if value in ("SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED"):
-            passage = input("  paste the passage you found (blank to skip): ").strip()
+            passage = ask("  paste the passage you found (blank to skip): ")
             if passage:
                 pair = extracted_pair(cache, row["url"])
                 if pair is not None:
@@ -269,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
                         print("  noted: that passage is in neither the extracted text nor the raw markup.")
                         print("         Recorded as unchecked rather than as an extraction failure.")
 
-        notes = input("  notes (optional): ").strip()
+        notes = ask("  notes (optional): ")
         labelled_splits.add(row["split_sha256"])
         labels.append(
             GoldLabel(
