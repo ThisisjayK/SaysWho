@@ -447,3 +447,37 @@ says which thing.
 unverified claims about its own competitors for five days, in the section arguing why it deserves to exist,
 both tilted the same way. The mechanism that caught it was being asked to check, not anything structural.
 There is no gate for prose.
+
+---
+
+## 13. I claimed a document said something it did not say
+
+Yesterday's commit message said "§7 now says it" about the API path's limits, and the reply that went with it
+said the same. `SCOPE.md` §7 contained nothing of the kind. The edit that was supposed to add it asserted on
+an anchor string, `## 8. Rubric`, that was not in the file, the assertion failed, and the write never ran. I
+read the traceback as a failure in a later step and moved on.
+
+The section is there now, and the decision in it is firmer than the version I claimed: no rate derived from an
+API capture is published, rather than the hedge about defaults it originally had.
+
+**Why this one is worth a numbered finding rather than a quiet fix.** It is the project's own subject,
+committed by the project's author, in the same session as item 12. Item 12 was two unverified claims about
+other people's tools. This is an unverified claim about my own document, made in a commit message that will be
+read as a record of what happened, and it went to the person relying on it.
+
+The pattern across both is identical and it is not carelessness about facts. It is a missing verification
+step in exactly one place: **prose**. Every number in this repo is checked by something. `git log` is checked
+by nothing, `SCOPE.md` is checked by nothing, and the only prose-level gates that exist are a scan for banned
+vocabulary and a check for em dashes. Both of those are lexical. Neither can tell whether a sentence about a
+file is true of that file.
+
+**What would actually catch it.** A test that reads the claims a document makes about other files and checks
+them. There is precedent in this repo already: `test_extension_manifest.py` asserts that source files contain
+specific strings, which is exactly this mechanism pointed at code. Pointing it at documentation would mean
+`SCOPE.md` §7 claiming `sayswho/apicapture.py` exists becomes a test, and so does §9's claim about the stack,
+which was wrong about the language for five days until the prior-art check happened to catch it.
+
+Three prose claims have now been found false in one day: the extension's language, two competitor claims, and
+this. All three were found by being asked, not by anything structural. That is the strongest argument in this
+repo for a documentation gate, and it is recorded here rather than acted on, because inventing a gate at the
+end of a session is how gates get built badly.

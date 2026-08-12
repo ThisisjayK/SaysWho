@@ -605,6 +605,36 @@ rest test how good the judge is, which matters less than whether the guard rails
 
 These belong to a human reader. The tool hands them back rather than pretending to have handled them.
 
+### An API capture measures a different object, and no rate from one is published
+
+`sayswho/apicapture.py` can build a capture from a provider API rather than from a rendered page, which
+removes the whole class of failure the `adapter_verified` flag warns about: no selectors, no hidden "+N"
+chips, citations arriving as data. It is tempting to treat that as strictly better. It is not.
+
+**An API answer is not the answer a person sees.** Different model, different retrieval, different
+post-processing. §1 says this tool audits what AI search products tell users, and an API is not that product.
+
+**The only free provider here is the conflicted one.** Gemini is the sole free tier this project can run,
+which means a Google model answering and a Google model judging. `rates.CONFLICTED_PRODUCTS` already refuses
+to put a Google surface into a cross-product aggregate, and that applies here unchanged.
+
+**Decided on 2026-08-11, rather than left as a preference: no rate derived from an API capture is
+published.** Not a support rate, not an unauditable rate, not a drift rate, not a judge-human agreement
+figure. A capture with `source="api"` may be audited, and its per-claim verdicts may be read and quoted,
+because those are statements about one document and one sentence. A rate is a claim about a product.
+
+**What the API path is for is measuring the scraper rather than replacing it.** `tools/compare_capture.py`
+asks the same question both ways and reports how many citations the DOM capture never saw. That is the
+largest unquantified risk in this project and the number has never existed: the Perplexity adapter found zero
+of eight citations for four days while passing every test, because the tests asserted the rule the adapter
+implemented. A test suite cannot catch a wrong model of the page. A rate over 8 of 10 citations is a
+different measurement from a rate over 10 of 10, and only one of them is the one being claimed.
+
+That comparison is a floor and not a ground truth, which the tool says in its own output: same question is
+not same answer, so a URL in one and absent from the other can mean the scraper missed it or that two models
+cited different things. The prose overlap is printed beside it, and below a threshold the tool tells the
+reader to disregard the difference entirely.
+
 ## 8. Deliverables mapped to the rubric
 
 | Rubric component | Pts | Artifact |

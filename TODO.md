@@ -464,9 +464,20 @@ The machinery is built and tested. What is left on this list is the labelling it
       key is in your shell and not mine. `python3 tools/api_capture.py --provider gemini --prompt "..."`
 - [ ] Run the fidelity comparison on a real pair, DOM and API, for one frozen query. This is the number that
       belongs in §7 beside the support rate
-- [ ] Decide whether any API-sourced rate enters the writeup at all. §7 now says an API answer is a different
-      object from what a user sees, and Gemini is the conflicted vendor case. The honest default is that the
-      API path measures the scraper and never produces a published support rate
+- [x] **Decided 2026-08-11: no API-sourced rate is published.** An API answer is a different object from the
+      one a person sees, and §1 says this tool audits products. So the API path exists to measure the scraper
+      and never to produce a published support rate, unauditable rate, drift rate or agreement figure. A
+      capture with `source="api"` may be audited, and its per-claim verdicts may be read and quoted, because
+      those are statements about one document and one sentence rather than rates about a product
+- [ ] Prose gate: check the claims documents make about files. Three prose claims were found false on day 5,
+      the extension's language, two about competitors, and one where a commit message said §7 said something
+      §7 did not contain. All three were found by being asked. `test_extension_manifest.py` already asserts
+      that source files contain given strings, so the mechanism exists and is pointed at code rather than at
+      documentation. `FINDINGS.md` item 13
+- [ ] Enforce the no-API-rates decision in code rather than trusting a line in this file. Every other rule of this kind is a gate:
+      `CONFLICTED_PRODUCTS` refuses a Google surface in an aggregate, `standing_denominator` raises on a
+      contaminated denominator, G4 refuses an uncalibrated rate. A decision that lives only in a TODO is one
+      a tired person overrides at 2am on day 7 without noticing they did
 
 ## Deliverables, by rubric row
 
