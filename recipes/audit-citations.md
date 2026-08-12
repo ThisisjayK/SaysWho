@@ -1,85 +1,119 @@
+---
+status: ACTIVE
+todos_open: 0
+last_gate: G4
+attestation: unsigned
+recipe_version: 0.2.0
+type: workflow
+---
+
 # Recipe: audit the citations in an AI answer
 
-Nine sections. Everything you need to take one cited answer from a browser tab to a per-claim record you can
-act on, and to know what that record does and does not entitle you to say.
-
-The short version of the argument: a footnote signals verification while performing none of it. This recipe
-performs it, and stops where the evidence stops.
-
 Companion card for quick reference: [`audit-citations.card.md`](audit-citations.card.md), six failure modes
-and what each one means.
+and what each one means. The two are updated in the same commit.
 
 ---
 
-## 1. What this produces
+## 1. Executive Summary
 
-For one AI answer, a record of every factual claim it made, every source it cited for that claim, and one of
-five outcomes per claim:
+A footnote signals verification while performing none of it. This recipe performs it, and stops where the
+evidence stops.
 
-| Shown as | Means |
+For one AI answer, it produces a per-claim record: every factual sentence, every source cited for it, and one
+of six outcomes per claim, each traceable to a fetched page. It never produces an overall score, and it
+refuses to produce a rate it cannot stand behind, naming which gate refused and why.
+
+**Who runs what.** An agent can execute every command here unattended except two: labelling a gold set and
+deciding whether an unsupported claim matters. Both are human calls and §9 says where they stop it.
+
+**The one-line version.** It tells you which two of the six footnotes to go read, so your fifteen minutes go
+where the risk is.
+
+## 2. Required Reads
+
+Read these before running anything. Where a document and this recipe disagree, the document wins.
+
+| Source | Path | Use |
+|---|---|---|
+| Data contract | `DATA_CONTRACT.md` | Fetch politeness, caching, what is never fetched, where private data stays |
+| Design document | `SCOPE.md` | §0a core-and-stretch split, §3 the phase gates, §4 the verified-inferred boundary, §7 limitations |
+| Status | `STATUS.md` | Which parts have run on real data and which have only ever been tested |
+| Findings | `FINDINGS.md` | Every bug that changed a published claim, including the ones this tool caused |
+| Break attempts | `BREAK_ATTEMPTS.md` | What was tried against it and what held |
+| Run log | `RUN_LOG.md` in the run's `--out` directory | What was run, what it produced, what blocked |
+| Query freeze | `queries/FREEZE.json` | The hash manifest. A run against a moved query set measures something else |
+
+**Prerequisites.** Python 3.11 or newer, for `tomllib`. Chrome or a Chromium browser for the extension. An
+API key only if you want verdicts rather than liveness: `export GEMINI_API_KEY=...` for the free-tier default,
+or `SAYSWHO_JUDGE=anthropic` with `ANTHROPIC_API_KEY`. Both satisfy the same protocol, so nothing else changes.
+
+## 3. Phase Gates
+
+Do not move to a later step until the earlier gate has passed. **Every gate here has a failure path, because a
+gate with no failure path is decoration.** Each one is enforced in code and has a test that fails on the bug
+the gate exists to catch.
+
+| # | Gate | Passes when | Failure path |
+|---|---|---|---|
+| F | Freeze | `queries/FREEZE.json` matches `queries/*.toml` | The run stops before fetching. `python3 tools/freeze_queries.py check` names the query. Overriding takes `--force --reason` and is recorded permanently in the manifest |
+| G0 | Citations exist | The answer carries at least one inline citation | Halts with `NO_CITATIONS`. An uncited answer is a different object, not a zero percent one |
+| G2 | Source readable | The page fetched, decoded and extracted to usable text | The claim becomes `UNAUDITABLE` and leaves every denominator. Eleven outcome codes, only `SOURCE_OK` proceeds |
+| G1 | Claims split | The answer split into claims bound to citation markers | Skipped lines are counted, listed and published, never dropped. `--dump-skipped` prints them |
+| G3 | Span verified | The judge quoted the page and a script confirmed the quote is there | The verdict is voided as `JUDGE_FABRICATED_SPAN` and leaves numerator and denominator together |
+| G4 | Judge calibrated | A gold set exists for this judge, judge prompt, claim prompt and split | No aggregate rate is printed, the reason is printed where the number would be, and per-claim verdicts still emit |
+
+Two further refusals behave as gates and are worth naming: `INSUFFICIENT_EVIDENCE` when more than half an
+answer's claims are unauditable, and `CAPTURE_UNBOUND` when a capture is not bound to a frozen query. Both
+withhold rates and neither withholds per-claim verdicts.
+
+## 4. Primary Stored Tools
+
+Prefer these over ad hoc code. If none fits, say so before writing a temporary script.
+
+| Command | Does |
 |---|---|
-| Supported by the cited source | A passage from the cited page was quoted and a script confirmed it is really there |
-| Partly supported by the cited source | The page supports part of this, or a weaker version. What it attaches that the sentence does not is listed with the quote |
-| Not supported by the cited source | The page was read and does not state this, or states something incompatible |
-| Sources disagree | One cited source supports it and another does not. Both shown, neither averaged |
-| Could not verify | No verdict stands. The source was unreadable, or the verdict was thrown out |
-| No citation to check | The answer attached no source to this sentence |
+| `python3 -m sayswho.cli <capture>` | The whole pipeline over one capture. Fetch and liveness by default; `--judge` adds Phase 1 and Phase 3 |
+| `python3 -m sayswho.server --judge` | The local audit server the extension posts to. Loopback only, origin allowlist |
+| `python3 -m sayswho.reextract <page.html> --capture <capture.json>` | Re-run selection and extraction over stored bytes, without re-running the query |
+| `python3 tools/run_stratum.py --captures captures/ --out runs/<name>` | The honest run over a whole stratum. Writes the run record, readout, `RUN_LOG.md` and the trace table |
+| `python3 tools/bind_capture.py <capture> --query <id>` | Bind a capture to a frozen query. Refuses an id that is not in the manifest |
+| `python3 tools/freeze_queries.py check` | The freeze check. Runs before every capture path |
+| `python3 tools/label_goldset.py --split <split> --out <gold>` | Label a gold set by hand. Refuses any file carrying judge output |
+| `python3 tools/break_attempts.py --all --judge --out runs/break` | The four stretch break attempts, each declaring its failure mode before it runs |
+| `python3 tools/reaudit_spans.py` | Re-check voided spans against cached bytes rather than the live web |
+| `python3 tools/compare_capture.py` | How many citations the DOM capture missed, measured against an API capture |
+| `python3 tools/split_spread.py <capture>` | Phase 1 only, several times, to measure how much the splitter varies |
+| `python3 tools/measure_named_recall.py` | Recall and precision of the named-but-unlinked citation patterns |
 
-Plus counts, the sources that could not be read and why, and the lines the splitter skipped.
+**No stored script exists** for two things this recipe needs, and both are human work by design: transcribing
+and scrubbing the professional query stratum, and labelling the gold set. §9 stops the workflow at each.
 
-**No overall score.** Not withheld for tidiness: an answer with three unreadable sources out of six has no
-honest percentage, and a tool that prints one anyway has converted missing data into a clean result. See §7.
+## 5. Workflow
 
-## 2. When to use this, and when not to
+### 5.1 Capture the answer
 
-Use it when you are about to put something from an AI answer into a document other people will act on, and
-the answer came back with footnotes. It tells you which two of the six footnotes to go read, so your fifteen
-minutes go where the risk is.
+Ask your question in the product as normal. When the answer is finished, click the SaysWho button.
 
-Do not use it for:
-
-- **Answers with no citations.** Gate G0 halts. An uncited answer is a different object, not a zero percent one.
-- **Deciding whether a claim is true.** It checks whether the cited page says what the answer says it says. A
-  claim can be perfectly true and cited to the wrong page, and it can be false and faithfully cited to a page
-  that is also wrong.
-- **Ranking products.** One answer is one answer. The sample sizes here do not support a comparison.
-- **Anything behind a login.** No authenticated fetches, ever. See `DATA_CONTRACT.md` §3.
-
-## 3. Before you start
-
-- Python 3.11 or newer, for `tomllib`.
-- Chrome or a Chromium browser, for the extension.
-- An API key for the judge, if you want verdicts rather than just liveness. Gemini's free tier is the
-  default and costs nothing: `export GEMINI_API_KEY=...`. `SAYSWHO_JUDGE=anthropic` with `ANTHROPIC_API_KEY`
-  switches to Claude. Both satisfy the same protocol, so nothing else changes.
-
-Load the extension: `chrome://extensions`, developer mode on, "Load unpacked", pick the `extension/`
-directory. It runs on claude.ai, chatgpt.com, perplexity.ai and Google search result pages.
-
-Click the toolbar icon once. The popup tells you whether the audit server is running and whether this page
-is one SaysWho understands, which is faster than finding out by clicking Audit and waiting.
-
-## 4. Capture the answer
-
-Ask your question in the product as you normally would. When the answer is finished, click the SaysWho
-button.
+Load the extension first: `chrome://extensions`, developer mode on, "Load unpacked", pick `extension/`. It
+runs on claude.ai, chatgpt.com, perplexity.ai and Google search result pages. Click the toolbar icon once and
+the popup tells you whether the server is running and whether this page is one SaysWho understands, which is
+faster than finding out by clicking Audit and waiting.
 
 The capture scrolls the answer into existence first, because a long answer is not fully in the DOM until it
 has been on screen, and a capture that is quietly short produces a rate over part of the answer while looking
 entirely normal. It then reads the answer text, pulls out the citation markers and their URLs, hashes the
-text, and downloads two files to `~/Downloads/sayswho/`: the capture record, and the page it came from.
+text, and writes the capture record and the page it came from.
 
-Read the two warnings it can print. `capture_is_known_incomplete` means the page showed citations or text
-the capture could not reach, and anything downstream covers part of the answer. A large
-`chrome_links_excluded` means the page-furniture filter is eating real citations.
+Read the two warnings it can print. `capture_is_known_incomplete` means the page held citations or text the
+capture could not reach. A large `chrome_links_excluded` means the page-furniture filter is eating real
+citations.
 
 The stored page stays on your machine. A full claude.ai page carries the sidebar, and therefore the titles of
 every other conversation you have had.
 
-## 5. Bind it to a query
+### 5.2 Bind it to a frozen query
 
-Skip this if you are auditing an ad hoc answer rather than running a study. Per-claim verdicts work either
-way; only rates need the binding.
+Skip this for an ad hoc answer. Per-claim verdicts work either way; only rates need the binding.
 
 ```bash
 python3 tools/bind_capture.py ~/Downloads/sayswho/capture-*.json --list
@@ -87,119 +121,147 @@ python3 tools/bind_capture.py ~/Downloads/sayswho/capture-chatgpt-20260812T10150
 ```
 
 Binding refuses a query id that is not in the freeze manifest, and re-verifies the answer hash on the way in,
-so binding cannot be the moment an edited answer slips through. Without a binding the audit still runs and
-the run says `CAPTURE_UNBOUND` next to every rate it withheld, because a rate has to be able to say what it
-is a rate over.
+so binding cannot be the moment an edited answer slips through.
 
-## 6. Run the audit
+### 5.3 Run the audit
 
-**The short path.** Start the server once, in a terminal:
+**The short path.** Start the server once:
 
 ```bash
 .venv/bin/python -m sayswho.server --judge
 ```
 
 That has to be a Python with `google-genai` installed, which the repo's virtualenv has. The server will not
-start with `--judge` if it cannot build a judge, and it prints which of the two problems it is.
-
-Then click the magnifier on the answer, or Audit in the popup. The marked result appears in a panel over the
-page, and the capture is written to `captures/` by the server, which is where the harness reads them from.
-If the server is not running you are told that, rather than told the audit found nothing, and the capture is
-downloaded instead so nothing is lost.
+start with `--judge` if it cannot build a judge, and it prints which of the two problems it is. Then click the
+magnifier on the answer, or Audit in the popup.
 
 **The long path**, which needs nothing running and is what the honest run uses:
 
 ```bash
-python3 -m sayswho.cli ~/Downloads/sayswho/capture-chatgpt-20260812T101500.json \
-  --judge --report report.html
+python3 -m sayswho.cli ~/Downloads/sayswho/capture-chatgpt-20260812T101500.json --judge --report report.html
 ```
 
-What happens, in order:
+The order of operations is the gate table in §3, top to bottom.
 
-1. **The freeze check.** If the query set on disk has moved since it was frozen, the run stops. A tuned
-   benchmark is the failure mode this exists for, and it applies to the author as much as anyone.
-2. **G0.** No citations, no audit.
-3. **Fetch.** One request per second per domain, `robots.txt` respected, an identifying User-Agent with a
-   contact address, everything cached to disk so a rerun audits the same bytes. Each source gets one of
-   seven outcomes, only one of which lets it proceed.
-4. **Drift.** Each page is compared against its nearest archived snapshot. A page with no snapshot is
-   recorded as unknown, never as unchanged.
-5. **G1, claim splitting.** Model inference, labelled as such everywhere it appears. Skipped lines are
-   counted and listed, never dropped.
-6. **G3, the judge and the span guard.** The judge is never called on a source that is not readable. To say
-   SUPPORTED it must quote the page verbatim, and `str.find` then confirms the quote is there. A quote that
-   is not there voids the verdict and is counted as `JUDGE_FABRICATED_SPAN`.
-7. **G4.** No gold set for this judge, this prompt version and this split means no aggregate rate. Per-claim
-   verdicts still emit.
-
-To run over a whole frozen stratum instead of one answer, use `tools/run_stratum.py`, which writes the run
-record, the metric readout, `RUN_LOG.md` and the per-number trace table.
-
-If you plan to label a gold set, produce the split with `--split-only` rather than as a by-product of a
-judged run:
+To run over a whole frozen stratum instead of one answer:
 
 ```bash
-python3 -m sayswho.cli captures/PR-07.json --split-only --save-split runs/PR-07.split.json
+python3 tools/run_stratum.py --captures captures/ --judge --goldset <set> --out runs/day7
 ```
 
-Phase 1 is a model call and does not return the same split twice, so a stored split is what makes a label
-mean anything later. `--split-only` runs Phase 1 and stops, because the labels have to predate the judge and
-every other route to a stored split prints the verdicts on the way past.
+### 5.4 Produce a split to label against
 
-Both paths are printed at the bottom of the panel, and both are relative to wherever the server was
-started:
+Only if you are building a gold set. Produce the split on its own rather than as a by-product of a judged run:
+
+```bash
+python3 -m sayswho.cli captures/PR-07.json --split-only --save-split splits/PR-07.json
+```
+
+Phase 1 is a model call and does not return the same split twice, so a stored split is what makes a label mean
+anything later. `--split-only` runs Phase 1 and stops, because the labels have to predate the judge and every
+other route to a stored split prints the verdicts on the way past. Then label, then judge that same split with
+`--split`, so the rate is over the claims a human actually read.
+
+## 6. Output Contract
+
+Every run emits these and nothing else claims to be a result.
+
+**Per claim**, one of six states, each traceable to a fetched page:
+
+| Shown as | Means |
+|---|---|
+| Supported by the cited source | A passage was quoted and a script confirmed it is really on the page |
+| Partly supported by the cited source | The page supports part of this, or a weaker version. What it attaches that the sentence does not is listed with the quote |
+| Not supported by the cited source | The page was read and does not state this |
+| Sources disagree | One cited source supports it and another does not. Both shown, neither averaged |
+| Could not verify | No verdict stands. The source was unreadable, or the verdict was thrown out |
+| No citation to check | The answer attached no source to this sentence |
+
+**Per run**: the sources that could not be read and why, the lines the splitter skipped in two units, the
+uncited-claim floor, and every rate the run is entitled to publish with its n, its 95% interval and how many
+splits it is over. Beside each rate it did not publish, the reason.
+
+**No score, anywhere.** Not withheld for tidiness: an answer with three unreadable sources out of six has no
+honest percentage, and a tool that prints one has converted missing data into a clean result.
+
+**Files written**, relative to where the server or the CLI was started:
 
 | Where | What |
 |---|---|
 | `reports/report-<product>-<stamp>.html` | The audit. Opens in any browser with nothing running |
 | `reports/report-<product>-<stamp>.json` | The same audit as data, for the extension's viewer |
-| `captures/capture-<product>-<stamp>.json` | The answer and its citations, hashed. The harness reads these |
-| `.cache/fetch/` | Every page that was fetched, so a rerun audits the same bytes |
+| `captures/capture-<product>-<stamp>.json` | The answer and its citations, hashed |
+| `.cache/fetch/` | Every page fetched, so a rerun audits the same bytes |
+| `runs/<name>/` | The run record, the metric readout, `RUN_LOG.md` and the per-number trace table |
 
-## 7. Read the output
+`captures/`, `reports/`, `runs/`, `splits/`, `goldset/`, `.cache/` and stored pages are all uncommitted by
+design. They carry answer text and quoted page content.
 
-Open `report.html`, or hover a marked sentence in the extension's viewer. Both go through the same renderer,
-which computes nothing: every state was decided in Python and there is a test that runs the real renderer in
-node and compares what appeared on screen against what Python decided.
+## 7. Verification Checks
 
-Three things to read first.
+How to confirm the run did what it says, rather than that it finished.
 
-**The unreadable sources.** These are excluded from every denominator, by a contract check that raises
-rather than warns. If most of the answer's sources were unreadable, the run prints `INSUFFICIENT_EVIDENCE`
-and no rate at all.
+1. **The unreadable sources.** Excluded from every denominator by a contract check that raises rather than
+   warns. If most sources were unreadable the run prints `INSUFFICIENT_EVIDENCE` and no rate at all.
+2. **The voided verdicts.** A voided verdict is no verdict and leaves numerator and denominator together.
+   `EXTRACTION_SUSPECT` means this tool's reader probably failed, not the citation.
+3. **The skipped lines.** Two counts, always together: blocks, which is what the splitter returns, and units,
+   which counts table rows and sentences. A table arrives as one block, so one skip can discard ninety
+   checkable cells. The gap between the numbers is the thing to read.
+4. **The trace table.** Every published figure traced to the record it came from. Generated, not typed.
+5. **The suite.** `python3 -m pytest` proves each gate fails on its target bug rather than merely existing.
+6. **Parity.** The extension and the harness are checked against each other by running the real renderer in
+   node over a payload the real Python built, and comparing state by state.
 
-**The voided verdicts.** A voided verdict is not a weaker verdict, it is no verdict, and it leaves the
-numerator and the denominator together. `EXTRACTION_SUSPECT` in particular means this tool's own reader
-probably failed, not the citation.
+## 8. Logging Rules
 
-**The skipped lines.** Two counts, always printed together: blocks, which is what the splitter returns, and
-units, which counts table rows and sentences. A table arrives from the DOM as one block, so one skip decision
-can discard ninety checkable cells. The gap between the two numbers is the thing to look at.
+`tools/run_stratum.py` writes `RUN_LOG.md` into its `--out` directory automatically. Add an entry by hand
+whenever you do something the harness did not:
 
-## 8. What this does not tell you
+```markdown
+## YYYY-MM-DD, short task name
 
-Stated here because the tool's own output is easy to over-read.
+- **Recipe:** audit-citations
+- **Inputs:** the commands run and the captures or splits they read
+- **Outputs:** files created or updated
+- **Result:** what worked, with the numbers it produced
+- **Open issues:** what did not work, and what is still blocked
+```
+
+Log a run against real data, a created or updated audit, a changed freeze or gold set, a blocker, and a
+decision about what not to use. Do not log the query text of a professional-stratum capture, real names, or
+any private application detail. Never log an API key.
+
+## 9. Stop Conditions
+
+Stop and hand back to a human when any of these happens. Do not work around them.
+
+- **The freeze check fails.** Something in `queries/` moved after it was frozen. Do not pass `--force` to get
+  the run moving; find out what changed.
+- **G0 halts.** The answer has no citations. There is nothing to audit and no number to report.
+- **G4 refuses a rate.** Report the refusal. Do not compute a percentage by hand from the per-claim verdicts,
+  which is the one contamination path no gate can close.
+- **`INSUFFICIENT_EVIDENCE`.** More than half the answer was unauditable. The answer is not evidence about the
+  product.
+- **The budget cap halts the judge.** A claim skipped for quota is a hole in the denominator, not a claim that
+  passed. Rerun rather than publishing the partial run.
+- **A source needs a login or sits behind a paywall.** `SOURCE_PAYWALLED` is a legitimate outcome. Routing
+  around it corrupts the measurement and violates `DATA_CONTRACT.md` §3.
+- **The gold set does not exist yet.** No stored script can produce one. Labelling is human work and it has to
+  happen before the judge runs.
+- **The professional query stratum is empty.** No stored script can fill it. The queries must be real questions
+  actually asked, scrubbed by hand, or the limitations argument in `SCOPE.md` §7 becomes false.
+
+## 10. What This Does Not Tell You
+
+Stated here because the output is easy to over-read.
 
 - **Whether the claim is true.** Only whether the cited page supports it.
 - **Whether the source is any good.** A blog post and a randomised trial are the same object to this tool.
-- **What the answer left out.** Omission is invisible to it. The uncited-claim count is a floor with a
-  measured gap under it, not a total.
-- **Whether an unsupported claim is the product's fault.** It may be a citation attached to the wrong page,
-  a page that changed, or this tool failing to read something.
-- **Anything at all from a single answer's percentages.** Every rate ships with its n and an interval, and at
-  these sample sizes the honest reading is directional.
-
-## 9. When it goes wrong
-
-Six failure modes and what to do about each are on the companion card. The three you will hit first:
-
-**Everything came back `NOT_FOUND_IN_SOURCE`.** Usually the extractor, not the answer. Check for the thin-page
-flag and for `SOURCE_NOT_HTML`. `python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs
-extraction over the stored bytes without re-running the query.
-
-**The run refuses to print a rate.** That is a gate, and the message says which one. `NO_CALIBRATION` needs a
-gold set; `INSUFFICIENT_EVIDENCE` means most of the answer was unreadable; `CAPTURE_UNBOUND` needs §5.
-
-**The freeze check fails.** Something in `queries/` changed after it was frozen. `python3
-tools/freeze_queries.py check` names the query. Breaking a freeze on purpose takes `--force --reason` and is
-recorded permanently in the manifest.
+- **What the answer left out.** Omission is invisible. The uncited-claim count is a floor with a measured gap
+  under it, not a total.
+- **Whether an unsupported claim is the product's fault.** It may be a citation attached to the wrong page, a
+  page that changed, or this tool failing to read something. Five of the card's six failure modes look like a
+  citation failure and only one of them is.
+- **Anything from one answer's percentages.** Every rate ships with its n and an interval, and at these sample
+  sizes the honest reading is directional.

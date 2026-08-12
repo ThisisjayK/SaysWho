@@ -1,17 +1,89 @@
-# Card: six ways a citation audit goes wrong
+# Card: SaysWho citation audit
 
-One page. Each failure mode is one you will actually meet, with the signal it gives, what it means, and what
-to do. Full walkthrough in [`audit-citations.md`](audit-citations.md).
+The human half of the two-customer pair. The agent-facing recipe is
+[`audit-citations.md`](audit-citations.md), and the two are updated in the same commit.
+
+## Purpose
+
+You are about to put something from an AI answer into a document other people will act on, and the answer came
+back with footnotes. This tells you which two of the six footnotes to go read, so your fifteen minutes go
+where the risk is.
+
+## What it can verify
+
+- That a cited page, as fetched, contains a passage supporting the sentence attached to it. The passage is
+  quoted and a script confirms it is really on the page.
+- That a cited page could or could not be read at all, in eleven distinct outcomes, so "we could not check"
+  is never reported as "the citation failed".
+- That a page has changed since the answer was written, and whether the passage a verdict rests on existed at
+  the time.
+- Which sentences carry no citation at all.
+
+## What it cannot verify
+
+- **Whether the claim is true.** Only whether the cited page supports it. A claim can be true and cited to the
+  wrong page.
+- **Whether the source is any good.** A blog post and a randomised trial are the same object to it.
+- **What the answer left out.** Omission is invisible. The uncited count is a floor.
+- **Whose fault an unsupported claim is.** Five of the six failure modes below look like a citation failure
+  and only one of them is.
+- **Anything from one answer's percentages.** Every rate carries its n and an interval.
+
+## Dependencies
+
+Python 3.11 or newer, for `tomllib`. Chrome or a Chromium browser for the extension. Two optional
+judge-only packages, `google-genai` (default, free tier) or `anthropic`. Nothing else in the package imports
+either, and the fetch, extraction and gate layers are stdlib only. A judge key is needed only for verdicts:
+without one you still get liveness and readability for every cited source.
+
+## Commands
+
+```bash
+# start the local audit server, then click Audit in the extension
+.venv/bin/python -m sayswho.server --judge
+
+# or audit one downloaded capture with nothing running
+python3 -m sayswho.cli <capture.json> --judge --report report.html
+
+# the whole frozen stratum, writing the run record, readout, RUN_LOG.md and trace table
+python3 tools/run_stratum.py --captures captures/ --judge --goldset <set> --out runs/day7
+
+# re-read a stored page after fixing a selector, without re-running the query
+python3 -m sayswho.reextract <page.html> --capture <capture.json>
+
+# check the query freeze by hand; it also runs automatically before every capture
+python3 tools/freeze_queries.py check
+```
+
+## What it produces
+
+An HTML report and its JSON twin in `reports/`, both drawn by the same renderer so the extension and the
+harness cannot disagree. Per claim, one of six states. Per run, the unreadable sources with reasons, the
+skipped lines in two units, the uncited floor, and every rate it is entitled to publish with its n and 95%
+interval. Where a rate is refused, the refusal appears in the number's place.
+
+Everything it writes stays local: `captures/`, `reports/`, `runs/`, `splits/`, `goldset/` and `.cache/` are
+all uncommitted, because they carry answer text and quoted page content.
+
+---
+
+## Failure modes
+
+Six, each one you will actually meet, with the signal it gives, what it means, and what to do.
 
 The rule that governs all six: **a result the tool could not measure never becomes a result against the
 product.** Five of these six look like "the citation failed" and only one of them is.
+
+Modes 4 and 6 are the two the contract turns on: 4 is drift, 6 is a contract violation the tool refuses rather
+than papers over.
 
 ---
 
 ## 1. The source could not be read
 
-**Signal.** `SOURCE_DEAD_LINK`, `SOURCE_BOT_BLOCKED`, `SOURCE_UNREACHABLE`, `SOURCE_PAYWALLED`,
-`SOURCE_EMPTY`, `SOURCE_NOT_HTML`, `SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`.
+**Signal.** Any code but `SOURCE_OK`: `SOURCE_DEAD_LINK`, `SOURCE_BOT_BLOCKED`, `SOURCE_UNREACHABLE`,
+`SOURCE_PAYWALLED`, `SOURCE_EMPTY`, `SOURCE_NOT_HTML`, `SOURCE_ROBOTS_EXCLUDED`, `SOURCE_DRIFTED`,
+`SOURCE_NO_TEXT_LAYER`, `SOURCE_UNREADABLE_ENCODING`.
 
 **Means.** Nothing about the claim. The page was dead, or behind a wall, or a PDF, or a JavaScript shell, or
 `robots.txt` asked us not to fetch it and we did not.
