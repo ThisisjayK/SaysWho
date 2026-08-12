@@ -7,9 +7,33 @@ Two rules for keeping this file honest. Nothing gets ticked because it was start
 does not happen gets marked not-done with a reason rather than deleted, because §0a promises the writeup
 reports it either way.
 
+## Start here next session
+
+Written 2026-08-12 at the end of the session, so tomorrow does not begin by rereading the file.
+
+**The one thing that unblocks everything: transcribe and scrub the professional stratum.** Nothing below it
+in this list can be finished first, and no amount of building substitutes for it. Everything buildable that
+does not depend on it has now been built.
+
+Tomorrow's queue, in order:
+
+1. **Pull the queries.** See "Blocking the whole schedule" below. This is the whole session if it needs to be
+2. **The rehearsal labelling run**, if there is an hour spare and the stratum is not ready. Eight pairs off
+   the existing ChatGPT capture, purely to walk the workflow before the session that counts. Commands are in
+   the day 5 section. It produces a real kappa and no publishable rate, since those captures are unbound
+3. **The PR description.** **Blocked on two answers only I have:** which repo `contrib/jayanth-says-who`
+   targets, and which chapters SaysWho satisfies. The requirement asks for chapters by name and this repo
+   cites none. Everything else about the description can be drafted the moment those two are known
+
+Landed 2026-08-12 and needing nothing further: break attempts 1 to 4 run against a live judge with 1b added
+(`FINDINGS.md` item 15), the gold set workflow made performable at all (item 16), the two-customer pair
+rebuilt to the required format, the ethics gate, and the §4 boundary table generated from
+`sayswho/boundary.py`.
+
 ## Where things actually stand
 
-Day 5 of ten. Days 2, 3, 4 and 6 are done; days 1, 5 and 7 are blocked on the same thing.
+Day 5 of ten, and day 5's own deliverable is the gold set, which is blocked. Days 2, 3, 4 and 6 are done;
+days 1, 5 and 7 are blocked on the same thing.
 
 **Everything still open is either mine to do by hand or waits on something that is.** The professional
 stratum has to be transcribed out of my own AI history and scrubbed, and it is the input to the gold set,
@@ -591,8 +615,10 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] The honest run, 35 points. Terminal output, plausibility audit, the two core break attempts, metric
       readout, §7 limitations
 - [ ] GitHub PR, 25 points. `contrib/jayanth-says-who` branch with a maintainer-ready description.
-      **Mine to do first:** confirm which repo this targets. Nothing else about it can be written until
-      that is known, since a maintainer-ready description is addressed to a specific maintainer
+      **Mine to do first, two answers:** which repo this targets, and which chapters SaysWho satisfies. The
+      requirement asks for the chapters by name and nothing in this repo cites one, so that is a decision
+      rather than a lookup. Nothing else about the description can be written until both are known, since a
+      maintainer-ready description is addressed to a specific maintainer and claims specific coverage
 - [x] Portfolio piece, 35 points: the case study. `CASE_STUDY.md`, for a technical reader, with the four
       load-bearing decisions and what each cost. The "what I would do differently" section is longer than
       the results section, which is the accurate shape on day 5
