@@ -361,6 +361,13 @@ The machinery is built and tested. What is left on this list is the labelling it
       matches nothing: an afternoon of labelling would have calibrated not one capture. Now a list, checked
       by membership, and it records the splits its labels actually came from rather than the ones the sampler
       was handed, since quitting early must not claim an answer never reached
+- [ ] **Catch a prior audit of the same answer.** Neither guard sees it. `goldset.agreement` compares label
+      times against the run they are compared with, so labels written today pass against a run made tomorrow,
+      and G4 ties to the split, which differs because Phase 1 does not repeat itself. So an answer judged
+      earlier under a different split leaves verdicts that anchor a labeller and trip nothing. Found on
+      2026-08-11 when every capture on disk turned out to have been audited already. Today it is a sentence in
+      a banner, which is the weakest control in this project. The fix is for the labelling tool to scan for a
+      report over the same `answer_sha256` and refuse a blind label when one exists
 - [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** Blocked on the
       professional stratum existing. The order is: `--split-only --save-split` to make the split, label
       against it, then `--split` on the judged run so the rate is over the same claims a human read
