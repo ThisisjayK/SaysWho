@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-11, day 5 of ten. 682 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
+Last updated 2026-08-11, day 5 of ten. 688 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**

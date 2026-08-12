@@ -233,3 +233,73 @@ def test_the_test_count_in_status_matches_the_suite(request):
     assert abs(claimed - actual) <= 0, (
         f"STATUS.md says {claimed} tests, the suite collects {actual}. Update STATUS.md."
     )
+
+
+# ---------------------------------------------------------------- the verified-inferred boundary, §4
+
+
+def test_scope_section_four_matches_the_generated_table():
+    """§4 is the heart of the attestation and it is exactly the kind of prose that rots: a field gets added
+    to a payload and nobody revisits the document. It is generated from `sayswho.boundary` now, and this
+    fails if the two drift apart."""
+    from sayswho.boundary import render_labels, render_table
+
+    scope = (REPO / "SCOPE.md").read_text()
+    assert render_table() in scope, "SCOPE.md §4's field table is not what boundary.py renders"
+    assert render_labels() in scope, "SCOPE.md §4's classification list is not what boundary.py renders"
+
+
+def test_every_field_carries_one_of_the_seven_classifications():
+    from sayswho.boundary import CLASSIFICATION, LABELS
+
+    assert len(LABELS) == 7, "the attestation names seven classifications"
+    for row in CLASSIFICATION:
+        assert row.label in LABELS
+        assert row.note.strip(), f"{row.field} has no note, so the table says what but never why"
+
+
+def test_a_classification_outside_the_seven_is_refused():
+    """The failure path. A row is a dataclass with a validator rather than a line in a markdown table, so an
+    invented label cannot reach the document at all."""
+    import pytest as _pytest
+
+    from sayswho.boundary import Row
+
+    with _pytest.raises(ValueError, match="not one of the seven"):
+        Row("something", "probably-fine", "note")
+
+
+def test_every_label_is_used_by_at_least_one_field():
+    """A classification nothing is classified as is a word in a glossary, not a boundary."""
+    from sayswho.boundary import CLASSIFICATION, LABELS
+
+    used = {row.label for row in CLASSIFICATION}
+    assert used == set(LABELS), f"defined but unused: {sorted(set(LABELS) - used)}"
+
+
+def test_nothing_the_run_record_emits_is_unclassified(tmp_path):
+    """The check a typed table cannot perform. Every top-level key of a real run record has to appear in the
+    boundary, so adding a field to the payload and forgetting §4 fails here rather than in review."""
+    import json
+    import sys as _sys
+
+    from sayswho.boundary import unclassified
+
+    _sys.path.insert(0, str(REPO))
+    from sayswho import cli
+
+    out = tmp_path / "record.json"
+    cli.main([str(REPO / "fixtures" / "example-capture.json"), "--json-out", str(out),
+              "--skip-freeze-check"])
+
+    missing = unclassified(json.loads(out.read_text()))
+    assert not missing, f"emitted but not classified in SCOPE.md §4: {missing}"
+
+
+def test_the_missing_rows_are_present_because_they_are_the_point():
+    """A reader who wants one number will look for it. The absences are named rather than left blank."""
+    from sayswho.boundary import CLASSIFICATION
+
+    absent = [r.field for r in CLASSIFICATION if r.label == "missing"]
+    assert any("true" in f for f in absent)
+    assert any("confidence score" in f for f in absent)

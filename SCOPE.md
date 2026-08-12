@@ -375,24 +375,69 @@ Emits the audit JSON, a human-readable report, and a `RUN_LOG.md` entry.
 
 ## 4. Verified vs. inferred boundary
 
-The heart of the attestation. Every field SaysWho emits, classified:
+The heart of the attestation. A reader deciding how much weight to put on a number needs to know where it
+came from, so every field this tool emits carries one of seven classifications.
 
-| Field | Classification |
+**This table is generated from `sayswho/boundary.py` and checked by `tests/test_documents.py`.** A typed
+table describes the fields that existed on the day it was written, and this project has already found three
+prose claims that had quietly drifted false. A field added to a payload and never carried into this section
+now fails the suite.
+
+### The seven classifications
+
+| Classification | What it means |
 |---|---|
-| Query, answer text, model ID, generation timestamp | record |
-| Cited URL, HTTP status, fetch timestamp, content hash | record |
-| Extracted source text, text length | script-output |
-| Wayback snapshot content and date | external-source |
-| Span-present check (`JUDGE_FABRICATED_SPAN`) | script-output, deterministic |
-| Counts, rates, denominators | script-output |
-| Claim boundaries (Phase 1 splitting) | **model-inference** |
-| Support verdict (Phase 3) | **model-inference** |
-| Gold-set labels | your-input (human) |
-| Judge precision / recall / kappa | script-output over your-input |
-| Whether the source is *true* | **missing, out of scope, see §7** |
+| `record` | A primary observation, written down as it arrived: what the product emitted, what a server returned, and when. Nothing was inferred to produce it |
+| `local-evidence` | An artefact this project stored and reads back as evidence, chiefly the fetch cache and the stored page. Distinct from a record because a rerun over stored bytes answers a different question than a fresh fetch, and several findings depend on the difference |
+| `external-source` | Content fetched from a third party that is not the audited product: the cited page itself, and the Wayback snapshot. Its accuracy is that third party's, not this tool's |
+| `script-output` | Computed by deterministic code from records, local evidence or external sources. Reproducible from the same inputs, and carrying no judgement |
+| `model-inference` | Produced by a language model. Rendered with an explicit judgement marker in every output surface and never printed bare beside a record-derived number |
+| `your-input` | Supplied by a person, and the only class this tool cannot generate or check. The gold set labels and the pre-registered cost of error |
+| `missing` | Not produced at all, and named here so its absence is visible. A field a reader might expect and will not find, with the reason |
+
+The distinction that took the most thought is `record` against `local-evidence`. A record is a primary
+observation: what the product emitted, what the server returned, when. Local evidence is something this
+project stored and later reads back. They are separated because a re-audit over cached bytes and a fresh
+fetch answer different questions, and `tools/reaudit_spans.py` deliberately does the first: re-checking a
+span against a page fetched today would substitute today's page for the one the answer was written against.
+Collapsing the two labels would hide that.
+
+### Every field, classified
+
+| Field | Classification | Note |
+|---|---|---|
+| Query, answer text, model ID, generation timestamp | `record` | as captured from the product, hashed. An edited capture is rejected on load |
+| Cited URL, HTTP status, fetch timestamp, content hash | `record` | what the server returned, before anything read it |
+| `extension_version`, adapter name, whether the adapter was verified | `record` | provenance of the capture itself, so a stale content script announces itself |
+| Cached page bytes in `.cache/fetch/` | `local-evidence` | append-only, so a rerun audits the same bytes rather than today's page |
+| Stored page HTML saved beside a capture | `local-evidence` | re-extraction runs over this, so a selector fix does not re-run the query |
+| Stored split (`splits/`), and its `split_sha256` | `local-evidence` | the claims a human labelled. Phase 1 does not return the same split twice, so the file is the evidence rather than the process |
+| Gold set file, its `labels_sha256` and split binding | `local-evidence` | the container. The labels inside it are your-input |
+| Fetched page content | `external-source` | the cited page, from whoever publishes it |
+| Wayback snapshot content and date | `external-source` | a third party's copy, and its absence is reported as unknown rather than as unchanged |
+| Crossref resolution of a named citation | `external-source` | existence only, never support. It enters no denominator |
+| Extracted source text, text length, document kind | `script-output` | deterministic given the bytes. The layer most likely to be wrong, per `FINDINGS.md` item 11 |
+| G2 outcome code | `script-output` | eleven codes, derived from status, headers and extracted length |
+| Span-present check (`JUDGE_FABRICATED_SPAN`) | `script-output` | deterministic. It checks presence, never relevance |
+| Drift containment and Jaccard, `SPAN_ADDED_AFTER_GENERATION` | `script-output` | computed against the archived copy, per claim rather than per page |
+| Counts, rates, denominators, Wilson intervals | `script-output` | one function computes each denominator and everything calls it |
+| Judge precision, recall, Cohen's kappa | `script-output` | arithmetic over your-input. Both halves are named wherever it is printed, because the number is only as good as the labels under it |
+| Extraction attribution (`extraction_missed`) | `script-output` | a script's answer about the passage a labeller pasted, so its input is your-input |
+| Claim boundaries (Phase 1 splitting) | **model-inference** | labelled as such in every surface. The spread across runs is measured, not assumed |
+| Support verdict (Phase 3) | **model-inference** | the judge's answer, admissible only with a verbatim span a script confirmed |
+| `missing_qualifiers` on a verdict | **model-inference** | a list of strings in the page's own terms, never a number |
+| Gold set labels | **your-input** | the one field this tool cannot generate. Blind, and refused if they postdate the judge run |
+| `cost_of_error` on a frozen query | **your-input** | pre-registered before any capture, and inside the freeze hash |
+| Whether the cited source is *true* | **missing** | out of scope. It checks whether the page says what the answer says it says. See §7 |
+| Whether the source is any good | **missing** | a blog post and a randomised trial are the same object to this tool |
+| What the answer left out | **missing** | omission is invisible. The uncited count is a floor with a measured gap under it |
+| A confidence score, anywhere | **missing** | refused by design, not unimplemented. An unreachable source makes a claim `UNAUDITABLE` and it leaves every denominator rather than being scored low |
 
 Rule enforced in code: any field classified model-inference is rendered with an explicit judgment marker in
 every output surface. It is never printed bare next to a record-derived number.
+
+The `missing` rows are the point of the table rather than an appendix to it. A reader who wants a single
+number is going to look for one, and four rows here say what is not on offer and why.
 
 ## 5. Metrics the honest run will report
 

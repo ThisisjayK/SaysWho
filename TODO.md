@@ -583,8 +583,11 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Two-customer pair, 30 points. `recipes/audit-citations.md` in nine sections, plus
       `recipes/audit-citations.card.md` covering six failure modes. Five of the six look like "the citation
       failed" and only one of them is, which is the card's organising idea
-- [ ] Verified-data attestation, 35 points. The §4 boundary table, the per-number trace table, the privacy and
-      honesty gate output
+- [ ] Verified-data attestation, 35 points. Two of the three parts are done. The §4 boundary table is
+      generated from `sayswho/boundary.py` rather than typed, carries all seven classifications, and
+      `tests/test_documents.py` fails if the document and the code disagree or if a run record emits a field
+      no row covers. The privacy and honesty gate output is `python3 tools/ethics_gate.py`. The per-number
+      trace table exists and is generated, but it has never run over real data, which is the blocker
 - [ ] The honest run, 35 points. Terminal output, plausibility audit, the two core break attempts, metric
       readout, §7 limitations
 - [ ] GitHub PR, 25 points. `contrib/jayanth-says-who` branch with a maintainer-ready description.
