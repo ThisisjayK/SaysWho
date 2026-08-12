@@ -114,7 +114,7 @@ def test_the_skip_and_uncited_records_pass_the_gate():
 
 def test_the_gold_set_records_pass_the_gate():
     gold = GoldSet(
-        split_sha256="a" * 64, judge_class="X", judge_model="y",
+        split_sha256s=["a" * 64], judge_class="X", judge_model="y",
         judge_prompt_version="judge-v1", claim_prompt_version="claims-v1",
         created_at="2026-08-11T00:00:00+00:00",
         labels=[GoldLabel(claim_id="c1", url="https://a.example/1", label=SUPPORTED,

@@ -68,6 +68,13 @@ def main(argv: list[str] | None = None) -> int:
         help="write this run's split to a file, so it can be labelled and re-used",
     )
     parser.add_argument(
+        "--split-only",
+        action="store_true",
+        help="run Phase 1 and stop, writing the split and no verdicts. This is how a gold set gets "
+        "something to be labelled against: the labels have to predate the judge, and every other path to "
+        "a stored split runs Phase 3 on the way. Needs --save-split, since it produces nothing else",
+    )
+    parser.add_argument(
         "--report",
         type=Path,
         default=None,
@@ -108,13 +115,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    if (args.split or args.save_split) and not (args.judge or args.split_only):
+        # Phase 1 only runs under --judge or --split-only, so these would otherwise be accepted and silently
+        # ignored, and a run that looks pinned and is not is the exact failure the stored split exists to
+        # prevent.
+        parser.error("--split and --save-split need --judge or --split-only, since Phase 1 only runs there")
+
+    if args.split_only:
+        # Each of these would put a verdict in front of the person about to label blind, which is the one
+        # thing this flag exists to prevent.
+        if args.judge:
+            parser.error("--split-only and --judge are opposites: one refuses to judge, the other judges")
+        if not args.save_split:
+            parser.error("--split-only needs --save-split, or the split it makes is thrown away")
+        if args.split:
+            parser.error("--split-only re-derives the split; passing a stored one would rewrite it unchanged")
+        for flag, name in ((args.report, "--report"), (args.report_json, "--report-json"),
+                           (args.goldset, "--goldset")):
+            if flag:
+                parser.error(f"{name} needs verdicts, and --split-only produces none")
+
     if (args.report or args.report_json) and not args.judge:
         parser.error("--report and --report-json need --judge: an unjudged answer has nothing to mark")
-
-    if (args.split or args.save_split) and not args.judge:
-        # Phase 1 only runs under --judge, so these would otherwise be accepted and silently ignored, and a
-        # run that looks pinned and is not is the exact failure the stored split exists to prevent.
-        parser.error("--split and --save-split need --judge, since Phase 1 only runs there")
 
     # CLAUDE.md: the freeze check passes before any capture run. The watcher already enforced this and the
     # interactive path did not, which left the one path a person uses by hand as the one path with no gate.
@@ -231,7 +253,10 @@ def main(argv: list[str] | None = None) -> int:
     claim_set = None
     report = None
     run_rates = None
-    if args.judge and auditable:
+    # --split-only runs even when nothing is auditable. Phase 1 splits the answer, which does not need a
+    # readable source, and the gold set stratifies UNAUDITABLE pairs first, so those are exactly the ones a
+    # labeller needs in front of them.
+    if (args.judge and auditable) or args.split_only:
         from .cache import now_iso
         from .gemini import build_judge
         from .judge import EXTRACTION_SUSPECT, JudgeReport
@@ -276,95 +301,105 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"    [{n:03d}] {s.reason}")
                 print(f"          {' '.join(s.text.split())}")
 
-        print()
-        print("Phase 3   judging each claim against its source   [model-inference]")
-        judgements = []
-        try:
-            for j in judge_claims(claim_set, records, drifts, client):
-                judgements.append(j)
-                flag = "" if not j.voided else f"  VOID {j.void_reason}"
-                if j.span_predates_generation is None and j.span:
-                    flag += "  (no snapshot: cannot tell if the span predates the answer)"
-                print(f"  {j.claim_id}  {j.verdict:<22}{flag}")
-        except BudgetExceeded as exc:
-            print(f"  HALTED  {exc}")
+        if args.split_only:
+            # Phase 3 deliberately not run. The gold set is labelled against this split, and the
+            # labelling has to happen before the judge has said anything: `goldset.agreement` refuses
+            # a blind label that postdates the run it is compared against. Producing the split through
+            # a command that also prints verdicts made that ordering impossible to honour.
+            print()
+            print("Phase 3   not run, because --split-only. No verdict exists yet for these claims.")
+            print(f"             Label {args.save_split} now, then judge the same claims with")
+            print(f"             --split {args.save_split}, which is the run a rate may come from.")
+        else:
+            print()
+            print("Phase 3   judging each claim against its source   [model-inference]")
+            judgements = []
+            try:
+                for j in judge_claims(claim_set, records, drifts, client):
+                    judgements.append(j)
+                    flag = "" if not j.voided else f"  VOID {j.void_reason}"
+                    if j.span_predates_generation is None and j.span:
+                        flag += "  (no snapshot: cannot tell if the span predates the answer)"
+                    print(f"  {j.claim_id}  {j.verdict:<22}{flag}")
+            except BudgetExceeded as exc:
+                print(f"  HALTED  {exc}")
 
-        report = JudgeReport(judgements)
-        rate = report.fabricated_span_rate
-        print()
-        print(f"verdicts     {report.counts()}")
-        print(
-            "fabricated   "
-            + (
-                f"{report.fabricated_span_count} of {len([j for j in judgements if j.span])} "
-                f"span-bearing verdicts ({rate:.1%})"
-                if rate is not None
-                else "no verdict required a span, so there is no rate"
-            )
-        )
-        suspect = sum(1 for j in judgements if j.void_reason == EXTRACTION_SUSPECT)
-        if suspect:
+            report = JudgeReport(judgements)
+            rate = report.fabricated_span_rate
+            print()
+            print(f"verdicts     {report.counts()}")
             print(
-                f"extraction   {suspect} NOT_FOUND_IN_SOURCE verdict(s) voided: the claim's own numbers or "
-                "names are in the page markup and missing from what we extracted, so the extractor is the "
-                "likelier explanation. Voided rather than published as a citation failure"
+                "fabricated   "
+                + (
+                    f"{report.fabricated_span_count} of {len([j for j in judgements if j.span])} "
+                    f"span-bearing verdicts ({rate:.1%})"
+                    if rate is not None
+                    else "no verdict required a span, so there is no rate"
+                )
             )
-        print(f"metering     {meter.to_dict()}")
+            suspect = sum(1 for j in judgements if j.void_reason == EXTRACTION_SUSPECT)
+            if suspect:
+                print(
+                    f"extraction   {suspect} NOT_FOUND_IN_SOURCE verdict(s) voided: the claim's own numbers or "
+                    "names are in the page markup and missing from what we extracted, so the extractor is the "
+                    "likelier explanation. Voided rather than published as a citation failure"
+                )
+            print(f"metering     {meter.to_dict()}")
 
-        # Every rate this run is entitled to publish, and the reason for each one it is not. Computed here
-        # rather than described, so the refusal is the same object the harness prints.
-        from .gates import g4_calibration_exists
-        from .goldset import GoldSet
-        from .judge import JUDGE_PROMPT_VERSION
-        from .rates import for_run
+            # Every rate this run is entitled to publish, and the reason for each one it is not. Computed here
+            # rather than described, so the refusal is the same object the harness prints.
+            from .gates import g4_calibration_exists
+            from .goldset import GoldSet
+            from .judge import JUDGE_PROMPT_VERSION
+            from .rates import for_run
 
-        gold = GoldSet.load(args.goldset) if args.goldset else None
-        run_rates = for_run(
-            capture, claim_set, records, judgements,
-            drifts=drifts,
-            split_sha256=split_digest(claim_set.claims),
-            splits=1,
-            calibration=g4_calibration_exists(
-                gold, type(client).__name__, client.model, JUDGE_PROMPT_VERSION,
-                CLAIM_PROMPT_VERSION, split_digest(claim_set.claims),
-            ),
-        )
-        print()
-        for rate in run_rates.rates:
-            print(f"  {rate.render()}")
-        for reason in run_rates.withheld:
-            print(f"  withheld: {reason}")
-        if not bound.ok:
-            print(f"  withheld: {bound.code}: {bound.detail}")
-        if run_rates.product in CONFLICTED_PRODUCTS:
+            gold = GoldSet.load(args.goldset) if args.goldset else None
+            run_rates = for_run(
+                capture, claim_set, records, judgements,
+                drifts=drifts,
+                split_sha256=split_digest(claim_set.claims),
+                splits=1,
+                calibration=g4_calibration_exists(
+                    gold, type(client).__name__, client.model, JUDGE_PROMPT_VERSION,
+                    CLAIM_PROMPT_VERSION, split_digest(claim_set.claims),
+                ),
+            )
+            print()
+            for rate in run_rates.rates:
+                print(f"  {rate.render()}")
+            for reason in run_rates.withheld:
+                print(f"  withheld: {reason}")
+            if not bound.ok:
+                print(f"  withheld: {bound.code}: {bound.detail}")
+            if run_rates.product in CONFLICTED_PRODUCTS:
+                print(
+                    f"  conflict: {CONFLICTED_PRODUCTS[run_rates.product]}. This product reports on its own and "
+                    "never enters a cross-product aggregate"
+                )
+
+            floor = uncited_floor(claim_set)
+            print()
             print(
-                f"  conflict: {CONFLICTED_PRODUCTS[run_rates.product]}. This product reports on its own and "
-                "never enters a cross-product aggregate"
+                f"uncited      {floor['uncited_claim_count']} claim(s) carried no citation, plus "
+                f"{floor['measured_gap']} factual-looking unit(s) G1 skipped before they could become claims. "
+                "A floor with a measured gap under it, not a total"
             )
 
-        floor = uncited_floor(claim_set)
-        print()
-        print(
-            f"uncited      {floor['uncited_claim_count']} claim(s) carried no citation, plus "
-            f"{floor['measured_gap']} factual-looking unit(s) G1 skipped before they could become claims. "
-            "A floor with a measured gap under it, not a total"
-        )
+            if args.report or args.report_json:
+                from .report import build as build_report
 
-        if args.report or args.report_json:
-            from .report import build as build_report
-
-            marked = build_report(
-                capture, records, claim_set, judgements,
-                drifts=drifts, split_sha256=split_digest(claim_set.claims),
-            )
-            if args.report:
-                marked.save(args.report)
-                print()
-                print(f"report       {args.report}")
-            if args.report_json:
-                args.report_json.parent.mkdir(parents=True, exist_ok=True)
-                args.report_json.write_text(marked.to_json(), encoding="utf-8")
-                print(f"report json  {args.report_json}")
+                marked = build_report(
+                    capture, records, claim_set, judgements,
+                    drifts=drifts, split_sha256=split_digest(claim_set.claims),
+                )
+                if args.report:
+                    marked.save(args.report)
+                    print()
+                    print(f"report       {args.report}")
+                if args.report_json:
+                    args.report_json.parent.mkdir(parents=True, exist_ok=True)
+                    args.report_json.write_text(marked.to_json(), encoding="utf-8")
+                    print(f"report json  {args.report_json}")
 
     if args.json:
         payload = {

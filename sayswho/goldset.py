@@ -6,8 +6,14 @@ the file format, the checks that keep the sample honest, and the arithmetic. It 
 
 Four refusals, all of them structural rather than advisory:
 
-- A gold set is bound to one `split_sha256`. Phase 1 does not return the same split twice, so a set labelled
-  against one split says nothing about another. Same tuple as gate G4.
+- A gold set is bound to the splits it was labelled against, and G4 asks whether the split in front of it is
+  one of them. Phase 1 does not return the same split twice, so a set labelled against one split says nothing
+  about another. It records a list rather than a single hash because one answer yields perhaps twenty
+  labellable pairs and the target is thirty to forty, so a real set spans two or three answers, and the
+  sampler stratifies across products, which needs more than one. The single-hash version made the set the
+  sampler is built to produce satisfy G4 against nothing at all.
+- The recorded splits are the ones that actually produced a label, not the ones offered to the sampler. A set
+  claiming an answer nobody got to before quitting would calibrate a run over that answer on no evidence.
 - A blind label carries the time it was written, and `agreement` refuses to run if any blind label postdates
   the judge run it is being compared against. Labelling after seeing the judge's answer is not labelling.
 - An edited file raises, the same way a stored split does, so a set cannot be quietly corrected after the
@@ -104,11 +110,25 @@ def labels_digest(labels: list[GoldLabel]) -> str:
     return sha256(payload)
 
 
+def _splits_from(d: dict[str, Any]) -> list[str]:
+    """Read the split binding from either shape.
+
+    The field was a single `split_sha256` before a set was ever labelled with it, and a file written then
+    would silently bind to nothing under the list reader. There are no such files, and reading both costs
+    four lines.
+    """
+    if "split_sha256s" in d:
+        return [s for s in d["split_sha256s"] if s]
+    one = d.get("split_sha256", "")
+    return [one] if one else []
+
+
 @dataclass
 class GoldSet:
-    """A labelled sample, bound to exactly one configuration of the pipeline."""
+    """A labelled sample, bound to the splits it covers and to one configuration of the pipeline."""
 
-    split_sha256: str
+    #: Every split this set carries at least one label for. G4 checks membership, not equality.
+    split_sha256s: list[str]
     judge_class: str
     judge_model: str
     judge_prompt_version: str
@@ -132,7 +152,7 @@ class GoldSet:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "split_sha256": self.split_sha256,
+            "split_sha256s": list(self.split_sha256s),
             "judge_class": self.judge_class,
             "judge_model": self.judge_model,
             "judge_prompt_version": self.judge_prompt_version,
@@ -178,7 +198,7 @@ class GoldSet:
             raise GoldSetContract(f"gold set contains labels outside the vocabulary: {unknown}")
 
         gold = cls(
-            split_sha256=d["split_sha256"],
+            split_sha256s=_splits_from(d),
             judge_class=d.get("judge_class", ""),
             judge_model=d.get("judge_model", ""),
             judge_prompt_version=d.get("judge_prompt_version", ""),

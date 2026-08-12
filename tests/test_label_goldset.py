@@ -152,3 +152,69 @@ def test_a_url_with_nothing_cached_returns_none(tmp_path):
     from sayswho.cache import FetchCache
 
     assert label_goldset.extracted_pair(FetchCache(tmp_path / "cache"), "https://example.org/x") is None
+
+
+# ---------------------------------------------------------------- which splits the saved set claims
+
+
+def test_the_saved_set_records_only_the_splits_that_produced_a_label(tmp_path, monkeypatch):
+    """The bug this pins made the whole tool useless for its own purpose.
+
+    Reaching thirty to forty pairs takes two or three answers, and the sampler stratifies across products,
+    which needs more than one split. Given more than one, the tool used to record `split_sha256 = ""`, and
+    G4 compares that against the split of the run in front of it, so an afternoon of labelling calibrated
+    nothing at all. It now records the splits its labels actually came from, which is also not the same as
+    the splits it was handed: quitting after one label must not claim the answer never reached."""
+    from sayswho.goldset import GoldSet
+
+    a, b = split(product="chatgpt", n=6), split(product="perplexity", n=5)
+    assert a.split_sha256 != b.split_sha256, "two identical splits would make this test vacuous"
+
+    paths = []
+    for n, s in enumerate((a, b)):
+        p = tmp_path / f"split{n}.json"
+        s.save(p)
+        paths.append(str(p))
+
+    out = tmp_path / "gold.json"
+    # One label, then quit: S, the passage prompt, the notes prompt, then q.
+    answers = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+
+    label_goldset.main(["--split", paths[0], "--split", paths[1], "--out", str(out),
+                        "--cache", str(tmp_path / "cache"), "--target", "10"])
+
+    gold = GoldSet.load(out)
+    assert len(gold.labels) == 1
+    assert gold.split_sha256s, "a set bound to no split calibrates nothing, which was the bug"
+    assert len(gold.split_sha256s) == 1, "only one pair was labelled, so only one split is covered"
+    assert gold.split_sha256s[0] in (a.split_sha256, b.split_sha256)
+
+
+def test_resuming_keeps_the_splits_the_earlier_session_recorded(tmp_path, monkeypatch):
+    """A labelling session is resumable, and the splits are accumulated across sessions rather than
+    recomputed from whatever the second invocation happened to be given."""
+    from sayswho.goldset import GoldSet
+
+    a, b = split(product="chatgpt", n=6), split(product="perplexity", n=5)
+    paths = []
+    for n, s in enumerate((a, b)):
+        p = tmp_path / f"split{n}.json"
+        s.save(p)
+        paths.append(str(p))
+
+    out = tmp_path / "gold.json"
+    args = ["--split", paths[0], "--split", paths[1], "--out", str(out),
+            "--cache", str(tmp_path / "cache"), "--target", "10"]
+
+    session_one = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(session_one))
+    label_goldset.main(args)
+    first = GoldSet.load(out).split_sha256s
+
+    answers = iter(["S", "", "", "S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+    label_goldset.main(args)
+
+    after = GoldSet.load(out).split_sha256s
+    assert set(first) <= set(after), "resuming dropped a split the first session had labelled"

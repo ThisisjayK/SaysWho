@@ -32,7 +32,7 @@ def label(claim_id, value, at="2026-08-12T09:00:00+00:00", blind=True, url="http
 
 def gold(labels, split=SPLIT):
     return GoldSet(
-        split_sha256=split,
+        split_sha256s=[split],
         judge_class="GeminiJudge",
         judge_model="gemini-3.5-flash-lite",
         judge_prompt_version="judge-v1",
@@ -64,7 +64,40 @@ def test_g4_refuses_a_gold_set_labelled_against_a_different_split():
         "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
     )
     assert not result.passed
-    assert "valid for the split it was labelled against" in result.detail
+    assert "valid for the splits it was labelled against" in result.detail
+
+
+def test_g4_passes_for_every_split_a_multi_answer_set_covers():
+    """The case that made the single-hash version useless. One answer yields roughly twenty labellable
+    pairs and the target is thirty to forty, so a real set spans two or three answers, and the sampler
+    stratifies across products, which needs more than one. Under equality such a set calibrated nothing."""
+    across = gold([label("c1", SUPPORTED)])
+    across.split_sha256s = [SPLIT, "b" * 64, "c" * 64]
+
+    for covered in across.split_sha256s:
+        result = g4_calibration_exists(
+            across, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", covered,
+        )
+        assert result.passed, f"the set holds labels for {covered[:8]} and should calibrate it"
+
+    stranger = g4_calibration_exists(
+        across, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", "d" * 64,
+    )
+    assert not stranger.passed, "membership, not a free pass to every split in existence"
+
+
+def test_g4_refuses_a_gold_set_bound_to_no_split_at_all():
+    """What the labelling tool used to write whenever it was given more than one split. It would otherwise
+    be a set that binds to nothing, and a check for equality against nothing calibrates nothing, which at
+    least fails loudly. A membership check against an empty list has to refuse on purpose."""
+    unbound = gold([label("c1", SUPPORTED)])
+    unbound.split_sha256s = []
+
+    result = g4_calibration_exists(
+        unbound, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    )
+    assert not result.passed
+    assert "records no split" in result.detail
 
 
 def test_g4_refuses_a_gold_set_labelled_against_a_different_judge():

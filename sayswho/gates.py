@@ -78,6 +78,10 @@ def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
     The tuple includes `split_sha256` because Phase 1 does not return the same split twice, so "the gold set
     for this judge and prompt version" did not identify a fixed set of claims. `FINDINGS.md` item 8.
 
+    Membership rather than equality: a gold set covers every answer it was labelled against, and the run in
+    front of it judges one of them at a time. Equality made a set spanning two answers, which is what
+    reaching thirty to forty pairs requires, calibrate neither of them.
+
     Every mismatch is reported separately rather than as one "no calibration" answer, because the four
     reasons need four different actions: relabel, revert the prompt, re-pin the split, or swap the judge back.
     """
@@ -104,10 +108,16 @@ def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
             f"gold set was labelled under claim prompt {goldset.claim_prompt_version}, this run used "
             f"{claim_prompt_version}"
         )
-    if goldset.split_sha256 != split_sha256:
+    if not goldset.split_sha256s:
         mismatches.append(
-            f"gold set was labelled against split {goldset.split_sha256[:16]}, this run judged split "
-            f"{split_sha256[:16]}. A gold set is valid for the split it was labelled against and no other"
+            "gold set records no split at all, so there is nothing to say it was labelled against these "
+            "claims. A set that binds to nothing would otherwise calibrate everything"
+        )
+    elif split_sha256 not in goldset.split_sha256s:
+        labelled = ", ".join(s[:16] for s in goldset.split_sha256s)
+        mismatches.append(
+            f"gold set was labelled against split(s) {labelled}, this run judged split {split_sha256[:16]}. "
+            "A gold set is valid for the splits it was labelled against and no others"
         )
 
     if mismatches:

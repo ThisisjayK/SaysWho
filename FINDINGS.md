@@ -586,3 +586,43 @@ was looking for" for any verdict that was not `NOT_FOUND_IN_SOURCE`, so attempt 
 as the declared failure when it was not one. The held and broke decision was correct and is unchanged; the
 sentence beside it was wrong and went into `runs/break/results.json` before anyone read it. Third time this
 project has published a true number with a false sentence attached, after items 13 and 14.
+
+---
+
+## 16. The blind gold set could not have been labelled blind, and would have calibrated nothing if it had
+
+Found by walking the labelling workflow end to end before labelling rather than during it, in answer to the
+question "what do I actually do with the gold set". Two faults, either of which would have wasted the
+session, and both in the part of the project with the most machinery around it.
+
+**The blindness could not be honoured.** `goldset.agreement` refuses a blind label that postdates the judge
+run it is compared against, `tools/label_goldset.py` refuses to open any file carrying judge output, and G4
+ties the set to the split. Three structural refusals. But the artefact a labeller works from is a stored
+split, and the only route to one was `--judge --save-split`, which runs Phase 3 and prints every verdict to
+the terminal on the way past. The one mandatory step in the workflow was the one that showed you the answers.
+`--split-only` now runs Phase 1 and stops.
+
+**And the set it produced was bound to nothing.** A `GoldSet` carried a single `split_sha256` and G4 compared
+it for equality against the split of the run in front of it. One captured answer yields roughly twenty
+labellable claim-source pairs; the target is thirty to forty; the sampler's whole stratification is
+round-robin across products. So a real set spans two or three answers, and given more than one split the
+labelling tool wrote `split_sha256 = ""`, which equals no split anywhere. Confirmed against the gate rather
+than read off the source: G4 returns "gold set was labelled against split , this run judged split
+abc123realsplitd". Thirty to forty pairs of irreplaceable human work, and not one capture calibrated.
+
+**What connects them.** Neither is a bug in a function. Both are gaps between components that are individually
+correct and were never run in sequence, and both would have been found in the first ten minutes of labelling
+and paid for with the whole session. The pieces were tested. The path through them was not, because the path
+requires a human at a terminal for two hours and no test does that.
+
+**What I changed and what I did not.** The split binding is now a list checked by membership, and it records
+the splits that actually produced a label rather than the ones the sampler was offered, because quitting after
+one label must not claim an answer nobody reached. G4 still refuses a set bound to no split at all, on
+purpose: under equality that case failed loudly by accident, and under membership an empty list would
+otherwise have to be refused deliberately or it becomes a set that calibrates everything.
+
+**The general shape, which is now three for three.** Item 13 was a document claiming something the code did
+not do. Item 15 was an attempt whose fixture could not ask its own question. This is a workflow whose steps
+could not be performed in the order the code requires. In each case the components were tested and the claim
+about them was untested, and in each case it was found by someone asking a plain question about the thing
+rather than by the suite. 661 tests at the time of writing, and none of them tried to label a gold set.

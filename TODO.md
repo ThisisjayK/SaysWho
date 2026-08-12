@@ -347,8 +347,23 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Ask the labeller for the passage they found, and check it against our own extraction. A passage that
       is on the page and missing from `extract.py`'s output makes the resulting disagreement the extractor's
       rather than the judge's, which is the one way to separate two problems with the same symptom
+- [x] **Make it possible to label blind at all.** Found by walking the workflow before labelling rather than
+      during it. The labels have to predate the judge, and `goldset.agreement` enforces that, but the only
+      route to a stored split was `--judge --save-split`, which runs Phase 3 and prints every verdict on the
+      way past. Three refusals guarded blindness and the one mandatory step handed you the answers.
+      `--split-only` runs Phase 1 and stops, and refuses `--judge`, `--goldset`, `--report` and
+      `--report-json` rather than quietly ignoring them. `tests/test_cli.py`, which counts what the model was
+      asked for rather than reading the output
+- [x] **Make a gold set able to cover more than one answer.** Same walk. A `GoldSet` carried one
+      `split_sha256` and G4 compared it for equality, but one answer yields roughly twenty labellable pairs
+      against a target of thirty to forty, and the sampler stratifies across products, so a real set spans
+      two or three answers. Given more than one split the labelling tool wrote `split_sha256 = ""`, which
+      matches nothing: an afternoon of labelling would have calibrated not one capture. Now a list, checked
+      by membership, and it records the splits its labels actually came from rather than the ones the sampler
+      was handed, since quitting early must not claim an answer never reached
 - [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** Blocked on the
-      professional stratum existing
+      professional stratum existing. The order is: `--split-only --save-split` to make the split, label
+      against it, then `--split` on the judged run so the rate is over the same claims a human read
 - [x] Stratification, as far as blind labelling permits. Products and G2 codes are knowable before any model
       runs and are stratified on, with `UNAUDITABLE` reached first. Verdict classes are the judge's output,
       so a blind sample cannot stratify on them and a sample that did would not be blind. If `CONTRADICTED`

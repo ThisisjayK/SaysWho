@@ -107,8 +107,10 @@ printed; more than half this answer's claims produced no verdict that stands; th
 frozen query, so a rate could not say what it is a rate over; or you asked for an aggregate including a
 product whose vendor also supplies the judge.
 
-**Do.** Read the per-claim verdicts, which all still stand. To lift the first, label a gold set:
-`python3 tools/label_goldset.py --split ... --out ...`.
+**Do.** Read the per-claim verdicts, which all still stand. To lift the first, label a gold set. Make the
+split with `--split-only` so no verdict is in front of you while you label, then
+`python3 tools/label_goldset.py --split ... --out ...`. One set may cover several answers; it records the
+splits it holds labels for and G4 accepts any of them.
 
 **Watch for.** This is the tool working. An absent number invites a reader to compute their own, so each
 refusal prints its reason where the number would have been.

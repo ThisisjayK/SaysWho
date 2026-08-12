@@ -113,6 +113,9 @@ def build_pool(splits, captures, cache) -> list[dict]:
             for url in claim.urls:
                 pool.append(
                     {
+                        # Which split this pair came from, so the saved set records the answers it actually
+                        # holds a label for rather than the ones the sampler was handed.
+                        "split_sha256": split.split_sha256,
                         "claim_id": claim.id,
                         "text": claim.text,
                         "markers": claim.markers,
@@ -195,8 +198,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     existing: list[GoldLabel] = []
+    labelled_splits: set[str] = set()
     if args.out.exists():
-        existing = GoldSet.load(args.out).labels
+        prior = GoldSet.load(args.out)
+        existing = prior.labels
+        labelled_splits = set(prior.split_sha256s)
         print(f"resuming: {len(existing)} label(s) already in {args.out}")
     done = {(l.claim_id, l.url) for l in existing}
 
@@ -255,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
                         print("         Recorded as unchecked rather than as an extraction failure.")
 
         notes = input("  notes (optional): ").strip()
+        labelled_splits.add(row["split_sha256"])
         labels.append(
             GoldLabel(
                 claim_id=row["claim_id"],
@@ -272,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
         # Written after every label. A labelling session is an hour of irreplaceable human work and it is
         # not going to be lost to a terminal closing.
         GoldSet(
-            split_sha256=splits[0].split_sha256 if len(splits) == 1 else "",
+            split_sha256s=sorted(labelled_splits),
             judge_class=args.judge_class,
             judge_model=args.judge_model,
             judge_prompt_version=JUDGE_PROMPT_VERSION,

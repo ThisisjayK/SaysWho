@@ -135,8 +135,16 @@ What happens, in order:
 To run over a whole frozen stratum instead of one answer, use `tools/run_stratum.py`, which writes the run
 record, the metric readout, `RUN_LOG.md` and the per-number trace table.
 
-Add `--save-split runs/PR-07.split.json` if you plan to label a gold set. Phase 1 is a model call and does
-not return the same split twice, so a stored split is what makes a label mean anything later.
+If you plan to label a gold set, produce the split with `--split-only` rather than as a by-product of a
+judged run:
+
+```bash
+python3 -m sayswho.cli captures/PR-07.json --split-only --save-split runs/PR-07.split.json
+```
+
+Phase 1 is a model call and does not return the same split twice, so a stored split is what makes a label
+mean anything later. `--split-only` runs Phase 1 and stops, because the labels have to predate the judge and
+every other route to a stored split prints the verdicts on the way past.
 
 Both paths are printed at the bottom of the panel, and both are relative to wherever the server was
 started:

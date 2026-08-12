@@ -76,7 +76,7 @@ def gold_for(url, labels, tmp_path, name="gold.json"):
     from sayswho.goldset import GoldLabel, GoldSet
 
     return GoldSet(
-        split_sha256=scripted_split_sha(),
+        split_sha256s=[scripted_split_sha()],
         judge_class="ScriptedJudge",
         judge_model="scripted-1",
         judge_prompt_version=JUDGE_PROMPT_VERSION,
@@ -348,7 +348,7 @@ def test_a_gold_set_labelled_before_the_run_produces_an_agreement_number(
     url = server.url("/ok.html")
 
     gold = GoldSet(
-        split_sha256="unchecked-here",
+        split_sha256s=["unchecked-here"],
         judge_class="ScriptedJudge", judge_model="scripted-1",
         judge_prompt_version=JUDGE_PROMPT_VERSION, claim_prompt_version="claims-v1",
         created_at="2026-08-08T00:00:00+00:00",
