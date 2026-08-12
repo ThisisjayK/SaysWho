@@ -276,6 +276,12 @@ PubMed survived. One verdict voided as `JUDGE_FABRICATED_SPAN`, 1 of 9 span-bear
 That is 1 of 16 across both runs and it is not a rate, but the guard has now fired on ordinary output rather
 than only on the test built to trip it. `FINDINGS.md` item 10.
 
+**Superseded on day 5, kept because deleting it would hide the correction.** That 1 of 16 was mostly this
+tool. Re-auditing the voided spans found three of four caused by SaysWho: two by a PDF reader inserting a
+space between every digit, one by a span comparison that read a curly quote and a straight quote as different
+characters. One was a genuine catch. Both bugs are fixed, the third cause is known and unfixed, and the figure
+is withdrawn rather than restated. `FINDINGS.md` item 14.
+
 ## Day 5 additions, from reading a spec against the build
 
 - [x] **`missing_qualifiers` on every verdict.** What the cited page attaches that the claim does not, in
@@ -559,6 +565,10 @@ These are not tasks that can be traded away for time. They are the reason the pr
 - [ ] The frozen query set is published in full so a reader can judge the sample instead of taking my word
       for it
 - [ ] The scrub drop count is published alongside the support rates, not in an appendix
-- [ ] The judge-fabricated-span rate is published as a finding about the judge, not quietly fixed
+- [ ] The judge-fabricated-span rate is published rather than quietly fixed, **and it is only described as a
+      finding about the judge once the extraction behind each void has been checked.** That precondition is new
+      and it is here because the obligation as originally worded would have published the wrong thing: three
+      of the first four voids were caused by this tool, and the honest phrasing separates a void caused by the
+      model from one caused by the extractor. `FINDINGS.md` item 14
 - [ ] §7 stays in: it cannot check whether a source is true, it is blind to omission, and it cannot tell a
       peer reviewed paper from a blog post

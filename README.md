@@ -72,9 +72,15 @@ switches. Both satisfy the same protocol, so the pipeline and the gates never kn
 
 **The span guard.** To return `SUPPORTED` the judge must quote the source verbatim, and a script confirms by
 substring match that the span is in the document that was actually retrieved. A span that is not there voids
-the verdict and logs `JUDGE_FABRICATED_SPAN`, and that rate is published as a finding about the judge. On the
-first live run it voided nothing across seven span-bearing verdicts, and on the re-run after the drift fix it
-voided one of nine. That is 1 of 16 across both runs. It is not a rate and it is reported as not being one.
+the verdict and logs `JUDGE_FABRICATED_SPAN`.
+
+**That count is published as a finding about the judge only once the extractor has been checked**, and the
+reason is the most useful thing this project has found out about itself. Re-auditing the voided spans by hand
+showed three of four were caused by SaysWho, not by the model: two by a PDF reader that put a space between
+every digit of "(61.1%)", one by a span comparison that treated a curly quote and a straight quote as
+different characters. One was a genuine catch, where the judge joined two passages with an ellipsis instead of
+quoting contiguously. Both bugs are fixed, one remaining cause is known and unfixed and named, and the
+earlier "1 of 16" figure is withdrawn rather than restated. `FINDINGS.md` item 14.
 
 `python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs extraction over the stored bytes
 and compares it to what the extension produced. Two implementations, one in JavaScript against a live DOM and
@@ -140,8 +146,13 @@ behind it.
 So the judge is constrained. To return `SUPPORTED` it has to quote the exact span from the fetched page that
 justifies the verdict, and a script then checks by string match that the span is really in the document that
 was retrieved. If it isn't, the verdict is voided and logged as `JUDGE_FABRICATED_SPAN`. How often that
-happens gets published as a finding about the judge rather than quietly fixed. It is a deterministic check on
-a probabilistic component, and the model cannot talk its way past `str.find()`.
+happens gets published rather than quietly fixed. It is a deterministic check on a probabilistic component,
+and the model cannot talk its way past `str.find()`.
+
+It is also a check on the extractor, which took a re-audit to notice: `str.find()` is equally unforgiving
+about a document this tool rendered badly, and a false void reads exactly like a fabricating judge. So the
+count is only a finding about the judge after the extraction behind it has been checked, and the writeup says
+which of the two each void was.
 
 The second constraint is that SaysWho emits no confidence score anywhere, and a test enforces that. A
 confidence number attached to a page that could not be fetched is invented. The dead link becomes "low
