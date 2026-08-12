@@ -6,6 +6,8 @@ printed that the run was not entitled to print, so that is what the tests are ab
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 from sayswho.claims import Claim, ClaimSet
@@ -337,3 +339,94 @@ def test_pairs_are_built_from_the_split_and_not_from_the_judgements():
     pairs = pairs_from(claim_set, records, [])
     assert len(pairs) == 2
     assert sum(1 for p in pairs if p.standing) == 0
+
+
+# ---------------------------------------------------------------- unpublishable sources
+
+
+def api_capture(**kw):
+    from sayswho.records import Capture, Citation
+
+    defaults = dict(
+        query_id="PR-01", product="api:perplexity", model_id="sonar",
+        generated_at="2026-08-11T00:00:00+00:00", captured_at="2026-08-11T00:00:01+00:00",
+        answer_text="Boston reported high screening participation [1].",
+        citations=[Citation(marker="[1]", url="https://a.example/1")],
+        source="api",
+    )
+    defaults.update(kw)
+    return Capture(**defaults)
+
+
+def one_supported_run(capture):
+    """A run that would produce a support rate if its source allowed one."""
+    from sayswho.claims import Claim, ClaimSet
+    from sayswho.records import SOURCE_OK, FetchRecord
+
+    claim = Claim(id="c1", text="Boston reported high screening participation",
+                  markers=["[1]"], urls=["https://a.example/1"])
+    record = FetchRecord(url="https://a.example/1", code=SOURCE_OK, fetched_at="t", text="x")
+    judgement = Judgement(claim_id="c1", url="https://a.example/1", verdict=SUPPORTED,
+                          span="x", span_verified=True)
+    return for_run(capture, ClaimSet(claims=[claim], skipped=[]), [record], [judgement],
+                   calibration=None)
+
+
+def test_an_api_capture_produces_no_rate_at_all():
+    """Decided 2026-08-11 and enforced here rather than in prose. Not even the rates that need no gold set:
+    "how often the judge invented a span on an API answer" is still a number about a surface nobody uses."""
+    run = one_supported_run(api_capture())
+
+    assert run.rates == []
+    assert any("UNPUBLISHABLE_SOURCE" in w for w in run.withheld)
+    assert "different model with different retrieval" in " ".join(run.withheld)
+
+
+def test_the_per_claim_verdicts_survive():
+    """The decision is about rates. A verdict is a statement about one document and one sentence."""
+    run = one_supported_run(api_capture())
+
+    assert len(run.pairs) == 1
+    assert run.pairs[0].verdict == SUPPORTED
+    assert run.counts.get(SUPPORTED) == 1
+
+
+def test_a_dom_capture_is_unaffected():
+    run = one_supported_run(api_capture(source="dom", product="perplexity"))
+    assert run.rates, "the ordinary path still produces rates"
+
+
+def test_an_aggregate_over_an_api_run_raises():
+    from sayswho.rates import UnpublishableSource
+
+    with pytest.raises(UnpublishableSource) as exc:
+        aggregate([one_supported_run(api_capture())])
+    assert "different model with different retrieval" in str(exc.value)
+
+
+def test_there_is_no_override_flag_for_an_unpublishable_source():
+    """`allow_conflicted` exists because a conflicted product is still reported per-product with the conflict
+    stated. There is no equivalent here, so an escape hatch would only ever be used to defeat the rule."""
+    import inspect
+
+    from sayswho.rates import aggregate as aggregate_fn
+
+    params = set(inspect.signature(aggregate_fn).parameters)
+    assert not {"allow_api", "allow_unpublishable", "allow_source"} & params
+
+
+def test_mixing_an_api_run_into_a_dom_aggregate_still_raises():
+    """The likely accident: a captures directory with one API capture in it among twenty DOM ones."""
+    from sayswho.rates import UnpublishableSource
+
+    runs = [one_supported_run(api_capture(source="dom", product="perplexity")),
+            one_supported_run(api_capture())]
+    with pytest.raises(UnpublishableSource):
+        aggregate(runs)
+
+
+def test_the_per_domain_slice_is_closed_too():
+    """A slice is still a rate. Per-domain builds from pairs directly, so it was the one door left open."""
+    source = (pathlib.Path(__file__).resolve().parent.parent / "sayswho" / "harness.py").read_text()
+    assert "not in UNPUBLISHABLE_SOURCES" in source
+    assert "excluded_from_domains" in source, "and the exclusion is reported, not silent"

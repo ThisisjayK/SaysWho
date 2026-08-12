@@ -1,249 +1,235 @@
-"""The non-HTML readers: PDF, plain text, XML and .docx, plus tables and picture-only pages.
+"""A gate for prose.
 
-All stdlib. The tests that matter most here are the refusals. A reader that returns garbled text produces a
-NOT_FOUND_IN_SOURCE, which is the one verdict with no span and therefore no G3 check, and the one that
-accuses the product. `FINDINGS.md` item 11 is that bug found once already, and every case below that ends in
-a refusal exists so it cannot come back through a new door.
+Every number in this repo is guarded by something. `SCOPE.md` was guarded by nothing, and on day 5 three of
+its claims turned out to be false: it said the extension was written in TypeScript, which it never was; it
+said every competitor outputs a confidence score, which is false for two of the four; and a commit message
+said §7 contained a section that did not exist. All three were found by a person asking, not by anything
+structural. `FINDINGS.md` items 12 and 13.
+
+The two prose checks that already existed are lexical: a banned-vocabulary scan and an em dash check. Neither
+can tell whether a sentence about a file is true of that file. This one can, for the subset of claims that are
+mechanically checkable, which is the subset that goes stale: a path, a module name, a command, a count.
+
+**What this deliberately does not do.** It cannot check an argument, and it does not try. "A confidence score
+on a source that could not be fetched is a fabricated number" is not checkable here and should not be. The
+line is between a claim about this repo and a claim about the world; the first is in scope and the second
+belongs to a reader.
+
+`tests/test_extension_manifest.py` is the same mechanism pointed at code, and predates this file by three
+days. Pointing it at documentation is the whole idea.
 """
 
 from __future__ import annotations
 
-import io
-import zipfile
+import re
+from pathlib import Path
 
 import pytest
 
-from sayswho import pdf as pdfmod
-from sayswho.extract import (
-    CELL_SEPARATOR,
-    extract_docx_text,
-    extract_text,
-    extract_xml_text,
-    looks_picture_only,
+REPO = Path(__file__).resolve().parent.parent
+
+#: Documents this gate reads. `email-to-professor.md` and `reply-to-professor.md` are gitignored
+#: correspondence and `CLAUDE.md` is instructions to a tool, so neither is a published claim about the repo.
+DOCUMENTS = sorted(
+    p for p in REPO.glob("*.md")
+    if p.name not in {"email-to-professor.md", "reply-to-professor.md", "CLAUDE.md"}
+) + sorted((REPO / "recipes").glob("*.md")) + [REPO / "extension" / "README.md"]
+
+#: Paths a document may name that do not exist on disk, with the reason each is legitimate. Anything not
+#: here has to exist. Keeping this list short is the point: every entry is a claim that a reader cannot
+#: verify by looking, so each one needs a reason.
+EXPECTED_ABSENT = {
+    # Written at runtime, gitignored, and empty on a fresh clone. DATA_CONTRACT.md §9.
+    "captures/": "written by the local server, gitignored",
+    "reports/": "written by the local server, gitignored",
+    "captures/raw/": "raw API responses, gitignored",
+    ".cache/": "the fetch cache, gitignored",
+    ".cache/fetch": "the fetch cache, gitignored",
+    ".cache/break": "the break-attempt cache, gitignored",
+    "runs/break": "an output directory the user chooses",
+    "pages/": "stored pages, gitignored",
+    "email-to-professor.md": "gitignored correspondence, deliberately not in the repo",
+    "reply-to-professor.md": "gitignored correspondence, deliberately not in the repo",
+    ".venv/bin/python": "a virtualenv the reader creates",
+}
+
+#: A repo-relative path inside backticks: at least one slash, and a file extension or a trailing slash.
+#: Deliberately conservative. A pattern that matched every backticked token would flag `--judge` and
+#: `SOURCE_OK`, and a gate that cries wolf gets deleted.
+PATH_PATTERN = re.compile(
+    r"`([A-Za-z0-9_.][A-Za-z0-9_./-]*(?:/[A-Za-z0-9_.-]+)+(?:\.[a-z]{2,5}|/))`"
 )
-from tests.conftest import CID_PDF, READABLE_PDF, SCANNED_PDF, build_docx
+
+#: A dotted module path inside backticks, like `sayswho.apicapture` or `tools/run_stratum.py`.
+MODULE_PATTERN = re.compile(r"`(sayswho\.[a-z_]+(?:\.[a-z_]+)*)`")
 
 
-# ---------------------------------------------------------------- PDF, the readable case
+def documents_with_text():
+    for path in DOCUMENTS:
+        if path.exists():
+            yield path, path.read_text()
 
 
-def test_a_text_layer_comes_out_as_sentences():
-    read = pdfmod.extract_pdf_text(READABLE_PDF)
-    assert read.ok
-    assert "77.0 percent of female residents" in read.text
-    assert "$979 to $1,759" in read.text
+def strip_code_fences(text: str) -> str:
+    """Fenced blocks are commands and examples, not claims about what exists.
+
+    A shell example may legitimately name an output file that does not exist yet, and flagging those would
+    make this gate wrong more often than the prose it guards.
+    """
+    return re.sub(r"```.*?```", "", text, flags=re.S)
 
 
-def test_line_breaks_survive_so_a_quote_can_cross_one():
-    """`T*` moves to the next line. Missing it fused the last word of each line onto the first of the next,
-    which would fail the span guard on any quoted passage crossing a line break."""
-    read = pdfmod.extract_pdf_text(READABLE_PDF)
-    assert "mammogram within the prior two\nyears" in read.text
-    assert "twoyears" not in read.text
+# ---------------------------------------------------------------- paths
 
 
-def test_an_uncompressed_content_stream_is_read_too():
-    """Not every generator compresses. A PDF that happens not to be Flate-encoded is not a failure."""
-    from tests.conftest import build_pdf
+@pytest.mark.parametrize("path", DOCUMENTS, ids=lambda p: str(p.relative_to(REPO)))
+def test_every_file_a_document_names_exists(path):
+    """The check that would have caught the TypeScript claim's neighbours, and any renamed module."""
+    if not path.exists():
+        pytest.skip(f"{path} is not in this repo")
 
-    ops = (
-        b"BT /F1 11 Tf 72 720 Td (Screening uptake rose to 80.3 percent across the state during the "
-        b"period under review, and the figures were published annually by the committee.) Tj ET"
+    prose = strip_code_fences(path.read_text())
+    missing = []
+    for match in PATH_PATTERN.finditer(prose):
+        named = match.group(1)
+        if named in EXPECTED_ABSENT or named.rstrip("/") + "/" in EXPECTED_ABSENT:
+            continue
+        if named.startswith(("http", "www.")) or "://" in named:
+            continue
+        # Relative to the repo root or to the document's own directory. `extension/README.md` names
+        # `src/adapters.js`, which is correct from where that file sits and nonsense from the root.
+        candidates = (REPO / named.rstrip("/"), path.parent / named.rstrip("/"))
+        if not any(c.exists() for c in candidates):
+            missing.append(named)
+
+    assert not missing, (
+        f"{path.relative_to(REPO)} names files that do not exist: {sorted(set(missing))}. "
+        "Either the document is wrong or the file moved. If it is written at runtime, add it to "
+        "EXPECTED_ABSENT with a reason."
     )
-    data = build_pdf([
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>",
-        b"<< /Length %d >>\nstream\n" % len(ops) + ops + b"\nendstream",
-    ])
-    read = pdfmod.extract_pdf_text(data)
-    assert read.ok
-    assert "80.3 percent" in read.text
 
 
-def test_a_hyphen_split_across_lines_is_rejoined():
-    from tests.conftest import build_pdf
-    import zlib
+@pytest.mark.parametrize("path", DOCUMENTS, ids=lambda p: str(p.relative_to(REPO)))
+def test_every_module_a_document_names_is_importable(path):
+    if not path.exists():
+        pytest.skip(f"{path} is not in this repo")
 
-    ops = (
-        b"BT /F1 11 Tf 72 720 Td (The mammog-) Tj T* (raphy programme reported figures every year to "
-        b"the coordinating committee, which published them alongside participation rates.) Tj ET"
+    import importlib
+
+    prose = strip_code_fences(path.read_text())
+    broken = []
+    for match in MODULE_PATTERN.finditer(prose):
+        name = match.group(1)
+        try:
+            importlib.import_module(name)
+        except ImportError:
+            broken.append(name)
+
+    assert not broken, f"{path.relative_to(REPO)} names modules that do not import: {sorted(set(broken))}"
+
+
+def test_the_expected_absent_list_stays_short():
+    """Every entry is a claim a reader cannot verify by looking, so each needs a reason and the list needs a
+    ceiling. If this fails, the honest fix is usually to stop naming runtime paths in prose."""
+    assert len(EXPECTED_ABSENT) <= 15
+    assert all(reason.strip() for reason in EXPECTED_ABSENT.values())
+
+
+# ---------------------------------------------------------------- load-bearing specific claims
+
+
+def test_the_stack_section_names_the_language_the_extension_is_written_in():
+    """It said TypeScript for five days. There is no TypeScript in this repo and never was, and the
+    no-build-step property is what makes the thirty-second install in README.md true."""
+    scope = (REPO / "SCOPE.md").read_text()
+    stack = scope[scope.index("**Extension (the product).**"):][:400]
+
+    sources = list((REPO / "extension" / "src").glob("*"))
+    assert not [p for p in sources if p.suffix == ".ts"], "there is no TypeScript here"
+    assert "vanilla TypeScript" not in stack, "the stack section is claiming a language this repo never used"
+    assert "vanilla JavaScript" in stack
+    # The word may appear in the note recording the correction, which is the honest reason to keep it.
+
+
+def test_the_two_dependency_claim_matches_what_the_package_imports():
+    """`CLAUDE.md` and `DATA_CONTRACT.md` both promise two dependencies, both judge-only, and that every
+    other layer is stdlib. A third import would make several documents false at once."""
+    third_party = {"google", "anthropic"}
+    allowed_importers = {"gemini.py", "model.py", "server.py"}
+
+    offenders = {}
+    for module in sorted((REPO / "sayswho").glob("*.py")):
+        text = module.read_text()
+        for name in third_party:
+            if re.search(rf"^\s*(?:import {name}\b|from {name}[. ])", text, re.M):
+                if module.name not in allowed_importers:
+                    offenders.setdefault(module.name, []).append(name)
+
+    assert not offenders, (
+        f"{offenders} imports a judge-only dependency outside the judge layer. "
+        "CLAUDE.md and DATA_CONTRACT.md both claim the fetch, extraction and gate layers are stdlib only."
     )
-    body = zlib.compress(ops)
-    data = build_pdf([
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>",
-        b"<< /Filter /FlateDecode /Length %d >>\nstream\n" % len(body) + body + b"\nendstream",
-    ])
-    read = pdfmod.extract_pdf_text(data)
-    assert "mammography programme" in read.text
 
 
-# ---------------------------------------------------------------- PDF, the refusals
+def test_the_extraction_and_fetch_layers_really_are_stdlib():
+    """The claim is specific and load-bearing: it is the reason the PDF reader was hand-rolled."""
+    stdlib_only = ("fetch.py", "extract.py", "reextract.py", "gates.py", "pdf.py", "apicapture.py")
+    for name in stdlib_only:
+        text = (REPO / "sayswho" / name).read_text()
+        assert "import google" not in text and "from google" not in text, name
+        assert "import anthropic" not in text and "from anthropic" not in text, name
 
 
-def test_a_scan_is_refused_and_says_the_words_are_in_a_picture():
-    read = pdfmod.extract_pdf_text(SCANNED_PDF)
-    assert read.code == pdfmod.NO_TEXT_LAYER
-    assert not read.ok
-    assert read.text == "", "a refusal carries no text: nothing may reach the judge"
-    assert read.has_images
-    assert "picture" in read.detail
+def test_no_document_promises_a_confidence_score():
+    """The hardest invariant in the project, checked in prose as well as in payloads. A document that
+    described one would be describing a different tool."""
+    for path, text in documents_with_text():
+        for match in re.finditer(r"confidence (score|number|level|value)", text, re.I):
+            # Whitespace-normalised before comparing. The first version missed "no\n   confidence score
+            # anywhere" because the line wrap fell between the two words, which is the same fault as
+            # comparing two character counts that were normalised differently.
+            window = " ".join(text[max(0, match.start() - 220): match.end() + 220].lower().split())
+            assert any(
+                marker in window
+                for marker in (
+                    "no confidence", "never", "refus", "not", "cannot", "incumbent", "fabricated",
+                    "instead", "rather than", "warns", "three of the four", "gate",
+                )
+            ), f"{path.name} mentions a confidence score without refusing it: {match.group(0)!r}"
 
 
-def test_a_custom_font_encoding_is_refused_rather_than_guessed_at():
-    """The bytes are glyph numbers. What a naive read recovers looks like text and is not."""
-    read = pdfmod.extract_pdf_text(CID_PDF)
-    assert read.code == pdfmod.GARBLED
-    assert read.text == ""
-    assert "glyph numbers rather than letters" in read.detail
-    assert read.printable_ratio < pdfmod.MIN_PRINTABLE_RATIO or read.space_ratio < pdfmod.MIN_SPACE_RATIO
+def test_the_prior_art_table_is_dated():
+    """Marketing pages change. A claim about a competitor with no date on it is a claim that quietly rots."""
+    scope = (REPO / "SCOPE.md").read_text()
+    section = scope[scope.index("## 1b."): scope.index("## 2.")]
+    assert "2026-08-11" in section
+    for tool in ("CiteGuardian", "CiteTrue", "GPTZero", "FactSentinel"):
+        assert tool in section, f"{tool} dropped out of the prior art section"
 
 
-def test_a_short_document_is_read_rather_than_called_a_scan():
-    """A one-page notice with sixty words in it has a text layer and it read correctly. Whether that is
-    enough text to audit is one rule shared by every format, applied by the fetcher, not decided here."""
-    from tests.conftest import build_pdf
+def test_the_no_api_rates_decision_is_stated_and_enforced():
+    """Both halves. The decision was recorded in prose first and was worth nothing until `rates.py` held it."""
+    from sayswho.rates import UNPUBLISHABLE_SOURCES
 
-    ops = b"BT /F1 11 Tf 72 720 Td (Screening uptake rose to 80.3 percent this year.) Tj ET"
-    read = pdfmod.extract_pdf_text(build_pdf([
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>",
-        b"<< /Length %d >>\nstream\n" % len(ops) + ops + b"\nendstream",
-    ]))
-    assert read.ok, "short is not unreadable"
-    assert "80.3 percent" in read.text
+    assert "api" in UNPUBLISHABLE_SOURCES
+
+    scope = (REPO / "SCOPE.md").read_text()
+    assert "no rate derived from an API capture is" in scope
+    todo = (REPO / "TODO.md").read_text()
+    assert "no API-sourced rate is published" in todo
 
 
-def test_the_refusal_records_the_numbers_it_refused_on():
-    """A heuristic that cannot be argued with is worse than one that can."""
-    read = pdfmod.extract_pdf_text(CID_PDF)
-    as_dict = read.to_dict()
-    assert as_dict["printable_ratio"] >= 0
-    assert as_dict["streams_found"] >= 1
-    assert set(as_dict) >= {"code", "detail", "pages", "has_images", "space_ratio"}
+def test_the_test_count_in_status_matches_the_suite(request):
+    """STATUS.md publishes a test count. A number in a document that nothing checks is a number that drifts,
+    and this file exists because of exactly that class of claim."""
+    stated = re.search(r"(\d{3,}) tests", (REPO / "STATUS.md").read_text())
+    assert stated, "STATUS.md should say how many tests there are"
 
+    actual = len(request.session.items) if request.session.items else 0
+    if actual < 50:
+        pytest.skip("running a subset, so the total is not comparable")
 
-def test_an_encrypted_pdf_is_its_own_reason():
-    from tests.conftest import build_pdf
-    import zlib
-
-    body = zlib.compress(b"BT (hello) Tj ET")
-    data = build_pdf(
-        [
-            b"<< /Type /Catalog /Pages 2 0 R >>",
-            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            b"<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>",
-            b"<< /Filter /FlateDecode /Length %d >>\nstream\n" % len(body) + body + b"\nendstream",
-        ],
-        extra_trailer=b"/Encrypt 9 0 R ",
+    claimed = int(stated.group(1))
+    assert abs(claimed - actual) <= 0, (
+        f"STATUS.md says {claimed} tests, the suite collects {actual}. Update STATUS.md."
     )
-    read = pdfmod.extract_pdf_text(data)
-    assert read.code == pdfmod.ENCRYPTED
-    assert read.text == ""
-
-
-def test_rubbish_that_is_not_a_pdf_does_not_raise():
-    """A bad document is a finding, not a crash."""
-    for junk in (b"", b"%PDF-", b"%PDF-1.7\nnot really\n", b"\x00\x01\x02" * 500):
-        read = pdfmod.extract_pdf_text(junk)
-        assert not read.ok
-        assert read.text == ""
-
-
-# ---------------------------------------------------------------- tables
-
-
-def test_a_table_row_keeps_its_label_with_its_value():
-    """One cell per line destroyed the association: "Recent mammography screening" and "80.3%" became two
-    unrelated lines, so a claim about that measure's rate could not be found in a page that stated it."""
-    text = extract_text(
-        "<table><tr><th>Measure</th><th>Rate</th></tr>"
-        "<tr><td>Recent mammography screening</td><td>80.3%</td></tr>"
-        "<tr><td>Uptake among recent immigrants</td><td>61.1%</td></tr></table>"
-    )
-    assert f"Recent mammography screening{CELL_SEPARATOR}80.3%" in text
-    assert f"Uptake among recent immigrants{CELL_SEPARATOR}61.1%" in text
-
-
-def test_a_row_does_not_end_on_a_separator():
-    text = extract_text("<table><tr><td>a</td><td>b</td></tr></table>")
-    assert text == "a | b"
-
-
-def test_empty_cells_do_not_stack_separators():
-    text = extract_text("<table><tr><td>a</td><td></td><td></td><td>b</td></tr></table>")
-    assert text == "a | b"
-
-
-# ---------------------------------------------------------------- the other formats
-
-
-def test_an_rss_title_does_not_fuse_into_its_description():
-    """XML has no fixed tag vocabulary, so there is no block-tag list to consult and siblings ran together."""
-    text = extract_xml_text(
-        b"<rss><item><title>Mammography rates</title><description>Uptake was 80.3 percent.</description>"
-        b"</item></rss>"
-    )
-    assert "Mammography rates\nUptake was 80.3 percent." in text
-
-
-def test_a_docx_keeps_paragraphs_and_table_rows():
-    data = build_docx(
-        ["Screening uptake rose to 80.3 percent.", "Costs ran from $979 to $1,759 per patient."],
-        rows=[("Recent screening", "80.3%")],
-    )
-    text, why_not = extract_docx_text(data)
-    assert why_not == ""
-    assert "Screening uptake rose to 80.3 percent." in text
-    assert "Costs ran from $979 to $1,759 per patient." in text
-    assert f"Recent screening{CELL_SEPARATOR}80.3%" in text
-
-
-def test_a_zip_that_is_not_a_word_document_says_so():
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w") as bundle:
-        bundle.writestr("something/else.xml", "<x/>")
-    text, why_not = extract_docx_text(buf.getvalue())
-    assert text == ""
-    assert "not a Word document" in why_not
-    assert ".doc" in why_not, "the old binary format is named, since that is the likely confusion"
-
-
-def test_something_that_is_not_a_zip_at_all_does_not_raise():
-    text, why_not = extract_docx_text(b"this is not a zip")
-    assert text == ""
-    assert "could not be opened as a zip" in why_not
-
-
-# ---------------------------------------------------------------- pictures
-
-
-@pytest.mark.parametrize(
-    "markup",
-    [
-        "<figure><img src='chart.png'></figure>",
-        "<svg><rect/></svg>",
-        "<picture><source srcset='a.webp'></picture>",
-        "<canvas id='plot'></canvas>",
-    ],
-)
-def test_a_page_that_is_only_a_picture_is_recognised(markup):
-    assert looks_picture_only(markup, "")
-
-
-def test_a_page_with_real_text_is_not_called_a_picture():
-    """Pictures alongside prose are the normal case and must not trip this."""
-    assert not looks_picture_only("<p>" + "x " * 200 + "</p><img src='chart.png'>", "x " * 200)
-
-
-def test_alt_text_still_counts_as_text():
-    """A chart with a described alt attribute is readable, and that description is where a claim resting on
-    the chart has to be found."""
-    text = extract_text(
-        "<img alt='" + ("Screening uptake rose to 80.3 percent in the period measured. " * 5) + "'>"
-    )
-    assert "80.3 percent" in text
-    assert not looks_picture_only("<img alt='...'>", text)

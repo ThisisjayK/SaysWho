@@ -57,6 +57,28 @@ CONFLICTED_PRODUCTS = {
 }
 
 
+#: Capture sources whose results may never become a published rate, and why.
+#:
+#: An API answer is produced by a different model with different retrieval from the one a person sees in the
+#: product, and `SCOPE.md` §1 says this tool audits products. Decided on 2026-08-11 and enforced here rather
+#: than in prose, for the same reason `CONFLICTED_PRODUCTS` is enforced here: a rule that lives only in a
+#: document is one a tired person overrides on day 7 without noticing they did.
+#:
+#: Per-claim verdicts from an API capture are untouched. Those are statements about one document and one
+#: sentence. A rate is a claim about a product.
+UNPUBLISHABLE_SOURCES = {
+    "api": (
+        "this capture came from a provider API, which is a different model with different retrieval from "
+        "the product a person uses. Per-claim verdicts stand; no rate derived from it is published. "
+        "SCOPE.md §7"
+    ),
+}
+
+
+class UnpublishableSource(Exception):
+    """Raised when something asks for a rate over a capture whose source may not produce one."""
+
+
 class ConflictedAggregate(Exception):
     """Raised when a conflicted product's results are folded into a cross-product aggregate."""
 
@@ -369,7 +391,10 @@ class RunRates:
 
     product: str
     query_id: str
-    pairs: list[Pair]
+    #: Where the capture came from. `dom` is a rendered page; `api` is a provider API, which may not produce
+    #: a published rate. Carried here so `aggregate` can refuse without being handed the capture.
+    source: str = "dom"
+    pairs: list[Pair] = field(default_factory=list)
     rates: list[Rate] = field(default_factory=list)
     withheld: list[str] = field(default_factory=list)
     counts: dict[str, int] = field(default_factory=dict)
@@ -406,9 +431,17 @@ def for_run(
     run = RunRates(
         product=capture.product,
         query_id=capture.query_id,
+        source=getattr(capture, "source", "dom"),
         pairs=pairs,
         counts=verdict_counts(pairs),
     )
+
+    # Before any rate is computed, not after. An unpublishable source withholds every rate including the
+    # ones that do not depend on the judge, because "how often the judge invented a span on an API answer"
+    # is still a number about a surface nobody uses.
+    if run.source in UNPUBLISHABLE_SOURCES:
+        run.withheld.append(f"UNPUBLISHABLE_SOURCE: {UNPUBLISHABLE_SOURCES[run.source]}")
+        return run
 
     # Rates that do not depend on the judge being calibrated. How often the judge invented a span is a fact
     # about the judge that a gold set is not needed to establish, and drift is a fact about the web.
@@ -440,6 +473,16 @@ def aggregate(runs: list[RunRates], allow_conflicted: bool = False) -> Rate:
     the writeup because prose disclosure does not survive being copied into a slide, and an aggregate
     carries the conflict into every number derived from it.
     """
+    # No override parameter, deliberately. `allow_conflicted` exists because a conflicted product is still
+    # reported per-product with the conflict stated beside it, which is a real and useful thing to publish.
+    # There is no equivalent for an API capture: the decision is that no rate comes from one, so an escape
+    # hatch here would only ever be used to defeat it.
+    unpublishable = sorted({r.source for r in runs if r.source in UNPUBLISHABLE_SOURCES})
+    if unpublishable:
+        raise UnpublishableSource(
+            "cannot aggregate: " + "; ".join(UNPUBLISHABLE_SOURCES[s] for s in unpublishable)
+        )
+
     conflicted = [r.product for r in runs if r.product in CONFLICTED_PRODUCTS]
     if conflicted and not allow_conflicted:
         raise ConflictedAggregate(

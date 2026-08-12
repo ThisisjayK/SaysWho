@@ -469,12 +469,22 @@ The machinery is built and tested. What is left on this list is the labelling it
       and never to produce a published support rate, unauditable rate, drift rate or agreement figure. A
       capture with `source="api"` may be audited, and its per-claim verdicts may be read and quoted, because
       those are statements about one document and one sentence rather than rates about a product
-- [ ] Prose gate: check the claims documents make about files. Three prose claims were found false on day 5,
+- [x] Prose gate: `tests/test_documents.py`. Every path and module a document names must exist, the
+      load-bearing claims are checked against the code (the extension's language, the two-dependency promise,
+      the stdlib-only layers, the dated prior-art table, no document promising a confidence score), and the
+      test count in `STATUS.md` is checked against the suite. Built by reintroducing all three of day 5's real
+      prose failures and confirming each fires. Two bugs in the gate itself while writing it, one of them
+      comparing an unnormalised window so that "no\n confidence score" did not match "no confidence", which is
+      the third time today the same fault appeared. Previously: check the claims documents make about files. Three prose claims were found false on day 5,
       the extension's language, two about competitors, and one where a commit message said §7 said something
       §7 did not contain. All three were found by being asked. `test_extension_manifest.py` already asserts
       that source files contain given strings, so the mechanism exists and is pointed at code rather than at
       documentation. `FINDINGS.md` item 13
-- [ ] Enforce the no-API-rates decision in code rather than trusting a line in this file. Every other rule of this kind is a gate:
+- [x] No-API-rates enforced in `sayswho/rates.py`. `UNPUBLISHABLE_SOURCES`, checked in `for_run` before any
+      rate is computed and in `aggregate`, with no override parameter: unlike a conflicted product, which is
+      still worth reporting per-product, there is no legitimate reason to want a rate from an API capture. The
+      per-domain path excludes them and reports the exclusion, because a slice is still a rate. Per-claim
+      verdicts are untouched, since those are statements about one document and one sentence Every other rule of this kind is a gate:
       `CONFLICTED_PRODUCTS` refuses a Google surface in an aggregate, `standing_denominator` raises on a
       contaminated denominator, G4 refuses an uncalibrated rate. A decision that lives only in a TODO is one
       a tired person overrides at 2am on day 7 without noticing they did

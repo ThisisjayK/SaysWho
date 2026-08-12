@@ -43,6 +43,7 @@ from .queryset import binding, freeze_intact, stratum_of
 from .domains import by_domain
 from .domains import render as render_domains
 from .rates import (
+    UNPUBLISHABLE_SOURCES,
     pairs_from,
     CONFLICTED_PRODUCTS,
     ConflictedAggregate,
@@ -119,6 +120,9 @@ class StratumRun:
     #: `SCOPE.md` §0a item 9. One row per publisher, counted in claim-source pairs, gated by G4 exactly as
     #: the aggregate is. A diagnostic about this pipeline before it is anything about a publisher.
     per_domain: list = field(default_factory=list)
+    #: Sources whose captures were kept out of the per-domain table, with the reason. An absence a reader
+    #: cannot see the shape of is worse than a number.
+    excluded_from_domains: list = field(default_factory=list)
     agreement: Any = None
     attribution: Any = None
     goldset_path: str = ""
@@ -269,12 +273,23 @@ def run_stratum(
             by_product.setdefault(item.capture.product, []).append(item.rates)
     # Per-domain, over every pair in the stratum. Built from the same Pair objects the rates are, so the
     # slice and the aggregate cannot disagree about what a denominator is.
+    # An unpublishable source is excluded here too. `for_run` already withholds its rates, and per-domain
+    # builds from pairs directly, so without this the slice would be the one door left open to a rate the
+    # aggregate refuses. A slice is still a rate.
     every_pair = [
         pair
         for item in run.runs
         if item.claim_set is not None
+        and getattr(item.capture, "source", "dom") not in UNPUBLISHABLE_SOURCES
         for pair in pairs_from(item.claim_set, item.records, item.judgements)
     ]
+    excluded_sources = sorted(
+        {
+            getattr(item.capture, "source", "dom")
+            for item in run.runs
+            if getattr(item.capture, "source", "dom") in UNPUBLISHABLE_SOURCES
+        }
+    )
     if every_pair:
         # A per-domain rate spans several captures, so it is calibrated only if every contributing run was.
         # One uncalibrated run in the stratum withholds every domain rate, which is the same rule the
@@ -292,6 +307,7 @@ def run_stratum(
             detail="; ".join(refusals),
         )
         run.per_domain = by_domain(every_pair, calibration=combined)
+    run.excluded_from_domains = [UNPUBLISHABLE_SOURCES[s] for s in excluded_sources]
 
     for product, rate_list in by_product.items():
         try:
@@ -362,6 +378,12 @@ def readout(run: StratumRun) -> str:
             if product in CONFLICTED_PRODUCTS:
                 add(f"               conflict: {CONFLICTED_PRODUCTS[product]}")
                 add("               reported here only, never in the stratum rate above")
+        add("")
+
+    if run.excluded_from_domains:
+        add("PER DOMAIN  partly excluded")
+        for reason in run.excluded_from_domains:
+            add(f"  {reason}")
         add("")
 
     if run.per_domain:

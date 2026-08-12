@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-11, day 5 of ten. 583 tests.
+Last updated 2026-08-11, day 5 of ten. 627 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**
@@ -57,6 +57,8 @@ answer" are different claims and only one of them is currently true.
 | # | Item | State | Reason |
 |---|---|---|---|
 | 6 | Competitor head-to-head (§5a) | **not done** | Day 8 at the earliest. Until it runs, the §1b differentiator is described as structural rather than measured, and incumbent behaviour is attributed to their documentation. What the documentation check established: three of the four attach a confidence number to a verdict, and none of the four says what it does with a source it could not fetch. That is a fact about their pages, not their behaviour |
+| (extra) | No API-sourced rate is published, enforced | **done** | Decided 2026-08-11 and held in `sayswho/rates.py` rather than in prose: `for_run` withholds every rate for a capture whose `source` is `api`, including the ones needing no gold set, and `aggregate` raises. No override parameter, because unlike a conflicted product there is no legitimate reason to want one. The per-domain slice is closed too, since a slice is still a rate |
+| (extra) | A gate for prose | **done** | `tests/test_documents.py`. Paths and modules named in any document must exist, load-bearing claims are checked against the code, and the test count in this file is checked against the suite. Verified by reintroducing all three of day 5's real prose failures and confirming each one fires |
 | (extra) | Prior art checked rather than asserted | **done** | All four tools in §1b verified against their own documentation, 2026-08-11. Two claims did not survive and both were tilted this project's way. `FINDINGS.md` item 12. Every row in the new §1b table is dated, and re-checking before submission is on `TODO.md` |
 | 7 | Consumer stratum run | **not done** | Written and frozen on day 1 so it cannot have been shaped by professional results. Running it needs the core to land first |
 | 8 | Break attempts 1 to 4 | **1 of 4 has a result** | `tools/break_attempts.py`, one command for all four, each declaring the failure it looks for before it runs. Attempt 2, paywall misread, **held** and needed no judge: holding means the judge is never called, because it refuses a source that is not `SOURCE_OK`. Attempts 1, 3 and 4 ask whether the judge can be fooled, which a scripted judge cannot answer, so they report **no result** rather than a pass and the runner counts those separately |
@@ -89,6 +91,10 @@ the "done" rows above are worth. Seven bugs were found by loading the extension 
 test suite had caught none of them: a popup sized from the wrong element, invisible text on a dark panel,
 long URLs pushing the page sideways, two character counts that measured different things, a warning naming
 the wrong problem, a stale server holding a port, and an audit that existed nowhere but on screen.
+
+Two of them, the language claim and a commit message describing a section that did not exist, were prose
+rather than code, and prose had no gate at all. It has one now, and it was built the same way the other gates
+were: by reintroducing each failure and watching it fire, rather than by trusting that it would.
 
 Every one was in a row this file already called done. They were done in the sense that the code path existed
 and was tested, which is exactly the distinction the "machinery exists and has never run" section above was
