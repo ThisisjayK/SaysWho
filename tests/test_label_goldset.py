@@ -252,3 +252,26 @@ def test_quitting_after_one_label_still_reports_coverage(tmp_path, monkeypatch, 
     printed = capsys.readouterr().out
     assert "saved 1 label(s)" in printed
     assert "coverage by class" in printed
+
+
+def test_the_banner_claims_only_what_the_tool_can_check(tmp_path, monkeypatch, capsys):
+    """It used to open with "nothing here has been judged yet", which is a claim about the world rather
+    than about this process, and it was false the first time anyone read it: every capture on disk had
+    already been audited. The tool knows what it opened and nothing else."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    monkeypatch.setattr("builtins.input", lambda *_: "q")
+
+    label_goldset.main(["--split", str(p), "--out", str(tmp_path / "g.json"),
+                        "--cache", str(tmp_path / "cache"), "--target", "3"])
+    blind = capsys.readouterr().out
+    assert "has not opened any file containing a verdict" in blind
+    assert "Nothing here has been judged yet" not in blind
+    assert "--supplemental" in blind, "the blind path has to name the way out of it"
+
+    label_goldset.main(["--split", str(p), "--out", str(tmp_path / "g2.json"),
+                        "--cache", str(tmp_path / "cache"), "--target", "3", "--supplemental"])
+    supplemental = capsys.readouterr().out
+    assert "SUPPLEMENTAL" in supplemental
+    assert "excluded from kappa" in supplemental

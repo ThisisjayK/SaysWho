@@ -216,8 +216,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     print()
-    print(f"{len(sample)} pairs to label. Nothing here has been judged yet, and this tool has not")
-    print("opened any file containing a verdict.")
+    # It used to say "nothing here has been judged yet", which is a claim about the world rather than about
+    # this process, and it was false the first time anyone read it: every capture on disk had already been
+    # audited. The tool knows what it opened and nothing else, so it says only that.
+    print(f"{len(sample)} pairs to label. This tool has not opened any file containing a verdict.")
+    if args.supplemental:
+        print("These labels are SUPPLEMENTAL: they carry blind: false, they are excluded from kappa, and")
+        print("they are reported on their own. Use this whenever the verdicts for this answer already")
+        print("exist, whether or not you believe you have read them.")
+    else:
+        print("Recorded as blind. That is a claim about you, not about this tool: if a verdict for this")
+        print("answer exists anywhere, rerun with --supplemental instead.")
     print()
     print("For each pair: open the URL, read the page, and say whether it supports the claim.")
     print("Labels: S supported, P partially, N not found in source, C contradicted,")
