@@ -54,10 +54,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--budget", type=int, default=2_000_000)
     parser.add_argument("--no-drift", action="store_true")
     parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--skip-ethics-gate", action="store_true",
+                        help="run without the privacy and honesty gate. The honest run never uses this, and "
+                             "a run that did is not one whose output belongs in the writeup")
+    parser.add_argument("--fast-ethics-gate", action="store_true",
+                        help="privacy checks only, skipping the honesty tests. The report says which half "
+                             "it did not check rather than reporting a pass it did not earn")
     parser.add_argument("--skip-freeze-check", action="store_true",
                         help="for auditing captures outside the frozen set entirely. No rate from such a "
                              "run may be published, and the readout says so")
     args = parser.parse_args(argv)
+
+    # The ethics gate, before anything is fetched or judged. SCOPE.md §8 and the capstone attestation row
+    # both say the same thing: if privacy or honesty fails, the run does not happen. That sentence is worth
+    # nothing printed in a document, so it is enforced on the one path where nobody watches every line.
+    if not args.skip_ethics_gate:
+        from sayswho.ethics import run as ethics_run
+
+        report = ethics_run(Path(__file__).resolve().parent.parent, run_suite=not args.fast_ethics_gate)
+        print(report.render())
+        print()
+        if not report.passed:
+            print("Refusing to run. Fix the checks above, or explain in the writeup why a run happened")
+            print("with the gate failing, which is a harder sentence to write than the fix.")
+            return 2
 
     captures = collect(args.captures)
     if not captures:

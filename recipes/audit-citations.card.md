@@ -53,6 +53,9 @@ python3 -m sayswho.reextract <page.html> --capture <capture.json>
 
 # check the query freeze by hand; it also runs automatically before every capture
 python3 tools/freeze_queries.py check
+
+# privacy and honesty, shown passing. run_stratum runs this first and refuses to continue if it fails
+python3 tools/ethics_gate.py
 ```
 
 ## What it produces

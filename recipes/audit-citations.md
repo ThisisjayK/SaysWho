@@ -55,6 +55,7 @@ the gate exists to catch.
 
 | # | Gate | Passes when | Failure path |
 |---|---|---|---|
+| E | Ethics | Privacy and honesty both pass | The run stops before fetching. `python3 tools/ethics_gate.py` names which check failed and what to do. `tools/run_stratum.py` runs it first and refuses to continue |
 | F | Freeze | `queries/FREEZE.json` matches `queries/*.toml` | The run stops before fetching. `python3 tools/freeze_queries.py check` names the query. Overriding takes `--force --reason` and is recorded permanently in the manifest |
 | G0 | Citations exist | The answer carries at least one inline citation | Halts with `NO_CITATIONS`. An uncited answer is a different object, not a zero percent one |
 | G2 | Source readable | The page fetched, decoded and extracted to usable text | The claim becomes `UNAUDITABLE` and leaves every denominator. Eleven outcome codes, only `SOURCE_OK` proceeds |
@@ -78,6 +79,7 @@ Prefer these over ad hoc code. If none fits, say so before writing a temporary s
 | `python3 tools/run_stratum.py --captures captures/ --out runs/<name>` | The honest run over a whole stratum. Writes the run record, readout, `RUN_LOG.md` and the trace table |
 | `python3 tools/bind_capture.py <capture> --query <id>` | Bind a capture to a frozen query. Refuses an id that is not in the manifest |
 | `python3 tools/freeze_queries.py check` | The freeze check. Runs before every capture path |
+| `python3 tools/ethics_gate.py` | The privacy and honesty gate. Exits non-zero when either half fails, and `run_stratum.py` runs it before the honest run |
 | `python3 tools/label_goldset.py --split <split> --out <gold>` | Label a gold set by hand. Refuses any file carrying judge output |
 | `python3 tools/break_attempts.py --all --judge --out runs/break` | The four stretch break attempts, each declaring its failure mode before it runs |
 | `python3 tools/reaudit_spans.py` | Re-check voided spans against cached bytes rather than the live web |
@@ -210,7 +212,10 @@ How to confirm the run did what it says, rather than that it finished.
    checkable cells. The gap between the numbers is the thing to read.
 4. **The trace table.** Every published figure traced to the record it came from. Generated, not typed.
 5. **The suite.** `python3 -m pytest` proves each gate fails on its target bug rather than merely existing.
-6. **Parity.** The extension and the harness are checked against each other by running the real renderer in
+6. **The ethics gate.** `python3 tools/ethics_gate.py` checks privacy against git rather than against the
+   `.gitignore` text, since a rule that exists and does not match is worth nothing, and runs the honesty
+   tests rather than citing them. Its output is the artefact the attestation asks for.
+7. **Parity.** The extension and the harness are checked against each other by running the real renderer in
    node over a payload the real Python built, and comparing state by state.
 
 ## 8. Logging Rules

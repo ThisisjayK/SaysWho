@@ -555,6 +555,27 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] Re-run the fabricated-span figure once there is a run to compute it over, and say in the writeup that
       the earlier one was mostly an artefact of the checker rather than a finding about the judge
 
+## The ethics gate
+
+- [x] **Privacy and honesty, shown passing rather than promised.** `sayswho/ethics.py` and
+      `python3 tools/ethics_gate.py`. The attestation row asks for the gate passing, and a paragraph saying
+      the contract holds is not evidence that it does, which is the argument this whole project rests on
+- [x] Privacy checked against git, not against the `.gitignore` text. Four checks: nothing private staged,
+      nothing private already tracked (ignoring a directory does not untrack what is in it), every private
+      rule actually matches when git is asked, and no key-shaped string in any tracked file. The key patterns
+      are built by concatenation, because written as single literals the scanner finds itself and the gate
+      can never pass
+- [x] One reviewed exception, `runs/span-reaudit.json`, named in the output with its reason rather than
+      silently skipped. It is the evidence behind `FINDINGS.md` item 14 and it holds public consumer-stratum
+      page spans. An exception with a reason can be argued with; a check relaxed to pass cannot
+- [x] Honesty is the suite's honesty tests, run rather than cited. A gate reporting on tests it did not run
+      is the thing the gate exists to prevent, so `--fast-ethics-gate` says which half it did not check
+- [x] Wired into `tools/run_stratum.py` ahead of any fetch, so "if either fails, the run does not happen" is
+      enforced on the one path where nobody watches every line
+- [x] Fifteen tests, each forcing a failure against a throwaway repository: a force-added capture,
+      correspondence staged, a private file already committed, an ignore rule that does not match, a leaked
+      key, and a directory that is not a repository at all, which reports not-checked rather than pass
+
 ## Deliverables, by rubric row
 
 - [ ] Contribution works, 60 points. Installable MV3 extension, headless harness, pytest proving each gate
