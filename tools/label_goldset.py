@@ -294,6 +294,14 @@ def main(argv: list[str] | None = None) -> int:
         ).save(args.out)
 
     print()
+    if not labels:
+        # The file is written after each label, so quitting at the first prompt leaves nothing on disk and
+        # the coverage summary below has nothing to load. Opening the tool to see what it asks for, and
+        # quitting, is a reasonable thing to do and used to end in a traceback under the words "saved 0
+        # label(s)", which reads like the save is what failed.
+        print(f"no labels written, so {args.out} was not created. Nothing was lost.")
+        return 0
+
     print(f"saved {len(labels)} label(s) to {args.out}")
     counts = coverage(GoldSet.load(args.out))
     print("coverage by class, published whatever it says:")

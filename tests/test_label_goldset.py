@@ -218,3 +218,37 @@ def test_resuming_keeps_the_splits_the_earlier_session_recorded(tmp_path, monkey
 
     after = GoldSet.load(out).split_sha256s
     assert set(first) <= set(after), "resuming dropped a split the first session had labelled"
+
+
+def test_quitting_at_the_first_prompt_leaves_no_file_and_does_not_crash(tmp_path, monkeypatch, capsys):
+    """Opening the tool to see what it asks for, and quitting, is a reasonable thing to do. It used to end
+    in a FileNotFoundError printed under the words "saved 0 label(s)", which reads like the save failed."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+
+    out = tmp_path / "gold.json"
+    monkeypatch.setattr("builtins.input", lambda *_: "q")
+
+    assert label_goldset.main(["--split", str(p), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "5"]) == 0
+    assert not out.exists(), "nothing was labelled, so there is no set to write"
+    assert "Nothing was lost" in capsys.readouterr().out
+
+
+def test_quitting_after_one_label_still_reports_coverage(tmp_path, monkeypatch, capsys):
+    """The other side of it: a session that produced something must still print what it produced."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+
+    out = tmp_path / "gold.json"
+    answers = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+
+    assert label_goldset.main(["--split", str(p), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "5"]) == 0
+    assert out.exists()
+    printed = capsys.readouterr().out
+    assert "saved 1 label(s)" in printed
+    assert "coverage by class" in printed
