@@ -208,6 +208,10 @@ terminal step. A local server is a real surface, so its rules are here rather th
   is never in a file, a plist, a request or a response, per §8.
 - **A cap on what one request can cause.** A capture is a list of URLs the server will then fetch, so a
   posted capture carrying more than sixty citations is refused before anything is fetched.
+- **Every raw API response is written to disk before it is parsed**, to `captures/raw/`, never overwritten.
+  A parser can be fixed and re-run against a stored response; a response reshaped before storage cannot be
+  recovered. Gitignored, because it holds the answer text and the query behind it. The same reasoning as the
+  fetch cache: a rerun audits the same bytes.
 - **Every posted capture is written to the captures directory**, before any fetching starts, and never
   overwritten. The capture is the irreplaceable half of an audit and the audit can be re-run, so it is
   saved first. The directory is gitignored: a capture holds the answer text and the query behind it, and

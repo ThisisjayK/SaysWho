@@ -446,6 +446,28 @@ The machinery is built and tested. What is left on this list is the labelling it
       out loud that starting from its own answers will anchor the marking. Until this runs the count stays a
       floor of unknown depth
 
+## Capture from an API rather than the DOM
+
+- [x] `sayswho/apicapture.py`. Produces an ordinary capture with `source="api"`, so the CLI, the harness and
+      the report all work on it unchanged. Stdlib only, no new dependency
+- [x] No schema hardcoded. Four providers return citations in four shapes and the documentation for one of
+      them described a structure that did not match what the file was first written to expect, so the walk
+      finds citation-shaped objects, records the JSON path of each, and counts the URLs it did not take. That
+      count is what made the Perplexity bare-list shape visible instead of reporting a clean zero
+- [x] Live calls only for a provider whose request builder has actually been run. Gemini, because it is the
+      only free tier here. Everything else replays a stored response through `--from`, which needs no
+      knowledge of how the call was made
+- [x] `tools/compare_capture.py`. The reason the API path is worth having: it measures how many citations the
+      DOM capture missed, which is the largest unquantified risk in the project and a number that has never
+      existed. Reported as a floor, with the prose overlap beside it, because same question is not same answer
+- [ ] Run one live Gemini grounded call and check the walk against the stored response. **Mine to do,** the
+      key is in your shell and not mine. `python3 tools/api_capture.py --provider gemini --prompt "..."`
+- [ ] Run the fidelity comparison on a real pair, DOM and API, for one frozen query. This is the number that
+      belongs in §7 beside the support rate
+- [ ] Decide whether any API-sourced rate enters the writeup at all. §7 now says an API answer is a different
+      object from what a user sees, and Gemini is the conflicted vendor case. The honest default is that the
+      API path measures the scraper and never produces a published support rate
+
 ## Deliverables, by rubric row
 
 - [ ] Contribution works, 60 points. Installable MV3 extension, headless harness, pytest proving each gate
