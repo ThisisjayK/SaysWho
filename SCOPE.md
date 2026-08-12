@@ -169,14 +169,49 @@ install and watch.
 
 ## 1b. What separates this from the tools that already ship
 
-This space is occupied. CiteGuardian describes itself as breaking text into individual claims, reviewing the
-cited sources, and checking whether the evidence supports what is said, on AI answers, in the browser.
-GPTZero has an AI source checker, and CiteTrue and FactSentinel are adjacent. **The general idea is not
-novel, and the writeup says so plainly.**
+This space is occupied, and one of the tools in it is very close to this one. **The general idea is not
+novel, and the writeup says so plainly.** All four were checked against their own documentation on
+2026-08-11, and the paragraph below was corrected twice as a result. What each one actually says:
 
-The difference is what happens when the evidence isn't there. Every incumbent, by its own description,
-outputs a **confidence score**. A confidence score on a source that could not be fetched is a fabricated
-number. That is the gate-as-vote failure this course is built around.
+| Tool | What it does, by its own description | What it outputs |
+|---|---|---|
+| [CiteGuardian](https://www.citeguardian.com/docs/extension) | Verifies claims against their cited sources in AI answers, as a Manifest V3 Chrome extension, invoked by right-clicking a highlighted answer. This is the same product | "Each claim with its verdict badge, confidence, and any flags", plus a support-rate badge: 80%+ green, 50 to 79% yellow, under 50% red. It also runs a "scrub test" for decorative citations, which SaysWho does not do |
+| [CiteTrue](https://citetrue.com/) | Checks whether a citation is *real*: authors, year, journal and DOI against Crossref, PubMed, OpenAlex and others. Academic citations, not AI answers | A confidence score for the authenticity of the citation. Not a judgement about whether a source supports a claim |
+| [GPTZero Source Finder](https://gptzero.me/sources) | Finds sources *for* text, matching claims to online and academic data. The opposite direction from auditing citations an answer already has | Whether evidence "contradicts, debates, or supports a claim", and formatted citations. It says it "does not take a stance on whether your claims or the claims in the sources cited are true". No confidence number is documented on that page |
+| [FactSentinel](https://factsentinel.com/ai-source-checker) | Fact-checks claims against sources across several frontier models, in a browser workflow | "verdict, confidence, reasoning, model split, caveats, and source links" |
+
+**Two corrections to what this section used to claim**, kept here rather than quietly edited, because a
+section about other people's citation accuracy is the worst possible place to be loose with citations.
+
+1. It said *every* incumbent outputs a confidence score. That is wrong for GPTZero, whose Source Finder
+   documents no confidence number and is doing a different task, and it is unfair to FactSentinel, whose own
+   page warns that "a single confidence number can make weak evidence feel settled". An incumbent making the
+   same argument this project makes is not an incumbent to use as a foil.
+2. It treated all four as competitors doing one thing. Two of them are not: CiteTrue checks that a reference
+   exists, which is the stretch item in §0a rather than this tool's core, and GPTZero finds sources rather
+   than auditing given ones.
+
+**Academic prior art, which this section did not name at all.** The commercial tools are the competitive
+picture; the research on whether a cited source supports a claim is the intellectual one, and leaving it out
+made the idea look more original than it is. [Generation-Time vs. Post-hoc Citation: A Holistic Evaluation of
+LLM Attribution](https://arxiv.org/abs/2509.21557) (Saxena, Bommireddy, Padia and Gaur, NeurIPS 2025 LLM
+Evaluation Workshop) evaluates attribution quality directly and separates whether a source was retrievable
+from whether it substantiates the claim, which is the same distinction §3's G2 outcome table enforces. Its
+finding is a trade-off between coverage and citation correctness, which is worth reading against this
+project's own bias: `EXTRACTION_SUSPECT` and the span guard both spend coverage to avoid a wrong accusation.
+
+One benchmark that should **not** be cited here, noted because it came up while checking and is easy to
+misuse: [CiteBench](https://aclanthology.org/2023.emnlp-main.455/) (Funkquist, Kuznetsov, Hou and Gurevych,
+EMNLP 2023) is a benchmark for scientific *citation text generation*, meaning writing the prose that cites a
+paper. It is not a citation-verification benchmark, and citing it as one in a project about citation accuracy
+would be precisely the error this tool exists to detect.
+
+**So the differentiator, stated at the strength the evidence supports.** Three of the four attach a
+confidence number to a verdict. None of the four documents what it does when a cited source cannot be
+fetched, is paywalled, or has changed since the answer was written. That is a claim about their
+documentation and nothing more: it is not evidence about their behaviour, and finding out would need the
+§5a head-to-head, which has not run. Until it does, the difference below is **structural**, demonstrable on
+SaysWho's own tool, and not a measured comparison.
 
 SaysWho instead:
 
@@ -432,8 +467,10 @@ changed after generation**. For each tool: did it return a confidence score, a v
 number it prints traces to a source it actually retrieved.
 
 **Fairness constraints.** Free tiers only, each tool used as documented, no attempt to construct inputs that
-flatter SaysWho. Where a tool's scope genuinely differs (CiteTrue targets academic citations rather than
-AI answers), that is stated rather than counted as a failure. Sample sizes will be small and every
+flatter SaysWho. Where a tool's scope genuinely differs, that is stated rather than counted as a failure, and two of the
+four differ: CiteTrue checks that a reference exists rather than that it supports anything, and GPTZero's
+Source Finder looks for sources rather than auditing the ones an answer already carries. Neither can fail a
+comparison it was never trying to enter. Sample sizes will be small and every
 comparison ships with its n.
 
 **Coverage disclosure.** Access failures are a likely outcome here and they are not a time problem, so
@@ -583,7 +620,10 @@ item landing.
 
 ## 9. Stack
 
-**Extension (the product).** Manifest V3, vanilla TypeScript, no framework. Content scripts for DOM capture
+**Extension (the product).** Manifest V3, vanilla JavaScript, no framework, no build step. (This said
+TypeScript until 2026-08-11 and never was: `extension/src` is twelve plain files a reader can open. The
+no-build-step property is what makes the thirty-second install in `README.md` true, so it is worth being
+accurate about.) Content scripts for DOM capture
 and inline marking, a service worker for fetching and judging, a side panel for the per-claim record. Host
 permissions for cross-origin fetch. Text extraction with Readability. Everything cached to
 `chrome.storage.local` so a rerun audits the same bytes.

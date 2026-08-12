@@ -482,7 +482,14 @@ These are not tasks that can be traded away for time. They are the reason the pr
 - [ ] Kappa at n between 30 and 40 is reported as a wide-interval estimate, not as a calibration
 - [ ] Products are named, and every sentence about them is calibrated. "We could not reproduce support for N
       of M claims, of which K were source-unreachable", never "Product X fabricates citations"
-- [ ] Prior art named plainly. CiteGuardian, GPTZero, CiteTrue, FactSentinel. The general idea is not novel
+- [x] Prior art named plainly, and checked rather than asserted. All four verified against their own
+      documentation on 2026-08-11. Two claims in §1b did not survive: "every incumbent outputs a confidence
+      score" is false for GPTZero and unfair to FactSentinel, whose own page warns that a single confidence
+      number makes weak evidence feel settled, and two of the four are not doing this task at all. §1b now
+      carries a table of what each says it does, plus the academic attribution work it never named, plus the
+      one thing CiteGuardian does that SaysWho does not. `FINDINGS.md` item 12
+- [ ] Re-check §1b before submission. Marketing pages change, and every claim in that table is dated
+      2026-08-11 rather than timeless. **Mine to do,** or worth one more pass if the writeup slips past a week
 - [ ] Until the head-to-head runs, the differentiator is described as structural rather than measured, and
       incumbent behaviour is attributed to their marketing copy
 - [ ] The frozen query set is published in full so a reader can judge the sample instead of taking my word

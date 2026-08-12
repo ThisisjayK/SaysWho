@@ -410,3 +410,40 @@ attribute lists across the language boundary.
 **One thing this does not fix.** The first Perplexity citation on that page is a PDF, which is
 `SOURCE_NOT_HTML` downstream: a code that is tested, has never fired on real data, and is listed in
 `STATUS.md` as unexercised. It could not fire while the citations never reached the fetch layer.
+
+---
+
+## 12. The prior art section had two wrong claims in it
+
+Checked every tool named in §1b against its own documentation on 2026-08-11, because §8's honesty overlay
+promises prior art named plainly and nothing had actually verified the naming. All four exist. Two of the
+claims about them did not survive.
+
+**"Every incumbent, by its own description, outputs a confidence score."** False as written. GPTZero's Source
+Finder documents no confidence number, and it is doing a different task: it finds sources *for* text rather
+than auditing citations an answer already has, and it states outright that it does not take a stance on
+whether the claims or the sources are true. Worse for the argument, FactSentinel's own page says "a single
+confidence number can make weak evidence feel settled", which is the argument this project makes. Using a
+tool that agrees with you as the foil for your differentiator is not a small slip: it was the load-bearing
+sentence under §1b, and it was overstated in the direction that flattered this project.
+
+**Four competitors doing one thing.** Two of the four are not doing this thing at all. CiteTrue verifies that
+a reference exists, against Crossref and PubMed and others, which is the §0a stretch item here rather than
+the core. GPTZero searches for sources. Counting either as a competitor to be beaten inflates the field and,
+by implication, the achievement of entering it.
+
+**What replaced them.** A table of what each tool says it does and outputs, and a narrower claim that the
+evidence supports: three of the four attach a confidence number to a verdict, and none of the four documents
+what happens when a cited source cannot be fetched. That second half is explicitly a claim about their
+documentation and not about their behaviour, which the §5a head-to-head would be needed to establish.
+
+**Two other things the check turned up.** The academic prior art was missing entirely, which made the idea
+look more original than it is; §1b now names the attribution-evaluation work that separates retrievability
+from support, the same distinction G2 enforces. And CiteGuardian runs a "scrub test" for decorative citations
+that SaysWho has no equivalent of, so the closest tool in the space is ahead on something and the writeup
+says which thing.
+
+**The honest reading of this finding.** A project whose entire subject is unverified claims carried two
+unverified claims about its own competitors for five days, in the section arguing why it deserves to exist,
+both tilted the same way. The mechanism that caught it was being asked to check, not anything structural.
+There is no gate for prose.
