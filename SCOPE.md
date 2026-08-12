@@ -104,6 +104,11 @@ day 5 rather than being assembled on day 10 when the answer is already known. **
 the blocker is named. Nothing here reads a rate, because no rate may be printed yet: gate G4 refuses one
 until the gold set exists, which is item 3.
 
+`STATUS.md` carries the same nine rows with the reasons, plus the extension surface and the items built ahead
+of their window. **It is the detailed one and the two are updated in the same commit**, so this table states
+the state and that file says why. Duplicated prose is how two documents start disagreeing, so the reasons
+live in one of them.
+
 | # | Item | State | Evidence, or what it waits on |
 |---|---|---|---|
 | 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 541 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
