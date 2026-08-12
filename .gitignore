@@ -40,6 +40,12 @@ reports/
 # published in the run record; the claims themselves stay on the machine.
 splits/
 
+# hand-labelled gold sets. They hold the cited URLs and the passages the labeller pasted out of those pages,
+# and for the professional stratum those are pages found by real work. DATA_CONTRACT.md §9 keeps quoted page
+# text local unless the writeup chooses to publish a particular span. The agreement numbers computed from a
+# gold set are publishable and the labels behind them stay on the machine.
+goldset/
+
 # run artefacts: results.json, readout.txt, the run record and the trace table. Same rule as reports/. The
 # writeup publishes the numbers it has chosen and traced, not a directory of every run that ever happened,
 # and a run over the professional stratum carries the answer text behind it. Written by the runner on every
