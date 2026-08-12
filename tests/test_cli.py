@@ -143,3 +143,43 @@ def test_split_only_runs_even_when_no_source_could_be_read(tmp_path, judge, monk
     assert cli.main([str(FIXTURE), "--split-only", "--save-split", str(out), "--skip-freeze-check"]) == 0
     assert judge.purposes == ["split"]
     assert out.exists()
+
+
+# ---------------------------------------------------------------- the run record as a file
+
+
+def test_json_out_writes_a_file_the_labelling_tool_can_load(tmp_path):
+    """`--json` prints the readout and then the JSON, both to stdout, so `--json > file` produces a page of
+    prose in front of the JSON and nothing can load it. That was step one of the documented gold set
+    workflow, and it could never have worked."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+    import label_goldset
+
+    out = tmp_path / "record.json"
+    assert cli.main([str(FIXTURE), "--json-out", str(out), "--skip-freeze-check"]) == 0
+
+    record = json.loads(out.read_text())
+    assert record["fetches"], "the labelling tool reads this for its G2 codes"
+    label_goldset.refuse_judge_output(record, out)
+
+
+def test_json_out_without_a_judge_carries_no_verdict(tmp_path):
+    """It is handed to the labelling tool, which refuses any file carrying judge output. A fetch pass has
+    none, and this asserts the payload does not grow one by accident."""
+    out = tmp_path / "record.json"
+    cli.main([str(FIXTURE), "--json-out", str(out), "--skip-freeze-check"])
+
+    text = out.read_text()
+    for key in ("judgements", "void_reason", "span_verified"):
+        assert f'"{key}"' not in text
+    assert json.loads(text)["claims"] is None, "no judge, no split, so no claims"
+
+
+def test_json_and_json_out_agree(tmp_path, capsys):
+    """Two surfaces for one record is two chances to disagree about what the run found."""
+    out = tmp_path / "record.json"
+    cli.main([str(FIXTURE), "--json", "--json-out", str(out), "--skip-freeze-check"])
+
+    printed = capsys.readouterr().out
+    start = printed.index("{\n")
+    assert json.loads(printed[start:]) == json.loads(out.read_text())

@@ -35,6 +35,11 @@ reports/
 # pages it fetched.
 .cache/
 
+# stored splits. A split is the answer broken into claims, so it carries the answer text, which for the
+# professional stratum is real work. Same grounds as captures/. The split hash a gold set binds to is
+# published in the run record; the claims themselves stay on the machine.
+splits/
+
 # run artefacts: results.json, readout.txt, the run record and the trace table. Same rule as reports/. The
 # writeup publishes the numbers it has chosen and traced, not a directory of every run that ever happened,
 # and a run over the professional stratum carries the answer text behind it. Written by the runner on every

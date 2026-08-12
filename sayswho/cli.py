@@ -55,6 +55,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--json", action="store_true", help="emit the run record as JSON")
     parser.add_argument(
+        "--json-out",
+        type=Path,
+        default=None,
+        help="write the run record to a file. Separate from --json because the readout and the JSON both go "
+        "to stdout, so redirecting --json produces a file with a page of prose in front of the JSON, which "
+        "nothing can load. tools/label_goldset.py wants this file for its G2 codes",
+    )
+    parser.add_argument(
         "--split",
         type=Path,
         default=None,
@@ -401,7 +409,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.report_json.write_text(marked.to_json(), encoding="utf-8")
                     print(f"report json  {args.report_json}")
 
-    if args.json:
+    if args.json or args.json_out:
         payload = {
             "capture": capture.to_dict(),
             "binding": {"ok": bound.ok, "code": bound.code, "detail": bound.detail},
@@ -432,8 +440,14 @@ def main(argv: list[str] | None = None) -> int:
 
         assert_no_confidence_number(strip_for_gate_check(payload))
 
-        print()
-        print(json.dumps(payload, indent=2))
+        if args.json_out:
+            args.json_out.parent.mkdir(parents=True, exist_ok=True)
+            args.json_out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            print()
+            print(f"record       {args.json_out}")
+        if args.json:
+            print()
+            print(json.dumps(payload, indent=2))
 
     return 0
 
