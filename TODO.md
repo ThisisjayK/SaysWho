@@ -489,6 +489,27 @@ The machinery is built and tested. What is left on this list is the labelling it
       contaminated denominator, G4 refuses an uncalibrated rate. A decision that lives only in a TODO is one
       a tired person overrides at 2am on day 7 without noticing they did
 
+## Spans, after the re-audit
+
+- [x] Fold typography in the span guard. Quotes, dashes, soft hyphens, zero-widths, and NFKC per character
+      for ligatures and full-width forms. Three of five variants used to void a span the page really contained
+- [x] Separate the claim-id normalisation from the span guard's. `canonical_for_id` is frozen and documented
+      as such: G4 ties a gold set to claim ids, so a span-guard change would otherwise have relabelled
+      everything silently
+- [x] Re-audit the voided spans. `tools/reaudit_spans.py`, over cached bytes rather than the live web, since
+      re-checking against a page fetched today answers a different question. One of four voids overturned by
+      the PDF fix, two traced to a symbol-font bullet, one is a genuine catch. `FINDINGS.md` item 14
+- [x] Fix the PDF `Td` line-break bug that broke "(61.1%)" into "(6 1 . 1 %)" and voided a correct verdict
+- [ ] Symbol-font bullets in PDFs. A bullet rendered through a symbol font extracts as a letter, so a judge
+      quoting a bulleted line verbatim is voided. Needs font-encoding support a stdlib reader does not have.
+      Until then the fabricated-span count over PDF sources is reported separately from HTML and described as
+      inflated by an unknown amount
+- [ ] Precomposed against decomposed accents in the span guard. "e" plus a combining acute still does not
+      match a single character. Fixing it means normalising whole strings, which breaks the per-character index
+      `report.py` uses to place a highlight. Narrower than the gap it replaced
+- [ ] Re-run the fabricated-span figure once there is a run to compute it over, and say in the writeup that
+      the earlier one was mostly an artefact of the checker rather than a finding about the judge
+
 ## Deliverables, by rubric row
 
 - [ ] Contribution works, 60 points. Installable MV3 extension, headless harness, pytest proving each gate

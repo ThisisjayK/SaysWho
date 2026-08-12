@@ -11,6 +11,15 @@ the stream are glyph indices in a table this parser does not follow, and the "te
 plausible-looking rubbish. It does not reconstruct reading order across columns, so a two-column paper
 comes out interleaved at the line level while remaining correct at the sentence level.
 
+**Symbol fonts are a known unfixed gap.** A PDF may render a bullet through a font whose glyphs sit at
+ordinary letter code points, so a list item that reads "\u2022 Adults who..." on screen extracts as
+"x Adults who...". This parser does not follow font encodings, so it cannot know that the "x" is a bullet.
+The consequence is specific and it is recorded in `FINDINGS.md` item 14: a judge quoting a bulleted line
+verbatim quotes the bullet a human sees, the extracted text has a letter there instead, and the span guard
+voids a correct verdict as `JUDGE_FABRICATED_SPAN`. Two of the four voids in the first live PDF audit were
+this. So a fabricated-span count over PDF sources is inflated by an unknown amount and has to be reported
+separately from one over HTML until this is fixed.
+
 **Why the failure detection matters more than the extraction.** If this returns garbled text, the judge
 reads a document that does not contain the claim, returns NOT_FOUND_IN_SOURCE, and the run publishes a
 citation failure that is really a parser failure. `FINDINGS.md` item 11 is that exact bug, found once
@@ -32,12 +41,37 @@ _SHOW_ARRAY = re.compile(rb"\[(.*?)\]\s*TJ", re.S)
 _HEX_SHOW = re.compile(rb"<([0-9A-Fa-f\s]*)>\s*(?:Tj|'|\")", re.S)
 _STRING_IN_ARRAY = re.compile(rb"\((?:[^()\\]|\\.)*\)", re.S)
 
-#: Operators that move to a new line or end a text object. Used only to decide where to put newlines, so
-#: that a run of cells or a heading does not fuse into the sentence after it.
-#: `T*` gets no trailing \b: the asterisk is not a word character, so the boundary can never match after
-#: it. That typo cost every line break in the document, which fused the last word of each line onto the
-#: first word of the next and would have broken the span guard on any quote crossing a line.
-_LINE_BREAKS = re.compile(rb"(?:T\*|TD\b|Td\b|ET\b)")
+#: Operators that always start a new line: `T*` moves to the next line, `ET` ends the text object.
+#:
+#: `T*` gets no trailing \b: the asterisk is not a word character, so the boundary can never match after it.
+#: That typo cost every line break in the document, which fused the last word of each line onto the first
+#: word of the next.
+_HARD_BREAKS = re.compile(rb"(?:T\*|ET\b)")
+
+#: `tx ty Td` and `tx ty TD` move the text position, and **only a vertical move is a new line**. This is not
+#: a nicety. Many PDF generators place glyphs individually, emitting `Td` between characters to kern them, so
+#: treating every `Td` as a line break put a newline between every letter. Collapsed, that turned the
+#: boston.gov figure "(61.1%)" into "(6 1 . 1 %)".
+#:
+#: The cost of that was not cosmetic. The span guard demands a verbatim quote, the judge quoted the number a
+#: human reads, the spaced-out version did not contain it, and four correct verdicts were thrown out and
+#: counted as `JUDGE_FABRICATED_SPAN`: the one code published as a finding about the judge. The tool was
+#: about to accuse a model of inventing quotes that its own PDF reader had broken.
+_MOVE = re.compile(rb"(-?[\d.]+)\s+(-?[\d.]+)\s+(?:TD|Td)\b")
+
+#: **A horizontal move inserts nothing.** Measured rather than assumed: swept from 0 to 8 unscaled units
+#: against the boston.gov document, and every threshold in that range still produced "(6 1.1%)". Only
+#: inserting nothing produced "(61.1%)".
+#:
+#: The risk of the other direction is words fusing where a PDF separates them by positioning alone. The same
+#: sweep says that is not what this document does: the space ratio moves only from 0.131 to 0.123 when all
+#: move-inserted spaces are removed, so almost every space here is a real space character inside a shown
+#: string. Calibrated on one document and stated as such.
+#:
+#: There is also a floor under the failure mode. A PDF whose word spacing really is positional would come out
+#: with almost no spaces, and `MIN_SPACE_RATIO` refuses such a document as garbled rather than passing a wall
+#: of fused words to the judge. So the bad case degrades into a refusal, which costs coverage rather than
+#: producing a wrong verdict.
 
 #: Stream filters. Flate is the overwhelming majority of text streams. The image codecs are listed so an
 #: image-only document can be recognised as one rather than reported as empty.
@@ -185,13 +219,27 @@ def _text_from_content(content: bytes) -> str:
     """Pull the shown strings out of one decoded content stream, in stream order."""
     pieces: list[str] = []
     for match in re.finditer(
-        rb"|".join([_SHOW_ARRAY.pattern, _SHOW_ONE.pattern, _HEX_SHOW.pattern, _LINE_BREAKS.pattern]),
+        rb"|".join([_SHOW_ARRAY.pattern, _SHOW_ONE.pattern, _HEX_SHOW.pattern,
+                    _MOVE.pattern, _HARD_BREAKS.pattern]),
         content,
         re.S,
     ):
         chunk = match.group(0)
-        if _LINE_BREAKS.fullmatch(chunk.strip()):
+
+        if _HARD_BREAKS.fullmatch(chunk.strip()):
             pieces.append("\n")
+            continue
+
+        move = _MOVE.fullmatch(chunk.strip())
+        if move:
+            # Vertical movement is a new line. Horizontal movement is kerning or a gap between words, and a
+            # newline there would break a word in half.
+            try:
+                dy = float(move.group(2))
+            except ValueError:
+                continue
+            if dy != 0:
+                pieces.append("\n")
             continue
         if chunk.rstrip().endswith(b"TJ"):
             inner = _SHOW_ARRAY.search(chunk)
@@ -227,6 +275,10 @@ def _ratios(text: str) -> tuple[float, float]:
 
 def _tidy(text: str) -> str:
     text = text.replace("\r", "\n")
+    # Control characters, which are never content. A symbol font maps its glyphs to low code points, so a
+    # bulleted list in this document arrives as NUL followed by a letter. Stripping the NUL is unambiguous
+    # cleanup. The letter left behind is not: see the note on symbol fonts below.
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     # Hyphenated line breaks, which are how a PDF stores a word split across two lines.
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
     text = re.sub(r"[ \t]+", " ", text)

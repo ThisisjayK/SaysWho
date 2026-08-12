@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-from .extract import normalise_for_span
+from .extract import canonical_for_id
 from .model import JudgeClient, ModelRefused
 from .records import Capture, normalise_url, sha256
 
@@ -136,9 +136,11 @@ def claim_id(query_id: str, text: str, seen: dict[str, int]) -> str:
     mean one sentence, so a claim that survives a re-split keeps its label and a claim that does not is
     visibly absent rather than quietly replaced. The stored split in `splits.py` remains the authority.
 
-    Normalised for whitespace and case first, so a reflowed line is the same claim.
+    Normalised for whitespace and case first, so a reflowed line is the same claim. Deliberately *not* the
+    span guard's normalisation: that one folds typography and may need to fold more later, and an id that
+    tracked it would silently invalidate every gold-set label whenever it changed.
     """
-    digest = sha256(normalise_for_span(text))[:8]
+    digest = sha256(canonical_for_id(text))[:8]
     n = seen.get(digest, 0)
     seen[digest] = n + 1
     # A splitter that emits the same sentence twice is unusual but not an error, and two claims cannot

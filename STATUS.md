@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-11, day 5 of ten. 627 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
+Last updated 2026-08-11, day 5 of ten. 643 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**
@@ -47,7 +47,7 @@ answer" are different claims and only one of them is currently true.
 | Honest run over the frozen professional stratum | No stratum. `tools/run_stratum.py` runs today and correctly prints nothing, naming which kind of nothing |
 | Metric readout with n and CIs over real data | Same. The readout is exercised by tests against a scripted judge |
 | Judge-human agreement | No gold set, which needs the stratum |
-| The PDF reader on live data | Built today, stdlib only, and unit-tested against five hand-built PDFs including a scan, a CID-font document and an encrypted one. It has never read a PDF cited by a real answer. The Perplexity capture cites a `boston.gov` PDF, which is the first real test and has not been run |
+| ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer: 56,352 characters, `SOURCE_OK`. Two extraction bugs came straight out of that, both found by re-auditing voided spans rather than by any test. See the day 5 note below |
 | The thin-page flag on live data | Tested, never fired on a real capture |
 | `EXTRACTION_SUSPECT`'s error direction | Only the gold set can measure it. Until then the writeup says the direction is chosen and the rate is unknown |
 | The PDF garbled test's error direction | Same shape, one layer down. Two ratios, printable characters and spaces, decide whether decoded text is language or glyph numbers. Neither threshold is measured. It is set to refuse in the ambiguous case, because refusing costs coverage and passing garbled text produces a verdict that accuses a source |
@@ -83,6 +83,30 @@ answer" are different claims and only one of them is currently true.
 | The audit and the capture are written to disk | **done** | `captures/` and `reports/`, both never overwritten, both gitignored because they hold answer text and quoted spans from fetched pages. Until today an audit existed only in the panel and closing it was the end of it, which was wrong for the same reason the capture is saved: an audit records what a set of pages said at one minute, and several will read differently next week |
 | The server fails before it claims to be ready | **done** | It builds a judge and throws it away before it starts listening, so a missing package or a missing key stops it there with the fix printed, rather than surfacing two minutes into the first audit while the popup shows green. A taken port is explained the same way, including asking whatever holds it whether it is an older SaysWho server, which is the case that actually happens |
 | Marking the product's own sentences in place | **not done** | Narrower reason than before: mapping payload offsets onto a live DOM that re-renders is separate work whose worst failure is a verdict beside the wrong sentence. The panel sits next to the page |
+
+### The first live PDF, and what it cost
+
+The PDF reader read a real cited PDF on its first outing. It also produced two bugs that no unit test could
+have caught, because both are about how a real generator lays out a page rather than about how a
+hand-built fixture does.
+
+`Td` was treated as a line break. It is a text-position operator, and many generators emit it between
+individual glyphs to kern them, so a newline went between every character and "(61.1%)" came out as
+"(6 1 . 1 %)". The span guard then voided a correct verdict as `JUDGE_FABRICATED_SPAN`, which is the one code
+published as a finding about the judge. The tool was about to accuse a model of inventing a quote its own PDF
+reader had broken. Fixed by reading the operands: only a vertical move is a line break. Calibrated by sweeping
+the horizontal threshold from 0 to 8 against the real document, where only inserting nothing gave the right
+answer.
+
+The second is unfixed and recorded rather than hidden. This document renders bullets through a symbol font
+whose glyphs sit at letter code points, so a line reading "\u2022 Adults who..." extracts as "x Adults
+who...". Two of the four voided spans are that. Following font encodings is beyond a stdlib reader, so a
+fabricated-span count over PDF sources is inflated by an unknown amount and must be reported separately from
+one over HTML until it is fixed. `FINDINGS.md` item 14.
+
+Of the four voids re-audited: one was the `Td` bug, two are the bullet, and one is a genuine catch, where the
+judge stitched two passages together with an ellipsis rather than quoting contiguously. Three of four were
+this tool's fault.
 
 ## What changed on day 5, and what it means
 

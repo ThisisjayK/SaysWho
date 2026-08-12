@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from .rates import UNIT_PAIR, pairs_from, standing_denominator
-from .extract import normalise_for_span
+from .extract import fold_for_span, normalise_for_span
 from .judge import PARTIALLY_SUPPORTED, SUPPORTED
 
 #: What the reader sees. Three answers to "does the source say this", plus the two ways there is no answer.
@@ -105,9 +105,15 @@ def _find_collapsed(answer: str, needle: str) -> tuple[int, int] | None:
             index.append(i)
             previous_space = True
         else:
-            flat.append(ch.casefold())
-            index.append(i)
-            previous_space = False
+            # The same fold the span guard applies, character by character, with one index entry per output
+            # character. A fold that produces two characters from one, or none at all, would otherwise
+            # desync this index from `flat` and put the highlight on the wrong words. `casefold` alone could
+            # already do that, since it turns one letter into two for a handful of them.
+            folded = fold_for_span(ch)
+            for out in folded:
+                flat.append(out)
+                index.append(i)
+            previous_space = False if folded else previous_space
 
     hay = "".join(flat)
     pin = normalise_for_span(needle)

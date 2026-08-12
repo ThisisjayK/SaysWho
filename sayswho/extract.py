@@ -12,6 +12,7 @@ made yet.
 from __future__ import annotations
 
 import re
+import unicodedata
 from html.parser import HTMLParser
 
 #: Below this many characters of extracted text, a 200 response is SOURCE_EMPTY rather than SOURCE_OK.
@@ -211,12 +212,75 @@ def detect_wall(text: str) -> str | None:
     return None
 
 
-def normalise_for_span(text: str) -> str:
-    """Whitespace and case normalisation used by the span guard in Phase 3.
+#: Characters that are the same character as far as a quoted span is concerned.
+#:
+#: Every entry here was a verdict thrown out. The span guard demands that a `SUPPORTED` verdict quote the
+#: source verbatim, and it was comparing on whitespace and case alone. So a page using curly quotes and a
+#: judge typing straight ones disagreed, and the verdict was voided as `JUDGE_FABRICATED_SPAN`: the one code
+#: that is published as a finding about the judge. The rate was partly measuring this table's absence and
+#: attributing it to Gemini. Three of five typographic variants failed before this existed.
+_SPAN_FOLD = {
+    # Quotation marks. Publishers use curly, models type straight, and PDF extraction produces both.
+    "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'", "\u2032": "'", "\u02bc": "'",
+    "\u201c": '"', "\u201d": '"', "\u201e": '"', "\u201f": '"', "\u2033": '"',
+    "\u00ab": '"', "\u00bb": '"',
+    # Dashes and minus signs. "21-day" against "21\u2013day" is the common case, and a number is exactly
+    # where a voided verdict costs most.
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-", "\u2014": "-", "\u2015": "-",
+    "\u2212": "-", "\u2043": "-",
+    # One glyph a writer means as three dots.
+    "\u2026": "...",
+}
 
-    Kept here so the fetcher, the harness and the extension all normalise identically. If they diverged, the
-    extension could confirm a span the harness rejects, and the §9 parity check exists precisely to catch
-    that class of disagreement.
+#: Characters that carry no meaning in a quoted span and are invisible on screen. A soft hyphen is inserted
+#: by a typesetter at a line break, so a word broken across two lines in a PDF contains one and the same
+#: word quoted by a judge does not.
+_SPAN_DROP = frozenset("\u00ad\u200b\u200c\u200d\u2060\ufeff")
+
+
+def fold_for_span(ch: str) -> str:
+    """One character as the span guard sees it. May return zero, one, or several characters.
+
+    Per character rather than per string, which is not a style choice: `report.py` locates a span inside the
+    answer by building a parallel index from folded positions back to raw ones, and that index is only valid
+    if folding can be done character by character. A whole-string `unicodedata.normalize` would silently
+    desync it and put a highlight on the wrong words.
+    """
+    if ch in _SPAN_DROP:
+        return ""
+    if ch in _SPAN_FOLD:
+        return _SPAN_FOLD[ch]
+    # NFKC per character handles ligatures, full-width forms and ordinals. It does not touch curly quotes or
+    # en dashes, which is why the table above exists as well.
+    return unicodedata.normalize("NFKC", ch).casefold()
+
+
+def normalise_for_span(text: str) -> str:
+    """Text as the span guard compares it: whitespace, case and typography folded.
+
+    Kept here so the fetcher, the harness and the drift check all normalise identically. If they diverged,
+    one could confirm a span another rejects.
+
+    **Known gap, stated rather than half-fixed.** A precomposed accent and a decomposed one still differ, so
+    an "e" plus a combining acute does not match a single "\u00e9". Fixing that means normalising the whole
+    string, which breaks the per-character index `report.py` depends on. It is a narrower gap than the one
+    this replaced and it is on `TODO.md` rather than in a comment nobody reads.
+    """
+    folded = "".join(fold_for_span(ch) for ch in text)
+    return re.sub(r"\s+", " ", folded).strip()
+
+
+def canonical_for_id(text: str) -> str:
+    """The normalisation a claim id is derived from. **Deliberately frozen.**
+
+    This was `normalise_for_span` until the span guard needed to fold typography, and separating them is the
+    whole point. A claim id is content-addressed, gate G4 ties a gold set to those ids, and `splits.py`
+    hashes them. So making the span guard more tolerant would otherwise have meant relabelling the gold set,
+    which is an absurd price for a table of curly quotes, and worse, it is a price that would be paid
+    silently by whoever changed the span guard next.
+
+    Whitespace and case only, so a reflowed line is the same claim. If this ever has to change, it changes
+    with a relabelling, on purpose.
     """
     return re.sub(r"\s+", " ", text).strip().casefold()
 

@@ -26,12 +26,15 @@ ANSWER = "Extending adjuvant endocrine therapy beyond five years reduced recurre
 def audit_server(tmp_path):
     """The real server on a real ephemeral port, no judge, drift off.
 
-    `captures_dir` is pinned to the temporary directory. Without it these tests write real files into the
-    repo's own captures folder every run, which is both litter and a way to smuggle test data into a real
-    stratum run.
+    `captures_dir` and `reports_dir` are both pinned to the temporary directory. Without them these tests
+    write real files into the repo every run, which is both litter and a way to smuggle test data into a real
+    stratum run. `captures_dir` was pinned when it was added and `reports_dir` was not, so 736 report files
+    accumulated in the repo before anyone looked. Adding an output directory means pinning it here in the
+    same commit.
     """
     service = AuditService(
-        cache_dir=tmp_path / "cache", judge=False, drift=False, captures_dir=tmp_path / "captures"
+        cache_dir=tmp_path / "cache", judge=False, drift=False,
+        captures_dir=tmp_path / "captures", reports_dir=tmp_path / "reports",
     )
     httpd = serve(service, HOST, 0)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)

@@ -1,0 +1,56 @@
+[
+  {
+    "report": "report-perplexity-20260811T2127370000.json",
+    "claim_id": "UNASSIGNED#01a03e20",
+    "url": "https://www.americashealthrankings.org/explore/measures/mammogram/MA",
+    "span": "Massachusetts Value:\n\n80.3%\n\nPercentage of women ages 40-74 who reported receiving a mammogram in the past two years",
+    "verdict": "SUPPORTED",
+    "status": "not a string-comparison void",
+    "detail": "SPAN_ADDED_AFTER_GENERATION"
+  },
+  {
+    "report": "report-perplexity-20260811T2150040000.json",
+    "claim_id": "UNASSIGNED#01a03e20",
+    "url": "https://www.americashealthrankings.org/explore/measures/mammogram/MA",
+    "span": "Massachusetts Value:\n\n80.3%\n\nPercentage of women ages 40-74 who reported receiving a mammogram in the past two years",
+    "verdict": "SUPPORTED",
+    "status": "not a string-comparison void",
+    "detail": "SPAN_ADDED_AFTER_GENERATION"
+  },
+  {
+    "report": "report-perplexity-20260811T2356150000.json",
+    "claim_id": "UNASSIGNED#980f6910",
+    "url": "https://www.boston.gov/sites/default/files/file/2023/05/HOB_Cancer_2023_FINAL_May11.pdf",
+    "span": "During 2017, 2019, and 2021 combined, 77.0% of Boston adult female residents ages 40+ reported receiving a mammogram in the past 2 years.",
+    "verdict": "SUPPORTED",
+    "status": "was really on the page",
+    "detail": "the void was an artefact of the old whitespace-and-case comparison"
+  },
+  {
+    "report": "report-perplexity-20260811T2356150000.json",
+    "claim_id": "UNASSIGNED#f84cc769",
+    "url": "https://www.boston.gov/sites/default/files/file/2023/05/HOB_Cancer_2023_FINAL_May11.pdf",
+    "span": "Adults who were and retired (89.3%) , compared to adults who were employed (75.1%)\nThe percentage of adults who received a mammogram was lower for the following groups:\n\u2022 Adults who lived in the US for ten or fewer years (61.1%) compared to adults who were born in the US (77.2%)\n\u2022 Adults who lived in nonBoston Housing Authority rental assisted housing (71.8%) compared with homeowners (80.8%)\n\u2022 Adults with a household income of less than $25,000 (73.8%) or $25,000-$49,999 (69.3%), compared to residents with an income of $50,000 or more (80.8%).",
+    "verdict": "SUPPORTED",
+    "status": "still fabricated",
+    "detail": "absent from the fetched document under the current fold as well"
+  },
+  {
+    "report": "report-perplexity-20260811T2356150000.json",
+    "claim_id": "UNASSIGNED#978806bf",
+    "url": "https://www.boston.gov/sites/default/files/file/2023/05/HOB_Cancer_2023_FINAL_May11.pdf",
+    "span": "\u2022 Adults who lived in the US for ten or fewer years (61.1%) compared to adults who were born in the US (77.2%)\n \u2022 Adults with a household income of less than $25,000 (73.8%) or $25,000- $49,999 (69.3%), compared to residents with an income of $50,000 or more (80.8%).",
+    "verdict": "SUPPORTED",
+    "status": "still fabricated",
+    "detail": "absent from the fetched document under the current fold as well"
+  },
+  {
+    "report": "report-perplexity-20260811T2356150000.json",
+    "claim_id": "UNASSIGNED#b779cb14",
+    "url": "https://www.dana-farber.org/community-health/mammography-van",
+    "span": "Dana-Farber's Mammography Van is the only mobile digital mammography program in the Commonwealth of Massachusetts. It provides screening mammograms and breast health education to women 40 years of age and older. ... serving all Boston neighborhoods as well as other towns, including Natick, Waltham, Quincy, and Brockton, Mass.",
+    "verdict": "SUPPORTED",
+    "status": "still fabricated",
+    "detail": "absent from the fetched document under the current fold as well"
+  }
+]

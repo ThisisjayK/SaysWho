@@ -481,3 +481,52 @@ Three prose claims have now been found false in one day: the extension's languag
 this. All three were found by being asked, not by anything structural. That is the strongest argument in this
 repo for a documentation gate, and it is recorded here rather than acted on, because inventing a gate at the
 end of a session is how gates get built badly.
+
+---
+
+## 14. Three of four "the judge fabricated a quote" verdicts were this tool's fault
+
+`JUDGE_FABRICATED_SPAN` is the one code published as a finding about the model: the judge quoted a passage
+that is not in the document it was given. That claim is only as good as the comparison behind it, and the
+comparison was worse than the claim.
+
+**The typographic fold.** The span guard compared on whitespace and case alone. A page using curly quotes and
+a judge typing straight ones disagreed; so did `21-day` against `21\u2013day`, and a word carrying a soft
+hyphen from a line break against the same word quoted cleanly. Three of five typographic variants voided a
+span the page really contained. Fixed with a per-character fold: quotes, dashes, invisible characters, and
+NFKC for ligatures and full-width forms.
+
+Separating that from claim ids was most of the work. `normalise_for_span` was also computing the content
+address every claim id is derived from, and gate G4 ties a gold set to those ids, so folding typography would
+have silently invalidated every label. Two functions now, and `canonical_for_id` is documented as frozen.
+
+**The PDF line breaks.** Then the first real PDF audit. `Td` was treated as a line break; it is a text
+position operator, and this generator emits it between individual glyphs to kern them, so a newline went
+between every character and "(61.1%)" extracted as "(6 1 . 1 %)". The judge had quoted the number a human
+reads. The guard voided it. Fixed by reading the operands: only a vertical move starts a line. The horizontal
+threshold was swept from 0 to 8 against the real document and only inserting nothing produced the right text,
+with the space ratio moving from 0.131 to 0.123, which says word spacing in this document is real space
+characters rather than positioning.
+
+**The bullet, unfixed.** This PDF renders bullets through a symbol font whose glyphs sit at letter code
+points, so a line reading "\u2022 Adults who lived in the US for ten or fewer years (61.1%)" extracts as
+"x Adults who...". The judge quoted the bullet a human sees. Following font encodings is beyond a stdlib
+reader, so this stays broken and is stated: a fabricated-span count over PDF sources is inflated by an unknown
+amount and is reported separately from one over HTML until it is fixed.
+
+**The four voids, resolved.** One was the `Td` bug. Two are the bullet. One is a genuine catch: the judge
+joined two non-contiguous passages with an ellipsis instead of quoting verbatim, which is exactly what the
+guard is for. So the honest count is one real catch out of four, and the earlier figure was mostly measuring
+this tool.
+
+**What this says about the guard, which is not what it looks like.** The span guard is not discredited by
+this. It caught a real non-verbatim quote, and every false void it produced cost coverage rather than
+accusing a source, which is the direction the design chooses on purpose. What is discredited is publishing
+`JUDGE_FABRICATED_SPAN` as a rate about the judge without first checking that the extractor can render the
+document a human sees. The rate was never a fact about Gemini. It was a fact about this repository, wearing
+the judge's name.
+
+**And how it was found.** Not by a test. By re-reading four spans against the bytes they were voted on,
+because someone asked whether the number was real. The suite had 627 passing tests at the time and every one
+of them agreed with the bug, for the same reason the Perplexity adapter's tests agreed with its bug: they
+asserted the rule the code implemented.
