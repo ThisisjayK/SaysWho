@@ -51,6 +51,9 @@ EXPECTED_ABSENT = {
     "email-to-professor.md": "gitignored correspondence, deliberately not in the repo",
     "reply-to-professor.md": "gitignored correspondence, deliberately not in the repo",
     ".venv/bin/python": "a virtualenv the reader creates",
+    # Written by the labelling session, into a directory the ethics gate keeps out of git because a
+    # gold set holds passages pasted out of fetched pages. LABELLING.md names it as the output.
+    "goldset/consumer.gold.json": "written by tools/label_goldset.py, gitignored",
 }
 
 #: A repo-relative path inside backticks: at least one slash, and a file extension or a trailing slash.

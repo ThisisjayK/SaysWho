@@ -114,6 +114,12 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
       split pass warmed the cache, 35 pairs over 25 pages, 725,539 characters to read, and the prior-audit
       scan clean over all 24 answers. So the labels can be blind in fact rather than by assertion, which is
       the first time that has been true in this repo
+- [x] `LABELLING.md`, a decision guide for the session. The vocabulary rather than the answers, since a guide
+      that discussed a claim would anchor the label it is meant to steady. The four boundaries it draws are
+      the ones with a known failure behind them: silence is not contradiction, which is the direction the
+      judge is already known to drift in from break attempt 1; never round `P` up to `S`; `U` rather than `N`
+      when the page could not be read, since the alternative turns our fetch failure into somebody's citation
+      failure; and `?` is a real answer rather than a tired one
 - [ ] **Decide the target, because it is not the number it looks like.** The pool is 145 pairs, of which only
       15 are unauditable, and the sampler takes all 15 first. `goldset.agreement` excludes those from kappa,
       since the judge was never asked about them, so `--target 35` yields 20 comparable pairs and a kappa at
