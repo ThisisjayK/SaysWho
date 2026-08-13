@@ -46,6 +46,20 @@ about somebody's citation, which is the specific dishonesty this whole project i
 label about the source, not about the claim: the judge was never asked about those pairs, so they carry no
 agreement information and are excluded from kappa and reported on their own.
 
+**And `U` means *you* could not read it, not that this pipeline could not.** Try the link before reaching for
+it. The two unauditable codes in this sample are not the same situation:
+
+- `SOURCE_DEAD_LINK` is a 404. You will see what we saw, and `U` is the honest label.
+- `SOURCE_BOT_BLOCKED` is a 403 aimed at an automated client. A person clicking that link will very often see
+  the page normally.
+
+When a blocked page loads for you, **label the claim as you find it and say in the notes that the page opened
+in a browser.** Those labels are excluded from kappa either way, since there is no verdict to compare them
+against, so nothing is lost by labelling them properly and something real is gained: the split between "this
+citation is broken" and "this citation is unreadable to anything automated" is the difference between a
+finding about a product and a limitation of this tool. `SOURCE_BOT_BLOCKED` exists as a separate code for
+exactly that reason (`FINDINGS.md` item 3), and nothing has ever measured how far apart the two are.
+
 **`?` is a real answer.** A forced label on an ambiguous pair is noise entered as signal. `?` is recorded,
 excluded from kappa, and its count is published. Use it when the honest answer is that the page is unclear or
 the claim is too vague to check, not when you are tired.

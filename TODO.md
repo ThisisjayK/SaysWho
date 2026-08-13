@@ -535,6 +535,24 @@ The machinery is built and tested. What is left on this list is the labelling it
       if any blind label postdates the run it is being compared against
 - [x] Per-class precision and recall, plus Cohen's kappa with its confidence interval. Each class carries
       its own n, and perfect agreement on a single class reports no interval rather than a flattering one
+- [x] A second rater, non-human and declared as such. All 45 pairs labelled independently by Claude as
+      `labeller: claude-opus-5`, in `goldset/second-rater-claude.gold.json`, a separate file that never merges
+      with the human set and never enters a human kappa. Done after the human labelling started and without
+      showing the human any of it, because presenting model labels first and inviting adjustment is anchoring
+      that no guard in this repo can see: the file would still say `blind: true` and `prior_audit` would still
+      report clean. Coverage: 21 S, 7 P, 2 N, 0 C, 15 U. The 15 U are structural, since the model only ever
+      had the block page for those sources while the human could open them in a browser
+- [ ] Report the two raters separately and never pooled. The comparison is a finding about how mechanical this
+      task is, not a calibration: **the first six overlapping pairs agree on 0 of 6.** Four of those six are
+      the access difference above. The other two are real disagreement on the same document, where the human
+      read the page as silent and the model quoted a passage from our own extraction. That is the number the
+      writeup reports, with its n, and it is why the human labels could not be replaced
+- [ ] **`extracted_pair` in `tools/label_goldset.py` runs the HTML extractor over raw bytes**, so for a PDF
+      source it compares the labeller's passage against `endstream endobj` noise and always records the pair
+      as unchecked rather than as a real comparison. `tools/reaudit_spans.py` fixed exactly this once and
+      carries a docstring warning about it, which is the second time this assumption has shipped. Two of the
+      45 sampled pairs are IRS PDFs. The fix is to route through `kind_of` and `extract_pdf_text` the way the
+      re-audit tool does
 - [ ] Try to recruit a classmate to double-label 10 to 15 claims. **Mine to do.** If nobody is available, say so plainly and
       treat my labels as a single-rater ceiling rather than ground truth
 
