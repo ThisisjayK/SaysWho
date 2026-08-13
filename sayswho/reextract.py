@@ -295,7 +295,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("page", type=Path)
     parser.add_argument("--capture", type=Path, help="compare against the capture this page came from")
     parser.add_argument("--product", help="override the product adapter")
+    parser.add_argument(
+        "--repair", action="store_true",
+        help="rewrite the capture's citation list from the stored page. Only with --capture, only when the "
+             "answer hash still verifies, and it records that it happened. This is what the stored page is "
+             "for: an extractor fix must not require re-asking the question",
+    )
     args = parser.parse_args(argv)
+
+    if args.repair and not args.capture:
+        print("--repair needs --capture: there is nothing to rewrite without one")
+        return 2
 
     html = args.page.read_text(encoding="utf-8", errors="replace")
 
@@ -337,7 +347,38 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  only in the stored page    {url}")
     print()
     print("One of the two is wrong. That disagreement is the finding, not a nuisance.")
-    return 1
+
+    if not args.repair:
+        print("Nothing was changed. Pass --repair to rebuild the capture's citations from this page.")
+        return 1
+
+    from .cache import now_iso
+    from .records import Capture
+
+    # Verifies the answer hash on the way in. A repair rewrites the citation list and must not become the
+    # moment an edited answer slips through: the answer text is exactly what it was, read again by better
+    # code, and if it is not then this is not a repair.
+    before = Capture.from_dict(recorded)
+
+    recorded["citations"] = [dict(c) for c in result.citations]
+    recorded["citations_source"] = "reextracted"
+    recorded["citations_reextracted_at"] = now_iso()
+    recorded["_repaired_from"] = {
+        "page_file": args.page.name,
+        "citations_before": len(before.citations),
+        "citations_after": len(result.citations),
+        "note": (
+            "citations rebuilt from the stored page after an extractor fix. The answer text and its hash are "
+            "unchanged: only the citation list was read again, from the same bytes."
+        ),
+    }
+    args.capture.write_text(json.dumps(recorded, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    print()
+    print(f"REPAIRED    {args.capture.name}: {len(before.citations)} citation(s) -> "
+          f"{len(result.citations)}, from {args.page.name}")
+    print("            answer text and hash untouched; citations_source is now 'reextracted'")
+    return 0
 
 
 if __name__ == "__main__":

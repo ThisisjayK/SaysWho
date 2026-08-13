@@ -95,9 +95,43 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
 
 ## What blocks the schedule now
 
-- [ ] Capture answers against the frozen consumer stratum. Ask the questions, capture each with the
-      extension, bind each capture to its query id with `tools/bind_capture.py`. Browser work rather than
-      transcription, and the first thing on this list in six days that somebody other than me could do
+- [x] Capture answers against the frozen consumer stratum. Done by hand on day 6: 24 Perplexity answers, one
+      conversation each, bound to CO-01 through CO-24 by `bind_capture.py --in-order`, whose pairing table was
+      read before confirming. 51 citations, no uncited answer, so G0 halts none of them
+- [ ] A second product, if there is appetite. One product means the gold set stratifies on G2 codes alone,
+      since product is the other axis and there is only one value of it. ChatGPT cites these questions;
+      Claude mostly does not, which is an observation on a handful of tries rather than a finding
+- [x] **The extractor was dropping a quarter of the citations, and the stored pages paid for themselves.**
+      `saysWhoExtractCitations` ended its selector loop with `if (citations.length) break;`, so the first
+      selector that matched anything won. Perplexity declares two and renders both, so 13 of 51 inline
+      citations were behind a selector that never ran. Found by `reextract` reporting a parity mismatch on the
+      first capture. Fixed in the extension, and the 24 captures were repaired from their stored pages with
+      `python3 -m sayswho.reextract PAGE --capture CAPTURE --repair` rather than by re-asking, which is
+      exactly what day 2 stored those pages for. `FINDINGS.md` item 20
+- [ ] Real parity on the extractor, not a source scan. The test added with that fix asserts the source no
+      longer contains the early exit, which is a test about the shape of a file and the project says elsewhere
+      that those are the weak kind. The one that would have caught this runs the extension's extractor in node
+      against the same markup `reextract` parses, and compares the two citation sets. The renderer already has
+      that treatment in `tests/parity/`, and the extractor, which is where the money is, has never had it
+- [ ] **The installed watcher is broken, and leaving it broken is deliberate until the gold set is labelled.**
+      `~/Library/LaunchAgents/com.sayswho.watch.plist` points at `/Users/jayanthadityak/Finall Project/`, two
+      Ls, from before this repo was renamed. `launchctl` reports last exit 78, a config error, and no log has
+      ever been written, so the agent has never run once. Two things follow. It has to be reinstalled with
+      `tools/install_watcher.sh` to work at all, and the plist embeds an absolute path, so any future rename
+      silently breaks it again the same way. And it must **not** be reinstalled before the labelling session:
+      it audits every new capture, so a working watcher would have judged all 24 consumer answers within
+      thirty seconds of capturing them and made a blind gold set impossible for this stratum. That is the
+      prior-audit guard's exact failure case, arriving automatically and with nobody at the keyboard
+- [x] Bind 24 captures without misbinding one. `bind_capture.py --in-order --stratum consumer` pairs captures
+      by capture time with a stratum's ids in id order, and refuses to trust that pairing: it writes nothing
+      without `--confirm`, and first prints each query beside the opening sentence of the answer it proposes to
+      bind. That table is the check, because a misbound capture is a rate over the wrong question and every
+      hash still verifies. It refuses outright when there are more captures than queries, since that means a
+      question was asked twice and order cannot say which, and a short run needs `--allow-partial` so that
+      stopping early is stated rather than silent. Both modes write through one `bind_one`
+- [ ] Teach the extension to carry a query id. `saysWhoBuildCapture` takes `queryId` and no caller passes one,
+      which is why order is load-bearing at all. The fix is a field in the popup, and it would make the
+      pairing above a checksum rather than the only link
 - [ ] Decide how many of the 24 frozen consumer queries the day-7 run covers, and say so. A run over a subset
       of a frozen set is legitimate and it is not the same claim as a run over the set, so whichever it is
       gets stated next to the n rather than left to be inferred
@@ -142,7 +176,13 @@ for three of the four products have never been checked field by field against a 
       comparison reported drift and every source became unauditable: a clean consistent result that was
       entirely an artefact. Regression test added
 - [x] MV3 extension skeleton: manifest, per-product adapters, capture builder, content script, service
-      worker. Captures the last answer, hashes it, downloads JSON the harness reads
+      worker. Hashes the answer and downloads JSON the harness reads. **This line said "captures the last
+      answer" until day 6 and that was never what the code does:** `saysWhoFindAnswer` ranks every matching
+      container on the page by citation count and returns the highest, falling back to the longest text. On a
+      single-answer page those are the same thing, which is why nobody noticed. In a multi-turn thread they are
+      not, and the consequence is practical rather than cosmetic: capturing the seventh question in a thread
+      returns whichever earlier answer cited most. One question per conversation is therefore a rule for the
+      capture run and not a preference
 - [x] Capture-side sha256 matches Python's, so both sides agree on what the input was. The beginning of the
       §9 parity check, not the whole of it
 - [x] Adapter provenance travels with every capture, including whether the adapter has been verified

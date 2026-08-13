@@ -183,8 +183,18 @@ asked_approx = "2026-06"
 - **The local-services domain is jurisdiction-bound to Massachusetts.** That is where I could write questions
   with a real cost of error attached. Support rates in that domain are about Massachusetts sources and are
   not evidence about local-services questions generally.
-- **The consumer stratum is synthetic.** It is written to the same standard, but nobody actually asked these.
-  It samples the shape of high-stakes consumer questions, not their real distribution.
+- **The consumer stratum is synthetic.** Nobody actually asked these. It samples the shape of high-stakes
+  consumer questions, not their real distribution.
+
+  This used to say it was "written to the same standard", and that was false in a specific way that went
+  unnoticed until the set carried the core. The same standard for stakes, yes: every entry has a cost of
+  error and a jurisdiction or a year attached. **Not the same standard for the population.** The professional
+  stratum's population is defined above as *answers that came back with citations attached*, and that property
+  was guaranteed by construction there, because its queries were to be selected out of answers that already
+  had them. A synthetic query cannot be selected that way and these never were. Checked on day 6, after the
+  swap rather than before it: Perplexity and ChatGPT do return sources for these questions and Claude
+  frequently does not, which makes the set usable on two products out of three. That is luck rather than
+  design, and the design gap is recorded here rather than repaired by the luck.
 - **Time-sensitivity is deliberate.** Many queries here have answers that changed recently or are bounded by
   a filing year. That is what makes source drift and dead links measurable, and it also means this set will
   age. Re-running it in a year measures a different web.

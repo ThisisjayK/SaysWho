@@ -771,3 +771,84 @@ longer than any of them, because a blocker restated every day reads as work outs
 claim to check. Nothing in the suite can test whether a file I intend to fill can be filled. What caught it
 was being asked what help I wanted with it.
 
+---
+
+## 19. A property guaranteed by construction in one stratum, and simply absent from the other
+
+The professional stratum's population is defined in `queries/README.md` in one sentence: not everything I
+asked an AI, but *the answers that came back with citations attached*, because an answer with no footnotes
+produces nothing to audit. That is the one property a citation audit cannot do without.
+
+It was free there. The queries were to be selected out of a history of answers that already had citations, so
+every entry satisfied it before it was written down. Nothing had to check it, and nothing did.
+
+The consumer stratum cannot satisfy it that way and never did. Its three selection criteria, stated at the top
+of its own file, are that a wrong answer changes what the asker does, that the correct answer is bounded by a
+jurisdiction or a year, and that it is the kind of question someone asks an AI instead of a professional. All
+three are about stakes. None is about whether the question elicits a cited answer. `queries/README.md` said
+the set was "written to the same standard", which was true of the standard anyone was thinking about and false
+of the one that mattered.
+
+Day 6 moved the core onto that stratum without anyone noticing the difference, and it surfaced the way these
+things do: by someone asking the questions and reporting that nothing was citing anything. The partial answer
+is that Perplexity and ChatGPT do return sources for these, and Claude frequently does not, so the set is
+usable on two products of three. That is not a repair. The set is usable by luck, and the property it was
+never held to is now written down in both places rather than assumed.
+
+**Two things follow that are worth separating.** A stratum that elicits no citations would not have produced a
+bad support rate, it would have produced no support rate at all: G0 halts an uncited answer and records
+`NO_CITATIONS`, because an answer with no footnotes is a different object rather than a zero. So the failure
+mode here was never a wrong number, it was an empty run discovered late. And Claude answering high-stakes
+consumer questions without citing anything is an observation about a product, made informally, on a handful of
+questions. It is not a finding yet. The run counts `NO_CITATIONS` per product, which is where it either
+becomes one with an n attached, or does not.
+
+**The general shape.** Items 13, 17 and 18 were sentences that stopped being true. This one was never true, and
+it survived because the two strata were described in one breath as written to the same standard, which made
+the difference between them invisible in exactly the place it mattered. A property that is free by
+construction is a property nothing tests.
+
+---
+
+## 20. The extractor stopped at the first selector that matched, and took a quarter of the citations with it
+
+First real capture run against the consumer stratum: 24 Perplexity answers, one per conversation. The
+captures looked fine. Twenty of the twenty-four flagged themselves incomplete, which is the "+N" chip counter
+doing its job, and fourteen recorded exactly one citation, which for Perplexity is low but not obviously
+wrong.
+
+Running `python3 -m sayswho.reextract` over the first capture and its stored page reported a parity mismatch:
+four citations in the page, three in the capture. Across all 24, **38 captured against 51 in the stored
+pages: 13 missing, a quarter of the total, spread over 11 of the 24 answers.**
+
+**The cause.** `saysWhoExtractCitations` looped over `adapter.citationSelectors` and ended with
+`if (citations.length) break;`. The first selector that matched anything won and the rest never ran.
+Perplexity declares two, `a[href^="http"]` and `[data-pplx-citation-url]`, and renders both shapes in the same
+answer, so every citation of the second kind was dropped the moment the first kind appeared. The dedup set was
+already keyed on marker and URL together, so scanning every selector could never have double-counted: the
+break was not protecting anything and never had been.
+
+**Why it was invisible.** Everything the capture did find was real. There was no crash, no empty list, no
+warning, and the citations it recorded were correct ones. This is the same shape as the Perplexity
+zero-of-eight in item 16 and the gzip bug in item 7: a component that fails by returning less, plausibly.
+
+**What caught it.** Not a test. `reextract` exists so that the extension's reading of the live DOM can be
+compared against a second implementation reading the same bytes, and it printed the disagreement with the
+sentence it was written with: one of the two is wrong, and that disagreement is the finding rather than a
+nuisance. The §9 parity check in `tests/parity/` covers the renderer and has never covered the extractor,
+which is where a silent shortfall actually costs something.
+
+**What it did not cost.** Nothing had to be re-asked. Day 2 stored the raw page beside every capture for
+exactly this: "a selector fix no longer re-runs the query, so a selector change and an answer change cannot
+arrive together and be mistaken for each other." `reextract --repair` rebuilt the citation lists from those
+bytes, left the answer text and its hash untouched, and recorded `citations_source: reextracted` in each
+capture so no repaired capture can pass as a clean one. That design decision was made four days before it
+was needed and it saved the run.
+
+**What is still open, and it is the honest half of this entry.** The test added with the fix asserts that the
+source no longer contains the early exit. That is a test about the shape of a file, which this project says
+elsewhere is the weak kind, and it is here because running the extension's extractor needs a DOM. The test
+that would have caught this runs that extractor in node against the same markup `reextract` parses and
+compares the two citation sets, the way the renderer is already treated. Until that exists, the extractor's
+half of §9 rests on somebody running `reextract` by hand and reading the output.
+

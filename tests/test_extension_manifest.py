@@ -567,3 +567,47 @@ def test_the_popup_declares_one_width_and_not_two():
     body_only = re.search(r"(?<!,)\nbody\s*\{([^}]*)\}", css).group(1)
     assert "width" not in body_only, "a second width on body would size the content differently"
     assert len(set(re.findall(r"width:\s*(\d+)px", rule))) == 1
+
+
+def test_the_citation_extractor_scans_every_selector_rather_than_stopping_at_the_first():
+    """The bug that cost a quarter of the citations in the first real run against the consumer stratum.
+
+    `saysWhoExtractCitations` looped over `adapter.citationSelectors` and ended with
+    `if (citations.length) break;`, so the first selector that matched anything won and the rest never ran.
+    Perplexity declares two, `a[href^="http"]` and `[data-pplx-citation-url]`, and renders both shapes in one
+    answer: 13 of 51 inline citations across 24 captured answers were of the second kind. The capture looked
+    completely normal, because everything it did find was real.
+
+    Asserted against the source rather than by running the extractor, which would need a DOM. That makes this
+    a weaker test than the one that should exist, and the one that should exist is on `TODO.md`: run the
+    extension's extractor in node against the same markup Python re-extracts from, and compare. `FINDINGS.md`
+    item 20."""
+    source = (EXTENSION / "src" / "capture.js").read_text()
+    start = source.index("function saysWhoExtractCitations")
+    end = source.index("function ", start + 10)
+    body = source[start:end]
+
+    # Comments stripped first. The fix left a long note explaining what the removed break did and why it was
+    # wrong, and that note quotes the statement, so a naive scan finds the very sentence describing its
+    # absence. A check that fails on its own explanation is not a check.
+    code = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
+    code = re.sub(r"//[^\n]*", "", code)
+
+    assert "citationSelectors" in code, "the extractor should still be the thing that loops over selectors"
+    assert "break" not in code, (
+        "saysWhoExtractCitations must not break out of the selector loop. The dedup set is keyed on marker "
+        "and URL together, so scanning every selector cannot double-count, and stopping early silently drops "
+        "every citation shape after the first that matched."
+    )
+
+
+def test_the_perplexity_adapter_still_declares_both_citation_shapes():
+    """The other half of the same finding. If this drops to one selector the fix above is moot, and the two
+    shapes are not interchangeable: the spans carry the URL in an attribute and the page can contain no
+    anchors at all."""
+    adapters = (EXTENSION / "src" / "adapters.js").read_text()
+    perplexity = adapters[adapters.index('id: "perplexity"'):]
+    perplexity = perplexity[:perplexity.index("},")]
+    assert 'a[href^="http"]' in perplexity
+    assert "[data-pplx-citation-url]" in perplexity
+

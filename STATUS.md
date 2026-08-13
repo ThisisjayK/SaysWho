@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 739 tests, and `tests/test_documents.py`
+Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 758 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot.
 
 **Day 7 is next, and day 7 is the line the core has to be behind.** Day 6's own deliverable, the two core
@@ -32,7 +32,7 @@ other is what the critical path moved to.
 | Item | State | Reason |
 |---|---|---|
 | Professional stratum assembled | **not done, and not deferred** | Entries had to be real questions I asked an AI tool during PM work, scrubbed per `queries/README.md`. The sessions they were to be transcribed from are gone. Retyping from memory is the only route left and it is refused: recall cannot be pulled chronologically, so it selects on what stuck, which correlates with how the tool performed and is invisible from outside; and a retyped question is reconstructed rather than transcribed, which converts §7's authorship caveat from a coverage limitation into a validity one. `queries/professional.toml` stays empty. It is not topped up with inventions and it is not filled with reconstructions labelled `real_scrubbed` |
-| Captured answers to audit and label | **not done** | The new critical path. The consumer stratum is frozen and ready, and nothing has been asked yet, so there is nothing to audit or to label against. This is browser work rather than transcription, and it is the last thing standing between the code and a number |
+| Captured answers to audit and label | **done for one product, day 6** | The new critical path. The consumer stratum is frozen and ready, and nothing has been asked yet, so there is nothing to audit or to label against. Captured by hand on day 6: 24 Perplexity answers, one per conversation, bound to CO-01 through CO-24, 51 citations, none uncited. The first pass captured 38 of those 51, because the extension's extractor stopped at the first citation selector that matched and Perplexity renders two shapes; the missing 13 were rebuilt from the stored pages rather than by re-asking, which is what storing them is for. `FINDINGS.md` item 20. A second product would be a second pass and is what would let the gold set stratify across products. Two other things came out of the attempt. The installed watcher has never run once, because its plist still points at the pre-rename path, and that is the only reason capturing 24 answers would not have auto-audited all 24 and made a blind gold set impossible for this stratum. And nothing connects a downloaded capture to the question that produced it except the order it was made in, since the extension never sets `query_id`. Both are on `TODO.md` |
 
 Everything below is either done, or waiting on the second row, or explicitly out of scope.
 
@@ -91,7 +91,7 @@ answer" are different claims and only one of them is currently true.
 
 | Item | State | Note |
 |---|---|---|
-| Capture on claude.ai, chatgpt.com, perplexity.ai, Google | **done** | With auto-scroll, hash, stored page and incompleteness warnings. One correction today worth naming: the rendered-versus-DOM character counts were measuring different things, so a table in an answer made `innerText` longer than `textContent` and a capture reported more characters rendered than the DOM contained. The display bug was the small half. An inflated rendered count eats the gap the check exists to find, so an answer half of which was never laid out could have reported as complete |
+| Capture on claude.ai, chatgpt.com, perplexity.ai, Google | **done, with one rule attached** | With auto-scroll, hash, stored page and incompleteness warnings. **One question per conversation**, because `saysWhoFindAnswer` returns the highest-citation container on the page rather than the newest answer. On a single-answer page they are the same and on a thread they are not, so a capture taken mid-thread can be an earlier answer wearing the current question's id. `TODO.md` claimed this captured the last answer since day 2 and the code has never done that. One correction today worth naming: the rendered-versus-DOM character counts were measuring different things, so a table in an answer made `innerText` longer than `textContent` and a capture reported more characters rendered than the DOM contained. The display bug was the small half. An inflated rendered count eats the gap the check exists to find, so an answer half of which was never laid out could have reported as complete |
 | Claude `.bg-surface-3 .standard-markdown` verified | **done** | Read end to end against the screen, corroborated by a DOM probe |
 | Claude `.font-claude-response` verified | **not done** | The chat path has never been exercised |
 | ChatGPT selectors verified field by field | **not done** | The capture works; it has not been checked |

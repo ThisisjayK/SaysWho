@@ -189,3 +189,115 @@ def test_an_ordinary_anchor_page_is_unaffected():
     </div></body></html>"""
     result = reextract(html, "perplexity")
     assert [c["url"] for c in result.citations] == ["https://example.org/a"]
+
+
+# ---------------------------------------------------------------- repairing a capture from its stored page
+
+
+def _capture_and_page(tmp_path, live_urls, page_html, answer="An answer with a claim in it."):
+    """A capture whose citation list disagrees with the page it was taken from, which is the case that
+    matters: the extension read the live DOM with a broken extractor and the page holds the truth."""
+    import json
+
+    from sayswho.records import Capture, Citation
+
+    page = tmp_path / "page.html"
+    page.write_text(page_html, encoding="utf-8")
+
+    record = Capture(
+        query_id="CO-01", product="perplexity", model_id="unknown",
+        generated_at="2026-08-13T19:04:53+00:00", captured_at="2026-08-13T19:04:53+00:00",
+        answer_text=answer,
+        citations=[Citation(marker=f"m{n}", url=u) for n, u in enumerate(live_urls)],
+        page_file="page.html",
+    )
+    path = tmp_path / "capture.json"
+    path.write_text(json.dumps(record.to_dict(), indent=2), encoding="utf-8")
+    return path, page
+
+
+PAGE_WITH_BOTH_SHAPES = (
+    '<html><body><div class="prose">'
+    '<p>First claim.<span class="citation" data-pplx-citation-url="https://a.example/one">a</span></p>'
+    '<p>Second claim.<span class="citation" data-pplx-citation-url="https://b.example/two">b</span></p>'
+    "</div></body></html>"
+)
+
+
+def test_repair_rebuilds_the_citation_list_from_the_stored_page(tmp_path, capsys):
+    """The whole reason the page is stored. An extractor fix must not require re-asking the question, because
+    a selector change and an answer change arriving together would be indistinguishable."""
+    import json
+
+    from sayswho.reextract import main
+
+    path, page = _capture_and_page(tmp_path, ["https://a.example/one"], PAGE_WITH_BOTH_SHAPES)
+    code = main([str(page), "--capture", str(path), "--repair"])
+    assert code == 0
+
+    after = json.loads(path.read_text())
+    assert {c["url"] for c in after["citations"]} == {"https://a.example/one", "https://b.example/two"}
+    assert after["citations_source"] == "reextracted"
+    assert after["citations_reextracted_at"]
+    assert after["_repaired_from"]["citations_before"] == 1
+    assert after["_repaired_from"]["citations_after"] == 2
+
+
+def test_repair_leaves_the_answer_and_its_hash_alone(tmp_path):
+    """A repair reads the citations again from the same bytes. If the answer moved, this is not a repair."""
+    import json
+
+    from sayswho.records import Capture
+    from sayswho.reextract import main
+
+    path, page = _capture_and_page(tmp_path, ["https://a.example/one"], PAGE_WITH_BOTH_SHAPES)
+    before = Capture.from_json(path)
+    main([str(page), "--capture", str(path), "--repair"])
+    after = Capture.from_json(path)
+
+    assert after.answer_text == before.answer_text
+    assert after.answer_sha256 == before.answer_sha256
+    assert json.loads(path.read_text())["answer_sha256"] == before.answer_sha256
+
+
+def test_a_capture_whose_answer_was_edited_is_refused(tmp_path):
+    """`Capture.from_dict` verifies the hash, and repair goes through it on purpose: rewriting the citation
+    list must not become the moment an edited answer slips through."""
+    import json
+
+    import pytest as _pytest
+
+    from sayswho.reextract import main
+
+    path, page = _capture_and_page(tmp_path, ["https://a.example/one"], PAGE_WITH_BOTH_SHAPES)
+    payload = json.loads(path.read_text())
+    payload["answer_text"] = "edited after capture"
+    path.write_text(json.dumps(payload))
+
+    with _pytest.raises(ValueError, match="answer_sha256"):
+        main([str(page), "--capture", str(path), "--repair"])
+
+
+def test_repair_without_a_capture_is_refused(tmp_path, capsys):
+    from sayswho.reextract import main
+
+    page = tmp_path / "page.html"
+    page.write_text(PAGE_WITH_BOTH_SHAPES, encoding="utf-8")
+    assert main([str(page), "--repair"]) == 2
+    assert "nothing to rewrite" in capsys.readouterr().out
+
+
+def test_without_repair_a_mismatch_reports_and_changes_nothing(tmp_path, capsys):
+    """The default stays a report. A tool that silently rewrote a capture on being pointed at a page would be
+    a tool nobody could trust to diff one."""
+    import json
+
+    from sayswho.reextract import main
+
+    path, page = _capture_and_page(tmp_path, ["https://a.example/one"], PAGE_WITH_BOTH_SHAPES)
+    before = path.read_text()
+    assert main([str(page), "--capture", str(path)]) == 1
+    assert path.read_text() == before
+    assert "Nothing was changed" in capsys.readouterr().out
+    assert json.loads(before)["citations_source"] == "dom"
+

@@ -207,6 +207,15 @@ class Capture:
     page_file: str = ""
     page_bytes: int = 0
 
+    #: Where the citation list came from. `dom` is the extension reading the live page, which is the normal
+    #: case. `reextracted` means it was rebuilt from the stored page by `sayswho/reextract.py` after an
+    #: extractor fix, which is the whole reason the page is stored: a selector fix must not require re-asking
+    #: the question, because a selector change and an answer change arriving together would be
+    #: indistinguishable. The answer text and its hash are untouched either way, so this says only that the
+    #: citations were read again from the same bytes, by better code.
+    citations_source: str = "dom"
+    citations_reextracted_at: str = ""
+
     @property
     def answer_sha256(self) -> str:
         return sha256(self.answer_text)

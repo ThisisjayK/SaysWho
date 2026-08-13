@@ -64,7 +64,19 @@ function saysWhoExtractCitations(adapter, element) {
       seen.add(key);
       citations.push({ marker, url });
     }
-    if (citations.length) break;
+    // No `break` here, and the one that used to be is worth a note, because it cost a quarter of the
+    // citations in the first real run against the consumer stratum.
+    //
+    // It read `if (citations.length) break;`, meaning the first selector that matched anything won and the
+    // rest were never scanned. Perplexity declares two, `a[href^="http"]` and `[data-pplx-citation-url]`, and
+    // renders both shapes in one answer: 13 of 51 inline citations across 24 answers were of the second kind
+    // and behind a selector that never ran. The capture looked entirely normal, since what it did find was
+    // real.
+    //
+    // The union is safe because `seen` is keyed on marker and URL together, so a citation matching two
+    // selectors is added once. That was already true when the break was written, which means the break was
+    // never protecting anything. `sayswho/reextract.py` walks the tree once and takes the union, and the
+    // disagreement between the two is what surfaced this.
   }
 
   return { citations, excluded };
