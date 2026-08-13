@@ -7,12 +7,20 @@ Two strata, per §10 of `SCOPE.md`:
 
 | File | Stratum | Runs in | Provenance |
 |---|---|---|---|
-| `professional.toml` | Professional research | Core, day 7 | Real queries from my own PM work, scrubbed |
-| `consumer.toml` | Consumer high-stakes | Stretch item 7 | Synthetic |
+| `consumer.toml` | Consumer high-stakes | Core, day 7 | Synthetic. Nobody asked these |
+| `professional.toml` | Professional research | Nothing. Empty and staying empty | Would have been real queries from my own PM work, scrubbed |
 
-**Both are authored and frozen now, even though only one runs in the core.** That ordering is the whole
-point. If the consumer set were written on day 8, it would be written by someone who had already seen what
-the professional set produced, and it would be impossible to prove it hadn't been shaped by that.
+**These swapped places on day 6 and the swap is a loss, not a substitution.** The professional set was to be
+transcribed out of my own AI history and that history is gone. The only route left was retyping the questions
+from memory, which the two selection rules below rule out: recall cannot be pulled chronologically, so it
+selects on what stuck, and a retyped question is reconstructed rather than transcribed. Both rules were
+written on day 1, before there was any reason to want an exception to them, which is the only reason they are
+worth anything now. `SCOPE.md` §10 carries the decision and §7 carries what it costs.
+
+**Both sets were authored and frozen on day 1, even though only one was ever going to run.** That ordering
+was insurance against the consumer set being shaped by professional results, and it turned out to be the
+thing that made a day-6 swap possible at all: the set now carrying the core was written before anything was
+known about what the other one would produce, and the freeze manifest proves it has not moved since.
 
 ## What "frozen" means here
 

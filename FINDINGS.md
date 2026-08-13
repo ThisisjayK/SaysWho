@@ -647,6 +647,17 @@ there is: it fails silently and in the direction that flatters the result. `says
 first question. Run against this repository it refuses immediately, which is the correct answer and not a
 comfortable one: the only real split on disk has two audits behind it.
 
+And a fifth, found by building the pass that prepares a session rather than by running one. The sample is
+stratified across products and G2 codes, and the codes come from a run record passed with `--capture`. Without
+one every pair buckets as `UNKNOWN`, so the stratification degrades to product-only and §3 Phase 4's
+"unauditable first" does not happen. Nothing says so, and the argument is optional. It is demonstrable rather
+than theoretical: on the one real split here the sample changes when the run record is supplied, from six
+pages with no unauditable pair among them to seven including the paywalled one and the one with no text layer.
+Those are exactly the pairs the plan asks to be labelled first, and they are the ones a forgotten flag drops.
+`tools/prep_goldset.py` reports NOT STRATIFIED when it happens, and reports the unauditable count as not-known
+rather than as zero, which is the same distinction as a missing snapshot making drift unknown rather than
+unchanged.
+
 Three things that guard is careful about, each for a reason this project has already paid for once. It reads
 files full of verdicts and never carries one out, so the refusal names the file and the key that proved it and
 nothing else. It reports not-checked rather than clean when there is no artefact directory to look in. And
@@ -710,4 +721,53 @@ correctly describing what the code did, and wrongly explaining why it had to. A 
 attached reads as settled, and this one was repeated in four places: `pdf.py`, `DATA_CONTRACT.md` §5,
 `STATUS.md` and `TODO.md`. Nothing in the suite can check the word "beyond", which is exactly why a stated
 limitation deserves the same suspicion as a stated result.
+
+---
+
+## 18. The stratum the whole project was designed around could not be assembled
+
+The professional-research stratum was the core's only population and the thing that made the query set worth
+defending: real questions asked during real work, transcribed and scrubbed, rather than questions written to
+be audited. It never arrived, and on day 6 the reason turned out not to be the one the file had recorded for
+six days.
+
+`TODO.md` said "blocked on pulling real queries out of my own AI history", which describes an unstarted task.
+The actual state was that there is no history to pull from. The sessions are gone.
+
+**What was available, and why it was refused.** The questions could be retyped from memory. They would still
+be questions I really needed answered, so `CLAUDE.md`'s rule against inventing one would not have been
+broken. Two rules in `queries/README.md` were, and both were written on day 1:
+
+- *"Do not select on remembered outcome. Pull chronologically or by domain and take what is there."* Recall
+  cannot be pulled chronologically. It selects on what stuck, which correlates with how the tool performed,
+  and the README already says why that one is the dangerous kind: it is undetectable from outside, because
+  the resulting set looks exactly like an honest one.
+- *"Do not improve the phrasing. These get transcribed roughly as typed."* A retyped question is
+  reconstructed. §7's argument that authorship here is a *coverage* limitation rather than a *validity* one
+  holds only because a query is a stimulus recorded as typed, and the README spells out that polishing
+  converts it into the validity version, "which cannot be stated and bounded the way a coverage gap can".
+
+The schema said the same thing in code: `provenance` accepts `synthetic` or `real_scrubbed`, and
+`real_scrubbed` requires `scrub_notes` describing what was removed. A recalled question has no text to have
+removed anything from, so the honest entry would have needed a third value that did not exist, and inventing
+one on day 6 to accommodate day 6's problem is the definition of a benchmark being tuned by its author.
+
+**What was done instead.** The core runs on the consumer stratum: 24 questions, written and frozen on day 1,
+synthetic and saying so in its own file. Day 1's insurance turned out to be the thing that made this
+possible. The consumer set was frozen before anything was known about what the professional set would
+produce, so it cannot have been shaped by results, and `FREEZE.json` is the evidence rather than my word.
+
+**What it costs, kept together in one place so no surface has to reconstruct it.** The core's numbers describe
+how this tool behaves on questions nobody asked. The §0 question of whether support rates differ between
+professional and consumer use is not half answered but unanswered, since one side has no data at all. The
+differentiator that the query set is real rather than invented is gone from the core entirely. And the scrub
+drop rate, promised in §10 to be published beside the support rates on the grounds that a suspiciously low
+one is evidence of a pre-filtered intake, cannot be computed: there was no intake, so there is no
+denominator, and the writeup says that rather than printing a zero.
+
+**The general shape.** Items 13, 14 and 17 were sentences that had stopped being true about the code. This is
+a sentence that was still true about the plan and had stopped being true about the world, and it survived
+longer than any of them, because a blocker restated every day reads as work outstanding rather than as a
+claim to check. Nothing in the suite can test whether a file I intend to fill can be filled. What caught it
+was being asked what help I wanted with it.
 

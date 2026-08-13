@@ -218,8 +218,10 @@ terminal step. A local server is a real surface, so its rules are here rather th
   fetch cache: a rerun audits the same bytes.
 - **Every posted capture is written to the captures directory**, before any fetching starts, and never
   overwritten. The capture is the irreplaceable half of an audit and the audit can be re-run, so it is
-  saved first. The directory is gitignored: a capture holds the answer text and the query behind it, and
-  for the professional stratum that is real work.
+  saved first. The directory is gitignored: a capture holds the answer text and the query behind it. That was
+  written when the core's stratum was to be real PM research; since day 6 it is the synthetic consumer set,
+  so the privacy argument is weaker and the rule stays anyway, because the answer text belongs to the product
+  that generated it and a rerun has to audit the same bytes either way.
 - **One audit at a time.** Concurrent audits would interleave requests to the same host and break the
   one-request-per-second rule in §2, which is a promise made to the sites being fetched, so the service
   serialises them.

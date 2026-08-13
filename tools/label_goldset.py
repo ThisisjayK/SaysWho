@@ -164,6 +164,23 @@ def stratify(pool: list[dict], target: int, seed: int) -> list[dict]:
     return picked
 
 
+def choose_sample(pool: list[dict], target: int, seed: int, done=frozenset()) -> list[dict]:
+    """The pairs a session will actually put in front of a labeller, resumed sessions included.
+
+    Split out so `tools/prep_goldset.py` can prepare the same pairs this tool is about to ask about. A prep
+    pass that warmed the cache for a different sample would be worse than none: it would report the session
+    as ready and leave the labeller waiting on the network for the pairs that mattered, which is the failure
+    that makes an hour of human work evaporate.
+
+    `done` is what a resumed session has already labelled. The over-draw and the slice together mean a second
+    session picks up where the first stopped rather than redrawing from scratch.
+    """
+    return [
+        row for row in stratify(pool, target + len(done), seed)
+        if (row["claim_id"], row["url"]) not in done
+    ][: max(0, target - len(done))]
+
+
 class NoLabeller(Exception):
     """Raised when there is nobody at the keyboard. Not an error: a session that cannot happen."""
 
@@ -260,9 +277,7 @@ def main(argv: list[str] | None = None) -> int:
         labelled_splits = set(prior.split_sha256s)
         print(f"resuming: {len(existing)} label(s) already in {args.out}")
     done = {(l.claim_id, l.url) for l in existing}
-
-    sample = [row for row in stratify(pool, args.target + len(done), args.seed)
-              if (row["claim_id"], row["url"]) not in done][: max(0, args.target - len(done))]
+    sample = choose_sample(pool, args.target, args.seed, done)
 
     if args.plan:
         print(f"{len(pool)} pairs available, {len(sample)} selected, seed {args.seed}")

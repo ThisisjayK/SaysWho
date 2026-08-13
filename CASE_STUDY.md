@@ -92,9 +92,17 @@ the reason is recorded permanently.
 The failure this prevents is not somebody else tampering. It is me, on day 9, with a result I do not like and
 a query I have started to feel was unfair.
 
-**What it cost.** The professional stratum has to be transcribed from my own AI history and scrubbed before
-anything can run, which is the single blocker on the schedule right now. The tempting version, writing twenty
-plausible PM questions in an hour, would make a published sentence false.
+**What it cost, and it cost the thing the project was about.** The professional stratum was to be transcribed
+from my own AI history and scrubbed, and it was the single blocker on the schedule for six days. On day 6 the
+sessions turned out to be gone. The tempting version, writing twenty plausible PM questions in an hour, would
+have made a published sentence false; the subtler version, retyping them from memory, would have broken two
+selection rules I had written on day 1 and would have looked identical from the outside. So the core runs on
+the frozen consumer stratum, which is synthetic and says so, and the claim that the query set is real is gone
+from the core rather than weakened in it. `FINDINGS.md` item 18.
+
+The freeze is what made that decision cheap to make and impossible to disguise. The consumer set was written
+and hashed on day 1, before anything was known about what the professional set would produce, so promoting it
+on day 6 could not have been a choice about results.
 
 ## Two decisions that turned out to matter more than expected
 

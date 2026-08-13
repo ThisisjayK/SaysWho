@@ -56,9 +56,19 @@ services**. Whether support rates differ between them is an open question and I'
 assume the answer. A wrong citation about a movie release date is a curiosity. A general-trivia version of
 this audit would be a party trick.
 
-**Only the professional-research stratum runs in the core (§0a).** The consumer stratum is written and frozen
-alongside it but held for the extension, which means the question in the paragraph above stays open in the
-day-7 deliverable rather than getting answered there.
+**The core now runs the consumer stratum, and the professional one does not run at all. Decided 2026-08-12,
+day 6, and the reason is not scheduling.** The professional stratum was to be transcribed out of my own AI
+history, and that history is gone: the sessions are not recoverable. What was left was retyping the questions
+from memory, and `queries/README.md` already rules that out in two places written before the problem existed.
+Recall cannot be pulled chronologically, so it selects on memorability, which correlates with how the tool
+performed and is undetectable from outside. And a retyped question is reconstructed rather than transcribed,
+which turns the authorship caveat in §7 from a coverage limitation into a validity one.
+
+So the core runs on a stratum that is synthetic and says so, rather than on one whose provenance would have to
+be described in a sentence I could not defend. What that costs is stated wherever a number appears: the
+question in the paragraph above is not answered by the day-7 deliverable, and it is now not even half
+answered, because the professional side has no data at all rather than being deferred. §0a reports the
+professional stratum not-done with this reason.
 
 Being my own primary user cuts both ways and I should name the bad half. I know exactly when the need shows
 up, which genuinely helps in designing for it. I'll also be tempted to build for my own habits and assume
@@ -74,7 +84,9 @@ what makes the project a project. The stretch is what makes it a stronger one.
 
 1. The full pipeline: claim splitting, source fetch, judge, deterministic span check, three-way verdict, no
    confidence score anywhere, unauditable claims excluded from every denominator by a hard contract check.
-2. One stratum only: professional-research queries, scrubbed (§10).
+2. One stratum only. This was the professional-research set, scrubbed (§10); as of day 6 it is the consumer
+   set, for the provenance reason in §0 and §10. The change is a downgrade in what the numbers describe and
+   it is reported as one, not presented as a substitution.
 3. A gold set of 30–40 hand-labeled claims, stratified across products and verdict classes, with n and
    confidence intervals reported honestly.
 4. Two break attempts: prompt injection through a fetched page, and forcing an unauditable claim into the
@@ -85,7 +97,9 @@ what makes the project a project. The stretch is what makes it a stronger one.
 
 6. Competitor head-to-head, starting with the dead-link/paywall stratum against one or two tools rather than
    all four (§5a).
-7. The consumer stratum (§10).
+7. ~~The consumer stratum (§10).~~ Promoted into the core on day 6, so this row is no longer stretch. What
+   sits here instead is the professional-research stratum, which is **not-done** and cannot be assembled from
+   the material that exists.
 8. The remaining break attempts: vocabulary-overlap trap, contradiction in the same words, paywall misread,
    post-hoc drift (§6, attempts 1–4).
 9. Per-domain reporting, and gold set expansion beyond 40 claims.
@@ -111,19 +125,21 @@ live in one of them.
 
 | # | Item | State | Evidence, or what it waits on |
 |---|---|---|---|
-| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 727 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
-| 2 | One stratum: professional-research queries, scrubbed | **Blocked** | The queries are real ones asked during PM work and must be transcribed and scrubbed by hand (§10). `queries/professional.toml` is empty and stays empty until they arrive. Inventing one would make a published sentence false |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **Blocked on item 2** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Four faults in the workflow were found by walking it rather than by the suite, the last being that an answer audited earlier leaves verdicts which anchor a labeller and trip no existing guard: `sayswho/prior_audit.py` refuses a blind session over one. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
+| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 739 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
+| 2 | One stratum, now the consumer set | **Changed on day 6, and reported rather than substituted** | The professional set cannot be assembled: the sessions it was to be transcribed from are gone, and retyping from memory breaks two of `queries/README.md`'s own selection rules. The consumer set is written, frozen since day 1, and honestly synthetic, so the core runs on it. `queries/professional.toml` stays empty, because inventing one would make a published sentence false |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **Unblocked on day 6, and now waiting on captures rather than on a stratum** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Four faults in the workflow were found by walking it rather than by the suite, the last being that an answer audited earlier leaves verdicts which anchor a labeller and trip no existing guard: `sayswho/prior_audit.py` refuses a blind session over one. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
 | 4 | Two break attempts: injection, denominator contamination | **Done** | `BREAK_ATTEMPTS.md` attempts 5 and 6, both with written results. Attempt 5 revised §6: an injection that dictates its own span defeats the guard, because dictating the span puts it on the page. Kept as a passing test of the failure |
 | 5 | Parity check, extension against headless pipeline | **Done** | `tests/test_parity.py`, running `render.js` under Node against the same payload the harness embeds. One renderer, one payload, no second opinion |
 | 6 | Competitor head-to-head, dead-link and paywall stratum | **Not done** | Stretch. Until it runs, §1b's differentiator is described as structural, not measured, and incumbent behaviour is attributed to their marketing copy |
-| 7 | Consumer stratum | **Not done** | Stretch. Written and frozen (24 questions, `queries/consumer.toml`), not run |
-| 8 | Break attempts 1 to 4 | **1 of 4 has a result** | `tools/break_attempts.py`, one command for all four. Attempt 2 held and needed no judge, because holding means the judge is never called on a page recognised as withheld. Attempts 1, 3 and 4 ask whether the judge can be fooled and therefore need a live judge; they are reported as no-result rather than as passes, and the runner counts those separately |
+| 7 | ~~Consumer stratum~~ Professional stratum | **Not done, and not deferred** | These two swapped places on day 6. The consumer set (24 questions, `queries/consumer.toml`) moved into the core and carries the day-7 run. The professional set is what sits here now, and it is not waiting on time: the sessions it was to be transcribed from are gone, and the honest routes left were retyping from memory, which breaks two of `queries/README.md`'s selection rules, or logging questions prospectively, which needs calendar time the ten days do not contain |
+| 8 | Break attempts 1 to 4 | **All four have results: 3 held, 1 broke** | `tools/break_attempts.py`, one command for all four, each declaring the failure it looks for before it runs. Run against the live judge on 2026-08-11. 2 held and needed no judge, because holding means the judge is never called on a page recognised as withheld. 3 held by the predicted route and 4 held on polarity. 1 broke, and not into the failure it had declared, which is why attempt 1b exists. `FINDINGS.md` item 15 |
 | 9 | Per-domain reporting; gold set beyond 40 | **Per-domain done, expansion blocked on item 3** | `sayswho/domains.py`, counted in claim-source pairs and gated by G4 exactly as the aggregate is. Expansion cannot precede a first gold set |
 
-**What this table costs, today.** Items 2 and 3 are the critical path, and both are hand work that no amount
-of building shortens. Everything downstream of them, which is the honest run, every published rate, the
-kappa and the per-number trace table, waits on them rather than on the code.
+**What this table costs, today.** Item 2 stopped being the critical path on day 6, and not by being solved:
+the stratum it names was replaced with one that already existed, and the thing it was going to measure was
+given up rather than delivered late. What is on the critical path now is item 3, which needs captured answers
+to label against and then an afternoon of hand labelling. Everything downstream of it, which is the honest
+run, every published rate, the kappa and the per-number trace table, waits on that rather than on the code.
 
 **A stretch item can be reported as attempted-and-blocked.** Prof. Brown flagged that the competitor
 comparison may hit access problems independent of time: paywalls, rate limits, no scriptable interface. If
@@ -568,8 +584,16 @@ rest test how good the judge is, which matters less than whether the guard rails
 
 ## 7. What the machine cannot know
 
+- **Whether any of this describes real use.** As of day 6 the core runs on the consumer stratum, which is
+  synthetic: nobody asked these questions. Every rate the core publishes therefore describes how this tool
+  behaves on a set of questions written to sample the shape of consumer research, not on anyone's actual
+  research. The professional stratum that was to supply the real half does not run and cannot be assembled,
+  for the provenance reason in §10, so this is not a gap that a later stratum narrows within these ten days.
+  It sits at the top of this list rather than the bottom because it bounds everything below it.
+
 - **Whether the source is true.** SaysWho checks correspondence between claim and source. A well-cited
-  falsehood passes. This is the largest limitation and it is not fixable within this design.
+  falsehood passes. This is the largest limitation of the *mechanism* and it is not fixable within this
+  design.
 - **Whether an uncited sentence needed a citation.** Omission is invisible to a citation auditor. An answer
   can score perfectly by citing only its safe claims.
 
@@ -733,19 +757,32 @@ carries no separate asterisk.
 A deliberately naive self-built RAG is included as a **control**. It establishes what a bad score looks like
 on this scale, so a good score means something.
 
-**Query set.** The core runs **one stratum**: professional-research, 20–30 questions. The consumer stratum is
-stretch item 7.
+**Query set.** The core runs **one stratum**. Until day 6 that was the professional-research set; it is now
+the consumer set, and the swap is a loss rather than a substitution.
 
-The **professional-research stratum** is the questions I actually ask AI tools during PM work. Competitive
-and market questions, regulatory and compliance questions, technical background on an unfamiliar space. These
-are drawn from my own recent research rather than invented, which makes them representative of one real
-person's use and of nothing wider. That limitation is stated, not smoothed over, and with the consumer
-stratum deferred it is now the *only* population the core says anything about.
+The **professional-research stratum** was to be the questions I actually ask AI tools during PM work,
+transcribed from my own history and scrubbed. **It does not run, and it is not deferred: it cannot be
+assembled.** The sessions are gone. What remained was retyping the questions from memory, and
+`queries/README.md` had already ruled that out twice, in rules written before there was any reason to want an
+exception. Recall cannot be pulled chronologically or by domain, so it selects on what stuck, which
+correlates with how the tool performed, and the resulting set would look exactly like an honest one from the
+outside. A retyped question is also reconstructed rather than transcribed, and §7's argument that authorship
+here is a *coverage* limitation depends on the query being a stimulus recorded as typed. `queries/professional.toml`
+stays empty. It is not topped up with inventions, and it is not filled with reconstructions wearing the label
+`real_scrubbed`.
 
-The **consumer stratum** (health, personal finance, immigration, local services) is written to the same
-standard when it runs. It is the higher-stakes case, and deferring it is a scheduling decision rather than a
-judgment that it matters less. Until it runs, the §0 claim that consumer stakes are worse stays an argument
-about why the work matters, not a result.
+The **consumer stratum** (health, personal finance, immigration, local services) carries the core instead. It
+is written, frozen since day 1, and **synthetic: nobody asked these questions**, which its own file says at
+the top and which every rate derived from it has to say too. Freezing it on day 1 is what makes it usable
+now, because it was written before anything was known about what the professional set would produce and
+therefore cannot have been shaped by it.
+
+**What the swap costs, stated here rather than discovered in the writeup.** The core's numbers describe how
+this tool behaves on questions nobody actually asked. They are a measurement of the pipeline, not of anyone's
+real research. The §0 question of whether support rates differ between professional and consumer use is not
+half answered, it is unanswered, since one side now has no data at all. And the differentiator that the query
+set is real rather than invented is gone from the core entirely: it was the professional stratum's whole
+contribution and there is nothing standing in for it.
 
 Every query carries a note on why a wrong answer would cost the asker something. Written before any capture,
 frozen, and committed. No query is added or dropped after the first run. That is how benchmarks get quietly
@@ -777,12 +814,19 @@ the measurement.
 
 **Cost and PII.** Model calls are metered and logged per run.
 
-The consumer-stratum queries are synthetic. The professional-research stratum is different and needs saying
-plainly: those questions come from my own actual PM research, so they are real queries, just mine rather than
-anyone else's. Before anything is committed, each one is reviewed and rewritten to remove employer names,
-project names, and any detail that would identify a company or a person. What lands in the repo is the
-question's shape, not its context. No third-party data enters the pipeline at any point, and if a query can't
-be scrubbed without destroying what made it a real question, it is dropped and the drop is counted.
+The consumer-stratum queries are synthetic, which is now the whole of the query set that runs. The paragraph
+that stood here described the professional stratum's scrub in the present tense: each query reviewed and
+rewritten to remove employer names, project names and anything identifying a company or a person, with
+unscrubbable queries dropped and the drops counted. None of that happens, because there are no queries to
+scrub. The scrub procedure stays written in `queries/README.md` rather than being deleted, since it is the
+standard any future professional set has to meet, and `tools/validate_queries.py` still enforces it on any
+entry claiming `real_scrubbed`.
+
+One consequence worth naming, because it was a promised number: **the scrub drop rate cannot be published.**
+It was to be reported alongside the support rates, on the grounds that a suspiciously low one is itself
+evidence the intake was pre-filtered. There was no intake, so there is no rate, and the writeup says that
+rather than printing a zero. No third-party data enters the pipeline at any point, which was always the
+stronger half of this paragraph and is unaffected.
 
 ## 11. Positioning for a PM portfolio
 
@@ -797,9 +841,11 @@ explaining why they should care.
 
 The four lines the reader should leave with:
 
-1. The measured support rate over the professional-research stratum, with its n and its caveat band, labeled
-   as one stratum rather than as a rate for AI citations generally. If the consumer stratum runs, the two
-   are reported separately, because the aggregate would hide any difference between them.
+1. The measured support rate over the one stratum that runs, with its n and its caveat band, labelled as one
+   stratum rather than as a rate for AI citations generally, and labelled synthetic. Since day 6 that
+   stratum is the consumer set, so the rate describes this tool's behaviour on questions nobody asked, and
+   there is no second stratum to report separately from it. That absence is line 5 rather than a footnote:
+   the professional set could not be assembled and §10 says why.
 2. The judge-fabricated-span rate, evidence that I did not trust my own LLM component and built a
    deterministic check on it.
 3. The unauditable rate, evidence that I distinguish "no support" from "no data," which is the entire

@@ -11,19 +11,26 @@ reports it either way.
 
 Written 2026-08-12 at the end of the session, so tomorrow does not begin by rereading the file.
 
-**The one thing that unblocks everything: transcribe and scrub the professional stratum.** Nothing below it
-in this list can be finished first, and no amount of building substitutes for it. Everything buildable that
-does not depend on it has now been built.
+**The professional stratum is withdrawn, not pending, and the core now runs on the consumer set.** Decided
+on day 6: the sessions the professional queries were to be transcribed from are gone, and retyping them from
+memory is refused for the two reasons `queries/README.md` wrote down before there was any reason to want an
+exception. `SCOPE.md` §0 and §10 carry the decision, §7 carries the limitation, and §0a reports the
+professional stratum not-done rather than deferred.
+
+**So the critical path is now captures, not transcription.** The consumer stratum is frozen and nothing has
+been asked yet.
 
 Tomorrow's queue, in order:
 
-1. **Pull the queries.** See "Blocking the whole schedule" below. This is the whole session if it needs to be
-2. **The rehearsal labelling run**, if there is an hour spare and the stratum is not ready. It now needs
-   `--supplemental`, and that is the prior-audit guard working rather than an obstacle: every capture on disk
-   has been audited, so no label taken off one of them is blind. Eight pairs, purely to walk the workflow
-   before the session that counts. It produces no publishable kappa, since supplemental labels are excluded
-   from it, and it is still worth the hour
-3. **The PR description.** **Blocked on two answers only I have:** which repo `contrib/jayanth-says-who`
+1. **Capture answers against the frozen consumer stratum.** Browser work: ask the questions, capture each
+   answer with the extension, bind each capture to its query id. This is the whole of what stands between the
+   code and a number, and it is the first item on this list in six days that is not transcription
+2. **Make the split, then label.** `--split-only --save-split` for the captures that will be labelled, then
+   `tools/prep_goldset.py` to warm the cache and say what the session will be, then 30 to 40 blind labels.
+   These are fresh captures, so the prior-audit guard will pass and the labels are genuinely blind, which is
+   the first time that has been true here
+3. **The honest run**, which is `tools/run_stratum.py` over the captures with the gold set attached
+4. **The PR description.** **Blocked on two answers only I have:** which repo `contrib/jayanth-says-who`
    targets, and which chapters SaysWho satisfies. The requirement asks for chapters by name and this repo
    cites none. Everything else about the description can be drafted the moment those two are known
 
@@ -43,14 +50,16 @@ longer than the thing limiting it.
 ## Where things actually stand
 
 Day 6 of ten, where day 5 was 2026-08-11. Day 6's own deliverable, the two core break attempts and the parity
-check, was already complete before day 6 began. Day 5's own deliverable is the gold set, which is blocked and
-has been for two days. Days 2, 3, 4 and 6 are done; days 1, 5 and 7 are blocked on the same thing, and day 7
-is tomorrow.
+check, was already complete before day 6 began. Day 5's own deliverable is the gold set, which was blocked for
+two days on a stratum that has now been given up rather than delivered: the core runs on the frozen consumer
+set instead, and the gold set waits on captures. Days 2, 3, 4 and 6 are done. Day 1 is done apart from the
+professional stratum, which is reported not-done with its reason. Days 5 and 7 are a day's work away rather
+than blocked, and day 7 is tomorrow.
 
-**Everything still open is either mine to do by hand or waits on something that is.** The professional
-stratum has to be transcribed out of my own AI history and scrubbed, and it is the input to the gold set,
-the honest run and every published number. Items below marked **mine to do** are the ones no amount of
-building moves forward.
+**What is still open is browser work and one afternoon of labelling.** That is a different sentence from the
+one that stood here for six days, and it is not better news than it sounds: the thing that made the old
+sentence true, a stratum only I could produce, was given up rather than done. Items below still marked
+**mine to do** are the ones no amount of building moves forward.
 
 Day 1, partially done.
 
@@ -58,21 +67,40 @@ Day 1, partially done.
 - [x] Consumer stratum frozen, hash manifest in `queries/FREEZE.json`
 - [x] Freeze tooling built, and all three failure paths tested rather than assumed
 - [x] Repo created, scope document and query set committed
-- [ ] Professional stratum assembled. Blocked on pulling real queries out of my own AI history
-- [ ] `SCRUB_LOG.md` filled in and the drop count recorded
+- [ ] **Professional stratum assembled. Not-done and withdrawn, day 6.** The sessions are gone, so there is
+      nothing to transcribe, and retyping from memory is refused: recall selects on what stuck, which
+      correlates with how the tool performed, and a retyped question is reconstructed rather than
+      transcribed. Reported not-done with this reason rather than deferred. `SCOPE.md` §10
+- [ ] `SCRUB_LOG.md` filled in and the drop count recorded. **Not possible and withdrawn:** there was no
+      intake, so there is no drop rate. The writeup says that rather than printing a zero
 - [x] `DATA_CONTRACT.md` written, before any fetch has happened
 - [ ] Reply sent to Prof. Brown with `SCOPE.md` attached. Parked for now, deliberately
 
-## Blocking the whole schedule
+## What blocked the schedule for six days, and how it ended
 
-- [ ] Pull the queries. Search Claude, ChatGPT and Perplexity history for answers that came back with
-      citations attached. Those are the population. Answers with no footnotes produce nothing to audit
-- [ ] Scrub each one per `queries/README.md`. Employer names, project codenames, colleague names, identifying
-      figures, markets narrow enough to identify the company
-- [ ] Log every query that entered intake in `SCRUB_LOG.md`, kept or dropped, with a reason code
-- [ ] Write `cost_of_error` for each survivor. This is pre-registration and it enters the freeze hash
-- [ ] Flip `professional.toml` status to `ready` and freeze it
-- [ ] Publish the drop rate. A suspiciously low one is itself evidence the intake was pre-filtered
+Kept rather than deleted, because §0a promises an item is reported either way and because the reason this
+list stopped mattering is itself the finding. `FINDINGS.md` item 18.
+
+- [ ] ~~Pull the queries~~ **Impossible.** The population was answers in my own AI history that came back with
+      citations attached. The sessions are gone
+- [ ] ~~Scrub each one per `queries/README.md`~~ **Nothing to scrub.** The procedure stays in that file, since
+      it is the standard any future professional set has to meet, and `tools/validate_queries.py` still
+      enforces it on anything claiming `real_scrubbed`
+- [ ] ~~Log every query that entered intake~~ **No intake happened**
+- [ ] ~~Write `cost_of_error` for each survivor~~ **No survivors**
+- [ ] ~~Flip `professional.toml` status to `ready` and freeze it~~ **Stays `draft` and stays empty.** Not
+      topped up with inventions, and not filled with reconstructions labelled `real_scrubbed`
+- [ ] ~~Publish the drop rate~~ **Withdrawn, and it was a promised number.** A rate needs a denominator and
+      there was no intake to have one
+
+## What blocks the schedule now
+
+- [ ] Capture answers against the frozen consumer stratum. Ask the questions, capture each with the
+      extension, bind each capture to its query id with `tools/bind_capture.py`. Browser work rather than
+      transcription, and the first thing on this list in six days that somebody other than me could do
+- [ ] Decide how many of the 24 frozen consumer queries the day-7 run covers, and say so. A run over a subset
+      of a frozen set is legitimate and it is not the same claim as a run over the set, so whichever it is
+      gets stated next to the n rather than left to be inferred
 
 ## Day 1: the data contract
 
@@ -411,9 +439,25 @@ The machinery is built and tested. What is left on this list is the labelling it
       flag to skip it. The way through is `--supplemental`, which is a different and clearly labelled thing
       rather than a weaker blind. Run against this repo it refuses immediately, which is correct and not
       comfortable: the one real split on disk has two audits behind it. `FINDINGS.md` item 16
-- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** Blocked on the
-      professional stratum existing. The order is: `--split-only --save-split` to make the split, label
-      against it, then `--split` on the judged run so the rate is over the same claims a human read
+- [x] **Prepare the session before it starts.** `tools/prep_goldset.py`. It draws the same sample the
+      labelling tool will, by importing `choose_sample` rather than reimplementing it, warms the cache for any
+      page in that sample it does not already have, and reports what the afternoon will be: pages, characters
+      to read, how many pairs are unauditable and how many can have a pasted passage checked against our own
+      extraction. It fetches only cache misses on purpose, because a fresh copy of a page we already have
+      moves the extraction check onto bytes the judge never read, and it says which pages that caveat applies
+      to. It runs the prior-audit scan too, so `--supplemental` is a decision made before the terminal is open
+- [x] The fifth workflow fault, found by building that. Without `--capture` no G2 code is known, every pair
+      buckets as `UNKNOWN`, and the stratification quietly becomes product-only, so §3 Phase 4's "unauditable
+      first" does not happen. Demonstrated rather than reasoned: on the real split the sample changed when the
+      run record was supplied, from six pages with no unauditable pair to seven including the paywalled and
+      the no-text-layer ones. The prep tool says NOT STRATIFIED when it happens, and reports the unauditable
+      count as not-known rather than as zero
+- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** No longer blocked on
+      a stratum: it needs captured answers from the frozen consumer set. The order is: `--split-only
+      --save-split` to make the split, `tools/prep_goldset.py` to warm the cache and report the session,
+      label against it, then `--split` on the judged run so the rate is over the same claims a human read.
+      Fresh captures mean the prior-audit guard passes and these labels are blind in fact rather than by
+      assertion
 - [x] Stratification, as far as blind labelling permits. Products and G2 codes are knowable before any model
       runs and are stratified on, with `UNAUDITABLE` reached first. Verdict classes are the judge's output,
       so a blind sample cannot stratify on them and a sample that did would not be blind. If `CONTRADICTED`
@@ -442,12 +486,15 @@ The machinery is built and tested. What is left on this list is the labelling it
 
 ## Day 7: the core is done
 
-- [ ] Honest run over the frozen professional stratum, terminal transcript pasted. The command is
+- [ ] Honest run over the frozen consumer stratum, terminal transcript pasted. The command is
       `python3 tools/run_stratum.py --captures captures/ --judge --goldset <set> --out runs/day7`, and it
-      writes the transcript, the readout, `RUN_LOG.md` and the trace table. **Blocked on the stratum**
+      writes the transcript, the readout, `RUN_LOG.md` and the trace table. Blocked on captures, not on a
+      stratum
 - [ ] Metric readout: citation support rate, unauditable rate, judge-fabricated-span rate, judge-human
       agreement, source drift rate. Every one with its n and a confidence interval
-- [ ] Label every rate as single-stratum. Not a rate for AI citations generally
+- [ ] Label every rate as single-stratum **and as synthetic**. Not a rate for AI citations generally, and
+      not a rate over anyone's real research either, since the stratum that would have supplied that does
+      not run. Both halves go next to the number rather than into §7 alone
 - [ ] Plausibility audit of the numbers
 - [x] §0a status table. `STATUS.md`, filled in for day 5 and updated as things land. Core items whose
       machinery exists but has never run on real data are listed separately rather than ticked, because
@@ -463,7 +510,8 @@ The machinery is built and tested. What is left on this list is the labelling it
       with a reason, or not attempted
 - [ ] If the incumbents refuse cleanly on unreachable sources, say the differentiator collapsed, as
       prominently as the flattering result would have been reported
-- [ ] Consumer stratum run, rates reported per stratum rather than only in aggregate
+- [x] ~~Consumer stratum run~~ Promoted into the core on day 6, so this is no longer a stretch item. Rates
+      are still reported per stratum, which now means one stratum and a statement that there is only one
 - [x] Break attempts 1 to 4 built as one runner, `tools/break_attempts.py`. Each declares the failure it is
       looking for before it runs, and the criterion is read mechanically rather than reinterpreted afterwards
 - [x] Break attempt 2, paywall misread. **Held.** The only one of the four needing no judge, because holding
@@ -685,8 +733,11 @@ These are not tasks that can be traded away for time. They are the reason the pr
 - [ ] Until the head-to-head runs, the differentiator is described as structural rather than measured, and
       incumbent behaviour is attributed to their marketing copy
 - [ ] The frozen query set is published in full so a reader can judge the sample instead of taking my word
-      for it
-- [ ] The scrub drop count is published alongside the support rates, not in an appendix
+      for it. Cheaper than it was and more important: the set that runs is synthetic, so a reader judging it
+      is judging questions I wrote, and there is no provenance claim standing between them and that judgement
+- [ ] ~~The scrub drop count is published alongside the support rates~~ **Withdrawn on day 6, and named as
+      withdrawn.** There was no intake, so there is no drop rate. A promised number that cannot be
+      produced is reported as absent rather than quietly dropped from the list
 - [ ] The judge-fabricated-span rate is published rather than quietly fixed, **and it is only described as a
       finding about the judge once the extraction behind each void has been checked.** That precondition is new
       and it is here because the obligation as originally worded would have published the wrong thing: three

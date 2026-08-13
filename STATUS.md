@@ -3,32 +3,38 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 727 tests, and `tests/test_documents.py`
+Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 739 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot.
 
-**Day 7 is next, and day 7 is the line the core has to be behind.** Two of the five core items are not done
-and both trace to the row below. Day 5's own deliverable, the gold set, did not happen on day 5 and has not
-happened since; day 6's own deliverable, the two core break attempts and the parity check, was already
-complete before day 6 began. So the schedule has not slipped evenly. It has slipped in exactly the one place
-that no amount of building moves.
+**Day 7 is next, and day 7 is the line the core has to be behind.** Day 6's own deliverable, the two core
+break attempts and the parity check, was complete before day 6 began. Day 5's own deliverable, the gold set,
+did not happen on day 5 and has not happened since.
+
+**The stratum changed on day 6, and it changed by being given up rather than delivered.** The
+professional-research set was to be transcribed from my own AI history and that history is gone. Retyping
+from memory was available and is refused, because `queries/README.md` rules it out in two places written
+before there was any reason to want an exception. So the core runs on the consumer stratum, which is written,
+frozen since day 1, and synthetic. Every number the core publishes now describes how this tool behaves on
+questions nobody asked. §10 carries the reasoning and §7 carries the limitation at the top of its list.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**
 `TODO.md` remains the working list. Three places recording state is one more than is comfortable, and the
 rule that keeps them honest is that §0a says the state and this file says why.
 
-**Read the first row first.** The professional stratum is empty, and it is the input to everything that
-produces a number. Every "built and unexercised" below traces back to it.
+**Read the first two rows first.** One of them was the blocker for six days and is now a withdrawal; the
+other is what the critical path moved to.
 
 ---
 
-## The blocker
+## The blocker, and what replaced it
 
 | Item | State | Reason |
 |---|---|---|
-| Professional stratum assembled | **not done** | Entries must be real questions I asked an AI tool during PM work, scrubbed per `queries/README.md`. §10 claims that and §7's limitations argument depends on it being literally true, so the file stays empty until real queries are transcribed. It cannot be unblocked by anyone but me and it cannot be topped up with inventions |
+| Professional stratum assembled | **not done, and not deferred** | Entries had to be real questions I asked an AI tool during PM work, scrubbed per `queries/README.md`. The sessions they were to be transcribed from are gone. Retyping from memory is the only route left and it is refused: recall cannot be pulled chronologically, so it selects on what stuck, which correlates with how the tool performed and is invisible from outside; and a retyped question is reconstructed rather than transcribed, which converts §7's authorship caveat from a coverage limitation into a validity one. `queries/professional.toml` stays empty. It is not topped up with inventions and it is not filled with reconstructions labelled `real_scrubbed` |
+| Captured answers to audit and label | **not done** | The new critical path. The consumer stratum is frozen and ready, and nothing has been asked yet, so there is nothing to audit or to label against. This is browser work rather than transcription, and it is the last thing standing between the code and a number |
 
-Everything below is either done, or blocked on that row, or explicitly out of scope.
+Everything below is either done, or waiting on the second row, or explicitly out of scope.
 
 ## Core, due day 7
 
@@ -41,8 +47,8 @@ it is not reassuring: those were the items that depend on nothing but code.
 | 1 | The full pipeline: splitting, fetch, judge, span check, three-way verdict | **done** | Runs end to end on a real capture. `sayswho/pipeline.py` is the single orchestration; the CLI and the harness both drive it |
 | 1 | No confidence score anywhere | **done** | Two checks per surface: the key gate over every payload, and a vocabulary scan of every rendered file. The word "score" survives in four sentences, all refusing to produce one, allowlisted in the test |
 | 1 | Unauditable claims excluded from every denominator by a hard contract check | **done** | Two levels, sources and claim-source pairs, plus voided verdicts. All three raise rather than warn |
-| 2 | One stratum: professional-research queries, scrubbed | **not done** | See the blocker |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **not done, tooling now actually usable** | Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. A third and a fourth fault came out of the same walk: launched without a terminal the tool raised `EOFError` at the first prompt, and an answer audited earlier left verdicts that would anchor a labeller while tripping neither the timestamp refusal nor G4. `sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and refuses a blind session, with `--supplemental` as the way through rather than an override. Run against this repository it refuses, which is the correct answer. The labelling itself is human work and needs the stratum |
+| 2 | One stratum, now the consumer set | **changed on day 6** | The professional set cannot be assembled and is reported not-done above rather than deferred. The consumer set is frozen since day 1 and synthetic, and it carries the core. Reported as a downgrade in what the numbers describe, not as a substitution |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **not done, tooling now actually usable** | Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. A third and a fourth fault came out of the same walk: launched without a terminal the tool raised `EOFError` at the first prompt, and an answer audited earlier left verdicts that would anchor a labeller while tripping neither the timestamp refusal nor G4. `sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and refuses a blind session, with `--supplemental` as the way through rather than an override. Run against this repository it refuses, which is the correct answer. `tools/prep_goldset.py` now runs before a session: it draws the same sample the session will, warms the cache for any page missing from it, and reports what the afternoon will be. Building it found a fifth fault, which is that the stratification across G2 codes degrades silently to product-only when no run record is passed. The labelling itself is human work, and as of day 6 it needs captured answers rather than a stratum |
 | 3 | n and confidence intervals reported honestly | **done** | `Rate` carries its n, a Wilson interval and its split count, and `Rate.render` is the only formatter, so no surface can print a bare percentage |
 | 4 | Break attempt 5, prompt injection through a fetched page | **done** | Narrowed a published claim rather than confirming it. `BREAK_ATTEMPTS.md` |
 | 4 | Break attempt 6, denominator contamination | **done** | Fires at both levels, and writing it found a third contamination path |
@@ -55,9 +61,9 @@ answer" are different claims and only one of them is currently true.
 
 | Item | Why it has not run |
 |---|---|
-| Honest run over the frozen professional stratum | No stratum. `tools/run_stratum.py` runs today and correctly prints nothing, naming which kind of nothing |
+| Honest run over the frozen stratum | No captures. The stratum exists now that the core runs on the consumer set, and no answer has been captured against it, so `tools/run_stratum.py` still correctly prints nothing and names which kind of nothing |
 | Metric readout with n and CIs over real data | Same. The readout is exercised by tests against a scripted judge |
-| Judge-human agreement | No gold set, which needs the stratum |
+| Judge-human agreement | No gold set, which now needs captures rather than a stratum |
 | ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811 characters as of 2026-08-12. The count is dated because it has moved twice: 57,067, then 56,352, then this, as each fix stopped the reader inventing characters. Two earlier figures were left standing here and in `tools/reaudit_spans.py` after they stopped being true, which is the rot a prose gate cannot catch, since a number is not a path. Three extraction bugs came out of this one document, none of them from a test. See "The first live PDF, and what it cost" below |
 | The thin-page flag on live data | Tested, never fired on a real capture |
 | The fabricated-span count as a finding about the judge | **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
@@ -73,7 +79,7 @@ answer" are different claims and only one of them is currently true.
 | (extra) | Capture from a provider API | **done** | `sayswho/apicapture.py` and `tools/api_capture.py`. Produces an ordinary capture with `source="api"` so the whole pipeline works on it unchanged, stdlib only, no schema hardcoded. No rate derived from one is published, enforced in `rates.py` rather than promised in prose. `tools/compare_capture.py` measures how many citations a DOM capture missed, which is the number this path exists for |
 | (extra) | A gate for prose | **done** | `tests/test_documents.py`. Paths and modules named in any document must exist, load-bearing claims are checked against the code, and the test count in this file is checked against the suite. Verified by reintroducing all three of day 5's real prose failures and confirming each one fires |
 | (extra) | Prior art checked rather than asserted | **done** | All four tools in §1b verified against their own documentation, 2026-08-11. Two claims did not survive and both were tilted this project's way. `FINDINGS.md` item 12. Every row in the new §1b table is dated, and re-checking before submission is on `TODO.md` |
-| 7 | Consumer stratum run | **not done** | Written and frozen on day 1 so it cannot have been shaped by professional results. Running it needs the core to land first |
+| 7 | ~~Consumer stratum run~~ Professional stratum run | **promoted, and swapped** | The consumer stratum stopped being stretch on day 6 and now carries the core, and being written and frozen on day 1 is exactly what makes that usable: it was authored before anything was known about what the professional set would produce. What sits in this row now is the professional stratum, not-done for the reason in the blocker table |
 | 8 | Break attempts 1 to 4 | **all run, 3 held and 1 broke** | Run against the live judge 2026-08-11, `tools/break_attempts.py`, each declaring the failure it looks for before it runs. 2 held with no judge needed, because holding means the judge is never called. 3 held by the predicted route: the span was really on the live page and the drift layer voided it as `SPAN_ADDED_AFTER_GENERATION` anyway. 4 held, reading polarity rather than vocabulary. 1 broke, and not into the failure it declared, because its fixture ended by denying it reported any estimate and the judge read that denial as `CONTRADICTED`. 1b removes the denial and produces the declared failure: `PARTIALLY_SUPPORTED` for a claim the page never states, 4 of 4 calls, every span verbatim and on the page. `FINDINGS.md` item 15 |
 | 9 | Per-domain reporting | **done** | `sayswho/domains.py`, built on `rates.py` so a slice and the aggregate cannot disagree about a denominator. G4 applies: a per-domain rate is still a rate. One readable pair gets counts and no percentage. The table leads with why sources could not be read, because at the core's n a low cell is a hypothesis about this pipeline before it is anything about a publisher |
 | 9 | Gold set expansion beyond 40 | **not done** | Depends on the first 40 |
@@ -158,9 +164,15 @@ the authority of a decision. The day 5 section below says a test suite over surf
 me the model was wrong. This says the same thing about prose: the limitations section is exactly as unaudited
 as the results section used to be, and it is read more charitably.
 
-**What did not change.** The blocker has not moved. No query was transcribed, no label was written, and the
-three items above produce no number. They were the right work only in the sense that everything else is either
-human work or waiting on it.
+**And then the blocker was not moved but withdrawn.** Late on day 6 the professional stratum turned out to be
+unassemblable rather than untranscribed: the sessions are gone. Retyping from memory was refused, for two
+reasons `queries/README.md` had already written down, and the core moved onto the frozen consumer stratum
+instead. That is a smaller project than the one §0 describes, and the honest framing is not that a blocker
+cleared. It is that the thing the blocker was protecting has been given up, and the numbers that follow
+describe a tool rather than anyone's research.
+
+What it does change is what stands between here and a number. It is no longer transcription, which only I
+could do. It is captured answers, which is browser work, and then the labelling hour.
 
 ## What changed on day 5, and what it means
 
@@ -190,9 +202,8 @@ If the core does not land by day 7, this table is what makes that a reported fac
 The rows above that say "not done" outnumber the ones that say "done" in the sections that produce numbers,
 and that is the accurate picture on day 6 as it was on day 5. The blocker at the top has not moved in two days.
 
-Day 7 is tomorrow, and the honest reading of this file is that the core will not be complete on it. Items 2 and
-3 both need hours of my own hands and one of them cannot begin until the other is finished. What the day 7
-entry can still be is a run that prints an honest nothing and names which kind of nothing, because that is what
-`tools/run_stratum.py` already does, plus this table saying so. §0a promised every item reported done or
-not-done rather than quietly dropped, and that promise is the one thing here that does not depend on the
-stratum arriving.
+Day 7 is tomorrow, and after the day 6 decision the core can plausibly be complete on it: the stratum exists,
+capturing answers against it is an afternoon in a browser, and the gold set is an hour after that. What it
+will not be is the core §0 describes. Item 2 is reported changed and item 7 reports what was lost, which is
+the §0a promise being kept in the one case it was written for: an item that did not happen is named, with the
+reason, rather than quietly becoming an item that did.
