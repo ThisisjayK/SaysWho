@@ -110,6 +110,16 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
       reads as nothing. A stratum run fetches every cited URL of every answer, so betting on no server
       misbehaving is not a bet. It is now caught like a timeout, retried under the same policy, and recorded
       as `SOURCE_UNREACHABLE` with the exception in its detail. One bad response costs one source, and says so
+- [x] Prep the labelling session. `tools/prep_goldset.py` over all 24 splits: 0 requests sent, because the
+      split pass warmed the cache, 35 pairs over 25 pages, 725,539 characters to read, and the prior-audit
+      scan clean over all 24 answers. So the labels can be blind in fact rather than by assertion, which is
+      the first time that has been true in this repo
+- [ ] **Decide the target, because it is not the number it looks like.** The pool is 145 pairs, of which only
+      15 are unauditable, and the sampler takes all 15 first. `goldset.agreement` excludes those from kappa,
+      since the judge was never asked about them, so `--target 35` yields 20 comparable pairs and a kappa at
+      n=20 rather than the 30 to 40 §0a asks for. `--target 45` gives 30 comparable, `--target 55` gives 40.
+      The choice is an hour of labelling against the width of the interval, and whichever is chosen the
+      writeup reports the comparable n rather than the label count
 - [ ] A second product, if there is appetite. One product means the gold set stratifies on G2 codes alone,
       since product is the other axis and there is only one value of it. ChatGPT cites these questions;
       Claude mostly does not, which is an observation on a handful of tries rather than a finding

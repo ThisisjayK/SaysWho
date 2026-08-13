@@ -207,9 +207,9 @@ def ask(prompt: str, options: tuple[str, ...] | None = None) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--split", type=Path, action="append", required=True,
+    parser.add_argument("--split", type=Path, action="extend", nargs="+", required=True,
                         help="a stored split. Repeatable, one per captured answer")
-    parser.add_argument("--capture", type=Path, action="append", default=[],
+    parser.add_argument("--capture", type=Path, action="extend", nargs="+", default=[],
                         help="a run record holding the fetch results, for the G2 codes. Repeatable")
     parser.add_argument("--cache", type=Path, default=Path(".cache/fetch"))
     parser.add_argument("--out", type=Path, required=True)

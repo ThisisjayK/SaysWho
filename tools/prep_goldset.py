@@ -249,10 +249,10 @@ def prepare(splits, captures, cache: FetchCache, target: int, seed: int, out: Pa
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--split", type=Path, action="append", required=True,
+    parser.add_argument("--split", type=Path, action="extend", nargs="+", required=True,
                         help="a stored split. Repeatable, one per captured answer. The same ones the "
                              "labelling session will be given")
-    parser.add_argument("--capture", type=Path, action="append", default=[],
+    parser.add_argument("--capture", type=Path, action="extend", nargs="+", default=[],
                         help="the run record from the fetch pass, for the G2 codes. Without it the sample "
                              "is not stratified across source codes and this says so")
     parser.add_argument("--cache", type=Path, default=Path(".cache/fetch"))
