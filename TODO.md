@@ -42,8 +42,10 @@ longer than the thing limiting it.
 
 ## Where things actually stand
 
-Day 5 of ten, and day 5's own deliverable is the gold set, which is blocked. Days 2, 3, 4 and 6 are done;
-days 1, 5 and 7 are blocked on the same thing.
+Day 6 of ten, where day 5 was 2026-08-11. Day 6's own deliverable, the two core break attempts and the parity
+check, was already complete before day 6 began. Day 5's own deliverable is the gold set, which is blocked and
+has been for two days. Days 2, 3, 4 and 6 are done; days 1, 5 and 7 are blocked on the same thing, and day 7
+is tomorrow.
 
 **Everything still open is either mine to do by hand or waits on something that is.** The professional
 stratum has to be transcribed out of my own AI history and scrubbed, and it is the input to the gold set,
@@ -286,9 +288,12 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [ ] Measure which way the PDF garbled test errs. Two ratios, printable characters and spaces, neither
       measured, both set to refuse in the ambiguous case. The day 5 gold set is the only thing that can say
       how much coverage that costs, same as `EXTRACTION_SUSPECT`
-- [ ] Exercise the PDF reader on live data. Unit-tested against five hand-built PDFs including a scan and a
-      CID-font document, and fetched over real HTTP, but not yet against a real cited PDF in the wild. The
-      Claude research report cites one, and the Perplexity answer cites a boston.gov PDF
+- [x] Exercise the PDF reader on live data. Done, and this row was the one place the three state files
+      disagreed: `STATUS.md` has had it struck through as run since the first live PDF audit and this list
+      still said not yet. It read the boston.gov PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811
+      characters as of 2026-08-12. Every extraction bug in `FINDINGS.md` items 14 and 17 came out of that one
+      document and none of them came from a test, which is the argument for exercising a reader on live data
+      rather than the argument for having done it
 - [ ] Exercise the thin-page flag on live data. Still has never fired on a real capture
 - [x] Label extraction failures separately in the gold set. Solved with a deterministic check rather than a
       second opinion: the labeller pastes the passage they found, and if it is on the page and missing from

@@ -107,10 +107,14 @@ def text_of(meta: dict, body: bytes) -> tuple[str | None, str]:
     """The document text, extracted the same way the pipeline extracted it.
 
     Not always the HTML extractor, which is what the first version of this file assumed. The boston.gov
-    citation in these reports is a PDF that the pipeline read successfully, 57,067 characters of it, and
-    running the HTML extractor over PDF bytes produces noise. Every span would then read as absent and the
-    re-audit would confirm four voids that it had itself manufactured, which is the same failure this whole
-    exercise is about, committed by the tool built to check for it.
+    citation in these reports is a PDF that the pipeline read successfully, and running the HTML extractor
+    over PDF bytes produces noise. Every span would then read as absent and the re-audit would confirm four
+    voids that it had itself manufactured, which is the same failure this whole exercise is about, committed
+    by the tool built to check for it.
+
+    That PDF reads as 54,811 characters as of 2026-08-12. The figure is dated because it is a measurement of
+    this reader rather than a property of the document: this line said 57,067 until today, and it was true
+    when written and stopped being true twice, as each fix removed characters the reader had been inventing.
     """
     content_type = content_type_of(meta.get("headers") or {})
     kind = kind_of(content_type, body)

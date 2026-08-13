@@ -3,7 +3,14 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-12, day 5 of ten. 727 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
+Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 727 tests, and `tests/test_documents.py`
+now checks that this number is true rather than leaving it to rot.
+
+**Day 7 is next, and day 7 is the line the core has to be behind.** Two of the five core items are not done
+and both trace to the row below. Day 5's own deliverable, the gold set, did not happen on day 5 and has not
+happened since; day 6's own deliverable, the two core break attempts and the parity check, was already
+complete before day 6 began. So the schedule has not slipped evenly. It has slipped in exactly the one place
+that no amount of building moves.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**
@@ -24,6 +31,10 @@ produces a number. Every "built and unexercised" below traces back to it.
 Everything below is either done, or blocked on that row, or explicitly out of scope.
 
 ## Core, due day 7
+
+Day 6's own row in §12 is items 4 and 5 below, and all three of them are done and written up. That is worth
+saying plainly rather than leaving to be inferred from three ticks, and it is worth saying next to the reason
+it is not reassuring: those were the items that depend on nothing but code.
 
 | # | Item | State | Note |
 |---|---|---|---|
@@ -47,7 +58,7 @@ answer" are different claims and only one of them is currently true.
 | Honest run over the frozen professional stratum | No stratum. `tools/run_stratum.py` runs today and correctly prints nothing, naming which kind of nothing |
 | Metric readout with n and CIs over real data | Same. The readout is exercised by tests against a scripted judge |
 | Judge-human agreement | No gold set, which needs the stratum |
-| ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer: 56,352 characters, `SOURCE_OK`. Two extraction bugs came straight out of that, both found by re-auditing voided spans rather than by any test. See the day 5 note below |
+| ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811 characters as of 2026-08-12. The count is dated because it has moved twice: 57,067, then 56,352, then this, as each fix stopped the reader inventing characters. Two earlier figures were left standing here and in `tools/reaudit_spans.py` after they stopped being true, which is the rot a prose gate cannot catch, since a number is not a path. Three extraction bugs came out of this one document, none of them from a test. See "The first live PDF, and what it cost" below |
 | The thin-page flag on live data | Tested, never fired on a real capture |
 | The fabricated-span count as a finding about the judge | **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
 | `EXTRACTION_SUSPECT`'s error direction | Only the gold set can measure it. Until then the writeup says the direction is chosen and the rate is unknown |
@@ -116,6 +127,41 @@ about 170, and then fail on `non-Boston`, because the judge quoted `nonBoston` f
 dropped an en dash. A span quoted from text this tool no longer produces cannot be settled by re-checking. So
 the fabricated-span count over PDF sources stays separate from one over HTML, and stays withdrawn.
 
+## What changed on day 6, and what it means
+
+Three items landed, and the reason they are worth a section is that all three had been recorded here or in
+`TODO.md` as blocked, and none of them was.
+
+**The prior-audit guard**, which was the weakest control in the project. Two refusals already stood between a
+gold set and the judge's answers and neither could see the case: `goldset.agreement` compares a label's
+timestamp against the run it is compared with, so labels written today pass against a run made yesterday, and
+G4 ties to the split, which differs for a second audit because Phase 1 does not repeat itself. An answer judged
+last week therefore left verdicts that would anchor a labeller and trip nothing at all, and for a day the only
+control was a sentence in a banner asking the labeller to remember. `sayswho/prior_audit.py` now scans
+`reports/` and `runs/` for a verdict over the same `answer_sha256`, and the tool exits before asking its first
+question. Run against this repository it refuses, which is the correct answer and not a comfortable one: the
+only real split on disk has two audits behind it, so the rehearsal needs `--supplemental`.
+
+**Precomposed against decomposed accents in the span guard**, recorded as blocked on the per-character index
+`report.py` builds. It was blocked on a belief about that index rather than on the index. Composing cannot be
+done one character at a time; decomposing can, and it reaches the same place from both sides.
+
+**Symbol-font bullets in PDFs**, recorded here as unfixed with a reason attached: following font encodings is
+beyond a stdlib reader. True of the general case, false of the document in hand, which carried its own reverse
+table inside it. `FINDINGS.md` item 17.
+
+**What the three have in common is the shape of the mistake, and it is a new one for this file.** Day 5's
+lesson was that a tested code path is not a run. This is different: each of these was a limitation stated with
+a reason, and a reason makes a limitation read as settled. Nothing in the suite can check the word "beyond",
+and two of the three sentences had been copied into three or four documents each, which is how a guess acquires
+the authority of a decision. The day 5 section below says a test suite over surfaces I build myself cannot tell
+me the model was wrong. This says the same thing about prose: the limitations section is exactly as unaudited
+as the results section used to be, and it is read more charitably.
+
+**What did not change.** The blocker has not moved. No query was transcribed, no label was written, and the
+three items above produce no number. They were the right work only in the sense that everything else is either
+human work or waiting on it.
+
 ## What changed on day 5, and what it means
 
 Most of today went on the browser surface, and the pattern is worth recording because it bears on how much
@@ -142,4 +188,11 @@ settled it.
 
 If the core does not land by day 7, this table is what makes that a reported fact rather than an impression.
 The rows above that say "not done" outnumber the ones that say "done" in the sections that produce numbers,
-and that is the accurate picture on day 5. The blocker at the top has not moved all day.
+and that is the accurate picture on day 6 as it was on day 5. The blocker at the top has not moved in two days.
+
+Day 7 is tomorrow, and the honest reading of this file is that the core will not be complete on it. Items 2 and
+3 both need hours of my own hands and one of them cannot begin until the other is finished. What the day 7
+entry can still be is a run that prints an honest nothing and names which kind of nothing, because that is what
+`tools/run_stratum.py` already does, plus this table saying so. §0a promised every item reported done or
+not-done rather than quietly dropped, and that promise is the one thing here that does not depend on the
+stratum arriving.

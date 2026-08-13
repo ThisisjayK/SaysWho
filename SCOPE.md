@@ -97,7 +97,7 @@ two it is. A design difference I can demonstrate on my own tool is worth stating
 actually run is not something to imply. Likewise, one stratum means the professional-versus-consumer question
 in §0 stays open rather than getting answered, and the report says it's open.
 
-### Status table, as of 2026-08-12 (day 5)
+### Status table, as of 2026-08-12 (day 6)
 
 §0a promises every item is reported done or not-done rather than quietly dropped, so this table exists from
 day 5 rather than being assembled on day 10 when the answer is already known. **Blocked** is used only where
