@@ -297,6 +297,23 @@ class Fetcher:
             except (urllib.error.URLError, socket.timeout, ssl.SSLError, TimeoutError) as exc:
                 status, headers, body = None, {}, b""
                 last_detail = f"{type(exc).__name__}: {exc}"
+            except Exception as exc:  # noqa: BLE001
+                # A malformed response is a fetch outcome, not a reason to end the run.
+                #
+                # Found on the first real stratum pass: one server returned a chunked body whose size line
+                # `http.client` could not parse, which surfaced as `ValueError: invalid literal for int() with
+                # base 16: b''` from inside urlopen. That is not a URLError, so it escaped the handler above,
+                # killed the whole capture, and cost the run record for that query. Rerunning succeeded, which
+                # is the worst version: transient, so it looks like nothing.
+                #
+                # A stratum run fetches every cited URL of every answer, so the chance that none of them
+                # misbehaves is not one to build on. The broad catch is deliberate and it is narrow in effect:
+                # this one URL becomes SOURCE_UNREACHABLE with the exception recorded in its detail, exactly
+                # as a timeout does, and the run continues. Losing one source to a bad response is a
+                # measurement with a hole in it that says so. Losing the run is a measurement that does not
+                # exist.
+                status, headers, body = None, {}, b""
+                last_detail = f"{type(exc).__name__}: {exc}"
             else:
                 last_detail = ""
 

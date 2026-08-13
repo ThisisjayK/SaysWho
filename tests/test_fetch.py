@@ -315,3 +315,49 @@ def test_an_encoding_we_cannot_decode_is_refused_rather_than_passed_through(serv
     assert record.code == SOURCE_EMPTY
     assert "unsupported content-encoding: br" in record.detail
     assert record.text_length == 0
+
+
+def test_a_malformed_response_becomes_an_outcome_rather_than_ending_the_run(cache, monkeypatch):
+    """Found on the first real stratum pass, and it is the transient kind that looks like nothing.
+
+    One server returned a chunked body whose size line `http.client` could not parse, which surfaces as
+    `ValueError: invalid literal for int() with base 16: b\'\'` from inside urlopen. That is not a URLError,
+    so it escaped the handler, ended the whole capture and cost that query its run record. The rerun
+    succeeded.
+
+    A stratum run fetches every cited URL of every answer, so betting on none of them misbehaving is not a
+    bet worth taking. One bad response should cost one source, recorded, and not the run."""
+    f = fetcher(cache)
+
+    def explode(url):
+        raise ValueError("invalid literal for int() with base 16: b''")
+
+    monkeypatch.setattr(f, "_raw_request", lambda url: explode(url))
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+
+    record = f.fetch("https://example.org/chunked-badly")
+
+    assert record.code == SOURCE_UNREACHABLE
+    assert "ValueError" in record.detail, "the exception type has to survive into the record"
+    assert "base 16" in record.detail
+    assert record.attempts >= 1
+
+
+def test_a_malformed_response_is_retried_like_any_other_failure(cache, monkeypatch):
+    """It goes down the same path a timeout does, which means the retry policy in DATA_CONTRACT.md section 2
+    applies to it rather than a second policy existing for surprises."""
+    f = fetcher(cache, max_retries=2)
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+
+    calls = []
+
+    def explode(url):
+        calls.append(url)
+        raise ValueError("invalid literal for int() with base 16: b''")
+
+    monkeypatch.setattr(f, "_raw_request", explode)
+    record = f.fetch("https://example.org/chunked-badly")
+
+    assert len(calls) == 3, "one attempt plus two retries, the same as a timeout"
+    assert record.attempts == 3
+

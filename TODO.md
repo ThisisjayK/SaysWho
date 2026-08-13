@@ -98,6 +98,18 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
 - [x] Capture answers against the frozen consumer stratum. Done by hand on day 6: 24 Perplexity answers, one
       conversation each, bound to CO-01 through CO-24 by `bind_capture.py --in-order`, whose pairing table was
       read before confirming. 51 citations, no uncited answer, so G0 halts none of them
+- [x] Make the split. 24 stored splits in `splits/`, 24 run records in `runs/consumer/`, from `--split-only`
+      so no verdict exists for any of these claims. 162 claims, 145 claim-source pairs, 43 uncited claims, 240
+      skipped units, 42 of 51 sources auditable. The gold set draws its 30 to 40 pairs from 145, and the
+      classes §3 Phase 4 says to fill first exist for once: 7 `SOURCE_BOT_BLOCKED`, 1 `SOURCE_DEAD_LINK`, 1
+      `SOURCE_UNREACHABLE`
+- [x] **A malformed response was ending the run rather than becoming an outcome.** One server returned a
+      chunked body whose size line `http.client` could not parse, which surfaces as a `ValueError` from inside
+      urlopen rather than a `URLError`, so it escaped the fetcher's handler and killed the whole capture,
+      costing CO-23 its run record. The rerun succeeded, which is the worst version of a bug: transient, so it
+      reads as nothing. A stratum run fetches every cited URL of every answer, so betting on no server
+      misbehaving is not a bet. It is now caught like a timeout, retried under the same policy, and recorded
+      as `SOURCE_UNREACHABLE` with the exception in its detail. One bad response costs one source, and says so
 - [ ] A second product, if there is appetite. One product means the gold set stratifies on G2 codes alone,
       since product is the other axis and there is only one value of it. ChatGPT cites these questions;
       Claude mostly does not, which is an observation on a handful of tries rather than a finding
