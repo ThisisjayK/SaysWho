@@ -80,7 +80,7 @@ Prefer these over ad hoc code. If none fits, say so before writing a temporary s
 | `python3 tools/bind_capture.py <capture> --query <id>` | Bind a capture to a frozen query. Refuses an id that is not in the manifest |
 | `python3 tools/freeze_queries.py check` | The freeze check. Runs before every capture path |
 | `python3 tools/ethics_gate.py` | The privacy and honesty gate. Exits non-zero when either half fails, and `run_stratum.py` runs it before the honest run |
-| `python3 tools/label_goldset.py --split <split> --out <gold>` | Label a gold set by hand. Refuses any file carrying judge output |
+| `python3 tools/label_goldset.py --split <split> --out <gold>` | Label a gold set by hand. Refuses any file carrying judge output, and refuses to start at all if `reports/` or `runs/` already holds a verdict over the same answer |
 | `python3 tools/break_attempts.py --all --judge --out runs/break` | The four stretch break attempts, each declaring its failure mode before it runs |
 | `python3 tools/reaudit_spans.py` | Re-check voided spans against cached bytes rather than the live web |
 | `python3 tools/compare_capture.py` | How many citations the DOM capture missed, measured against an API capture |

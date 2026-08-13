@@ -97,7 +97,7 @@ two it is. A design difference I can demonstrate on my own tool is worth stating
 actually run is not something to imply. Likewise, one stratum means the professional-versus-consumer question
 in §0 stays open rather than getting answered, and the report says it's open.
 
-### Status table, as of 2026-08-11 (day 5)
+### Status table, as of 2026-08-12 (day 5)
 
 §0a promises every item is reported done or not-done rather than quietly dropped, so this table exists from
 day 5 rather than being assembled on day 10 when the answer is already known. **Blocked** is used only where
@@ -111,9 +111,9 @@ live in one of them.
 
 | # | Item | State | Evidence, or what it waits on |
 |---|---|---|---|
-| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 541 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
+| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 727 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
 | 2 | One stratum: professional-research queries, scrubbed | **Blocked** | The queries are real ones asked during PM work and must be transcribed and scrubbed by hand (§10). `queries/professional.toml` is empty and stays empty until they arrive. Inventing one would make a published sentence false |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **Blocked on item 2** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **Blocked on item 2** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Four faults in the workflow were found by walking it rather than by the suite, the last being that an answer audited earlier leaves verdicts which anchor a labeller and trip no existing guard: `sayswho/prior_audit.py` refuses a blind session over one. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
 | 4 | Two break attempts: injection, denominator contamination | **Done** | `BREAK_ATTEMPTS.md` attempts 5 and 6, both with written results. Attempt 5 revised §6: an injection that dictates its own span defeats the guard, because dictating the span puts it on the page. Kept as a passing test of the failure |
 | 5 | Parity check, extension against headless pipeline | **Done** | `tests/test_parity.py`, running `render.js` under Node against the same payload the harness embeds. One renderer, one payload, no second opinion |
 | 6 | Competitor head-to-head, dead-link and paywall stratum | **Not done** | Stretch. Until it runs, §1b's differentiator is described as structural, not measured, and incumbent behaviour is attributed to their marketing copy |

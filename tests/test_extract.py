@@ -95,12 +95,50 @@ def test_folding_does_not_make_different_words_equal():
     assert normalise_for_span("did reduce") not in normalise_for_span("did not reduce")
 
 
-def test_a_precomposed_and_a_decomposed_accent_still_differ():
-    """The known gap, asserted so it is a recorded limitation rather than a surprise. Fixing it means
-    normalising the whole string, which breaks the per-character index report.py depends on."""
+def test_a_precomposed_and_a_decomposed_accent_now_match():
+    """This used to be the assertion that the gap existed. It was blocked on a belief that turned out to be
+    wrong: that closing it meant normalising whole strings, which would desync the per-character index
+    `report.py` builds. Composing would have. Decomposing does not, because it is one-to-many in the
+    direction the index already tolerates.
+
+    A publisher's CMS and a model's tokeniser disagree about this routinely, and the cost of the disagreement
+    was a verdict voided as JUDGE_FABRICATED_SPAN, which is the code published as a finding about the judge.
+    Written with escapes rather than literal accents on purpose: the two strings have to differ in the file
+    and an editor that normalises on save would quietly make this test vacuous."""
     from sayswho.extract import normalise_for_span as n
 
-    assert n("René") != n("René"), "if this ever passes, TODO.md's entry can be ticked"
+    precomposed = "Ren\u00e9 was first"
+    decomposed = "Rene\u0301 was first"
+    assert precomposed != decomposed, "if these are equal the test is comparing one string with itself"
+    assert n(precomposed) == n(decomposed)
+
+    # Both directions of containment, since the guard is a substring test rather than an equality one.
+    assert n("Ren\u00e9") in n("the trial by Rene\u0301 and others")
+    assert n("Rene\u0301") in n("the trial by Ren\u00e9 and others")
+
+
+def test_an_accent_folds_away_entirely_which_is_the_cost_of_the_fix():
+    """Stated rather than hidden, because it is a real widening: the guard can no longer tell "resume" from
+    "r\u00e9sum\u00e9". It was already unable to tell "Trial" from "trial", and the direction of the trade is
+    the same one every row of the fold table accepts. What buys it is that a fabricated span differing from the
+    page only in its accents is not a plausible fabrication, while a real span differing only in its accents is
+    an ordinary Tuesday."""
+    from sayswho.extract import normalise_for_span as n
+
+    assert n("resume") == n("r\u00e9sum\u00e9")
+    # And the guard still refuses a span that differs in anything else.
+    assert n("resumed") != n("r\u00e9sum\u00e9")
+
+
+def test_marks_that_are_not_typography_are_left_alone():
+    """The line drawn instead of `category(c) == "Mn"`, which would have been shorter and wrong. A Devanagari
+    virama suppresses a vowel and a Hebrew point is a vowel, so dropping either changes the word rather than
+    how it was typeset. Folding them would make the guard accept a span the page does not contain, in exactly
+    the languages nobody here is going to check by hand."""
+    from sayswho.extract import normalise_for_span as n
+
+    assert n("\u0915\u094d\u0937") != n("\u0915\u0937"), "the Devanagari virama survives"
+    assert n("\u05e9\u05b8\u05dd") != n("\u05e9\u05dd"), "the Hebrew point survives"
 
 
 def test_claim_ids_do_not_track_the_span_guard():

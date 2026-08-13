@@ -18,9 +18,11 @@ does not depend on it has now been built.
 Tomorrow's queue, in order:
 
 1. **Pull the queries.** See "Blocking the whole schedule" below. This is the whole session if it needs to be
-2. **The rehearsal labelling run**, if there is an hour spare and the stratum is not ready. Eight pairs off
-   the existing ChatGPT capture, purely to walk the workflow before the session that counts. Commands are in
-   the day 5 section. It produces a real kappa and no publishable rate, since those captures are unbound
+2. **The rehearsal labelling run**, if there is an hour spare and the stratum is not ready. It now needs
+   `--supplemental`, and that is the prior-audit guard working rather than an obstacle: every capture on disk
+   has been audited, so no label taken off one of them is blind. Eight pairs, purely to walk the workflow
+   before the session that counts. It produces no publishable kappa, since supplemental labels are excluded
+   from it, and it is still worth the hour
 3. **The PR description.** **Blocked on two answers only I have:** which repo `contrib/jayanth-says-who`
    targets, and which chapters SaysWho satisfies. The requirement asks for chapters by name and this repo
    cites none. Everything else about the description can be drafted the moment those two are known
@@ -29,6 +31,14 @@ Landed 2026-08-12 and needing nothing further: break attempts 1 to 4 run against
 (`FINDINGS.md` item 15), the gold set workflow made performable at all (item 16), the two-customer pair
 rebuilt to the required format, the ethics gate, and the §4 boundary table generated from
 `sayswho/boundary.py`.
+
+Landed later the same day, all three of them things the file had recorded as blocked on something they turned
+out not to need. The prior-audit guard, which was the weakest control in the project and is now the one that
+refuses this repo's own split. Precomposed against decomposed accents in the span guard, which was blocked on
+a belief about `report.py`'s index rather than on the index. And symbol-font bullets in PDFs, which was
+blocked on a sentence saying stdlib could not do it, in a document that had the answer inside it.
+`FINDINGS.md` item 17 is about that pattern, since it is now the second time a stated limitation has held
+longer than the thing limiting it.
 
 ## Where things actually stand
 
@@ -385,13 +395,17 @@ The machinery is built and tested. What is left on this list is the labelling it
       matches nothing: an afternoon of labelling would have calibrated not one capture. Now a list, checked
       by membership, and it records the splits its labels actually came from rather than the ones the sampler
       was handed, since quitting early must not claim an answer never reached
-- [ ] **Catch a prior audit of the same answer.** Neither guard sees it. `goldset.agreement` compares label
-      times against the run they are compared with, so labels written today pass against a run made tomorrow,
-      and G4 ties to the split, which differs because Phase 1 does not repeat itself. So an answer judged
-      earlier under a different split leaves verdicts that anchor a labeller and trip nothing. Found on
-      2026-08-11 when every capture on disk turned out to have been audited already. Today it is a sentence in
-      a banner, which is the weakest control in this project. The fix is for the labelling tool to scan for a
-      report over the same `answer_sha256` and refuse a blind label when one exists
+- [x] **Catch a prior audit of the same answer.** Built as `sayswho/prior_audit.py`, and it was the weakest
+      control in the project until it was: neither existing guard could see this case, because
+      `goldset.agreement` compares label times against the run they are compared with, so labels written today
+      pass against a run made tomorrow, and G4 ties to the split, which differs because Phase 1 does not repeat
+      itself. The scan matches on `answer_sha256` across `reports/` and `runs/`, so a report renamed or moved
+      is still found, and the tool exits 3 before asking its first question rather than after three claims have
+      been read. Three things it is careful about: it reads files full of verdicts and never carries one out,
+      it reports not-checked rather than clean when there is no artefact directory to look in, and there is no
+      flag to skip it. The way through is `--supplemental`, which is a different and clearly labelled thing
+      rather than a weaker blind. Run against this repo it refuses immediately, which is correct and not
+      comfortable: the one real split on disk has two audits behind it. `FINDINGS.md` item 16
 - [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** Blocked on the
       professional stratum existing. The order is: `--split-only --save-split` to make the split, label
       against it, then `--split` on the judged run so the rate is over the same claims a human read
@@ -569,13 +583,27 @@ The machinery is built and tested. What is left on this list is the labelling it
       re-checking against a page fetched today answers a different question. One of four voids overturned by
       the PDF fix, two traced to a symbol-font bullet, one is a genuine catch. `FINDINGS.md` item 14
 - [x] Fix the PDF `Td` line-break bug that broke "(61.1%)" into "(6 1 . 1 %)" and voided a correct verdict
-- [ ] Symbol-font bullets in PDFs. A bullet rendered through a symbol font extracts as a letter, so a judge
-      quoting a bulleted line verbatim is voided. Needs font-encoding support a stdlib reader does not have.
-      Until then the fabricated-span count over PDF sources is reported separately from HTML and described as
-      inflated by an unknown amount
-- [ ] Precomposed against decomposed accents in the span guard. "e" plus a combining acute still does not
-      match a single character. Fixing it means normalising whole strings, which breaks the per-character index
-      `report.py` uses to place a highlight. Narrower than the gap it replaced
+- [x] Symbol-font bullets in PDFs. Fixed, and the sentence that said it could not be was the reason it stayed
+      broken: "needs font-encoding support a stdlib reader does not have" was true of the general case and
+      false of this document, which carried the reverse table inside it as an ordinary Flate stream. Two bugs,
+      not one. The symbol bullet was a two-byte code in an embedded SymbolMT subset, now read through the
+      document's own `/ToUnicode` CMaps, pooled, with a code two fonts disagree about dropped rather than
+      guessed. The second bullet was WinAnsi 0x95, decoded into a control code and then stripped as
+      never-content, which deleted the evidence rather than corrupting it, and that half needed no font at all.
+      Measured on the real boston.gov PDF: 54,811 characters before and after, 23 bullets where there were
+      none. `FINDINGS.md` item 17
+- [ ] The fabricated-span count over PDF sources. Still reported separately from HTML, and still withdrawn
+      rather than restated, because the two voided spans are not overturned by the fix: they were quoted from
+      an extraction this tool no longer produces, so only judging the fixed document settles them. That is the
+      re-run below, not a re-check
+- [x] Precomposed against decomposed accents in the span guard. The blocker was a belief rather than a
+      constraint: composing cannot be done per character, and decomposing can, and decomposing reaches the same
+      place from both sides. `fold_for_span` now strips the Combining Diacritical Marks block after an NFD
+      pass, so a precomposed accent and a decomposed one match and the per-character index in `report.py`
+      still lands on the right characters, which is what a test now pins. The line is the block, not the `Mn`
+      category: a Devanagari virama and a Hebrew point are also `Mn`, and dropping either changes the word
+      rather than its typography. The cost is stated rather than hidden, since the guard can no longer tell
+      "resume" from an accented one
 - [ ] Re-run the fabricated-span figure once there is a run to compute it over, and say in the writeup that
       the earlier one was mostly an artefact of the checker rather than a finding about the judge
 

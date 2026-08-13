@@ -83,6 +83,25 @@ def test_a_claim_that_is_not_in_the_answer_returns_none():
     assert locate(ANSWER, "A sentence from somewhere else entirely.") is None
 
 
+def test_a_decomposed_accent_in_the_answer_still_marks_the_right_characters():
+    """The reason the accent fold in `extract.py` was left undone for a week. Folding accents means a folded
+    character count that no longer matches the raw one, and this index is what would have broken: it maps
+    folded positions back to real ones so the highlight lands on the right words.
+
+    It holds because the fold decomposes rather than composes, so one input character still produces zero or
+    more output characters and the mapping stays one way. Here the answer carries "Rene" plus a combining
+    acute, five characters, and the claim carries a precomposed one, four. The offsets returned have to be the
+    answer's, not the claim's, or a reader gets a mark one character short of the sentence."""
+    sentence = "The trial by Rene\u0301 Dubois reported a fall."
+    answer = sentence + "\n\nA second paragraph follows."
+    claim_text = "The trial by Ren\u00e9 Dubois reported a fall."
+    assert len(claim_text) < len(sentence), "the two forms have to differ in length or this proves nothing"
+
+    start, end = locate(answer, claim_text)
+    assert answer[start:end] == sentence
+    assert answer[end:].startswith("\n\nA second"), "the mark stopped where the sentence did"
+
+
 def test_unlocatable_claims_are_counted_not_dropped():
     """Claims quoted across a flattened table cannot be marked. They must still be audited and listed."""
     cs = ClaimSet(claims=[claim(text="A sentence that is not in the answer.")], skipped=[])

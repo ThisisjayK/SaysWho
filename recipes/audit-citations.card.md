@@ -187,6 +187,10 @@ split with `--split-only` so no verdict is in front of you while you label, then
 `python3 tools/label_goldset.py --split ... --out ...`. One set may cover several answers; it records the
 splits it holds labels for and G4 accepts any of them.
 
+If the tool refuses to start, saying this answer already has a verdict on disk, that is the point: label a
+fresh answer, or pass `--supplemental` and accept that those labels are reported on their own and excluded
+from the agreement number.
+
 **Watch for.** This is the tool working. An absent number invites a reader to compute their own, so each
 refusal prints its reason where the number would have been.
 

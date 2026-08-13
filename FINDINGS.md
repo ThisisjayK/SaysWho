@@ -508,11 +508,15 @@ threshold was swept from 0 to 8 against the real document and only inserting not
 with the space ratio moving from 0.131 to 0.123, which says word spacing in this document is real space
 characters rather than positioning.
 
-**The bullet, unfixed.** This PDF renders bullets through a symbol font whose glyphs sit at letter code
-points, so a line reading "\u2022 Adults who lived in the US for ten or fewer years (61.1%)" extracts as
-"x Adults who...". The judge quoted the bullet a human sees. Following font encodings is beyond a stdlib
-reader, so this stays broken and is stated: a fabricated-span count over PDF sources is inflated by an unknown
-amount and is reported separately from one over HTML until it is fixed.
+**The bullet, unfixed here and fixed in item 17.** This PDF renders bullets through a symbol font whose
+glyphs sit at letter code points, so a line reading "\u2022 Adults who lived in the US for ten or fewer years
+(61.1%)" extracts as "x Adults who...". The judge quoted the bullet a human sees.
+
+The sentence that stood here said that following font encodings is beyond a stdlib reader, so this stays
+broken. That was true of the general case and false of this document, and it was the wrong kind of wrong: a
+limitation asserted from the shape of the problem rather than from opening the file, which had the reverse
+table in it the whole time. Item 17 is what opening it found. The count is still reported separately from one
+over HTML, because fixing an extractor does not retrospectively settle a span quoted from the old one.
 
 **The four voids, resolved.** One was the `Td` bug. Two are the bullet. One is a genuine catch: the judge
 joined two non-contiguous passages with an ellipsis instead of quoting verbatim, which is exactly what the
@@ -626,3 +630,84 @@ not do. Item 15 was an attempt whose fixture could not ask its own question. Thi
 could not be performed in the order the code requires. In each case the components were tested and the claim
 about them was untested, and in each case it was found by someone asking a plain question about the thing
 rather than by the suite. 661 tests at the time of writing, and none of them tried to label a gold set.
+
+**Two more from the same walk, kept in this item because they are the same finding continuing.** Launched
+without a terminal the tool reached the first prompt and raised `EOFError`, which reads as "the tool is
+broken" rather than "there is nobody here to type"; EOF and Ctrl-C are now a session that cannot happen, and
+the labels made before an interrupt are kept.
+
+And the fourth, which is the one none of the refusals could see. `goldset.agreement` compares a label's
+timestamp against the run it is compared with, so labels written today pass against a run made tomorrow, and
+G4 ties to the split, which differs for a second audit because Phase 1 does not repeat itself. An answer
+judged last week therefore leaves verdicts on disk that would anchor a labeller and trip nothing at all. It
+was found on 2026-08-11 when every capture on disk turned out to have been audited already, and for a day the
+only control was a sentence in a banner asking the labeller to remember, which is the weakest kind of control
+there is: it fails silently and in the direction that flatters the result. `sayswho/prior_audit.py` now scans
+`reports/` and `runs/` for a verdict over the same `answer_sha256` and the tool exits rather than asking its
+first question. Run against this repository it refuses immediately, which is the correct answer and not a
+comfortable one: the only real split on disk has two audits behind it.
+
+Three things that guard is careful about, each for a reason this project has already paid for once. It reads
+files full of verdicts and never carries one out, so the refusal names the file and the key that proved it and
+nothing else. It reports not-checked rather than clean when there is no artefact directory to look in. And
+there is no flag to skip it: the way through is `--supplemental`, which is not a weaker blind but a different
+and clearly labelled thing, excluded from kappa and reported on its own.
+
+---
+
+## 17. The bullet was readable all along, and the reason it stayed broken was a sentence
+
+Item 14 ended with a limitation: a PDF renders bullets through a symbol font, the bullet extracts as the
+letter "x", the judge quoting the line a human reads is voided as `JUDGE_FABRICATED_SPAN`, and following font
+encodings is beyond a stdlib reader, so this stays broken.
+
+The last clause was not measured. It was inferred from the general problem, which is real: resolving an
+arbitrary font means walking each page's `/Resources`, tracking the `Tf` operator, and following an object
+graph that in this document is inside twenty-nine compressed object streams. The specific problem was much
+smaller, and the way to find that out was to open the file rather than to reason about the class of files it
+belongs to.
+
+**What was in there.** Sixteen font objects, none of them visible in the raw bytes, all inside object streams.
+Two of them are `/Type0` with `/Encoding /Identity-H`, which means their text is shown as two-byte glyph
+numbers. One is an embedded SymbolMT subset, and it carries a `/ToUnicode` CMap that is one entry long:
+
+```
+1 beginbfchar
+<0078> <2022>
+endbfchar
+```
+
+That is the answer, in the document, as an ordinary Flate stream. Glyph 0x0078 is `\u2022`. Decoded a byte at a
+time it had been arriving as NUL followed by "x", and `_tidy` stripped the NUL as never-content, leaving the
+letter.
+
+**There were two bullet bugs, not one.** The other line's bullet was WinAnsi 0x95, decoded as latin-1 into an
+unused control code and then stripped by the same rule. That one needed no font at all: WinAnsi is cp1252, so
+the fix is a translation table built from the codec, and it also recovers the curly apostrophe, the en dash
+and the ellipsis, which are most of what the span guard's fold table exists to reconcile. A bullet that
+extracts as the wrong character corrupts evidence; a bullet that extracts as nothing deletes it. The second
+is worse and it was the one nobody had noticed.
+
+**What was deliberately not built, and the rule that replaces it.** No page resource resolution and no `Tf`
+tracking. Instead the document's two-byte tables are pooled, a code two of them disagree about is dropped
+rather than guessed at, and a shown string is decoded through the pool only when every code in it resolves and
+at least one byte is a control byte. That last condition is what separates two-byte codes from ordinary text,
+and the first version of it was wrong in the dangerous direction: it asked for a code above 0xFF, which any
+two ASCII letters read as one code satisfy, so a table holding 0x6162 would have rewritten the word "ab" as a
+bullet. A test caught it. Measured on the real document: two two-byte fonts, nineteen codes, no conflicts,
+54,811 characters before and 54,811 after, 23 bullets where there had been none.
+
+**What this does not fix, which is the part worth saying twice.** The two voided spans are not overturned.
+Re-checking them against the fixed extraction gets 305 of 549 characters through, where the bullet used to
+stop it at about 170, and then fails on `non-Boston`: the judge quoted `nonBoston`, because the extraction it
+was given had dropped an en dash and joined the word. So those spans were quoted from text this tool no longer
+produces, and no amount of re-checking settles them. Only judging the fixed document does. The
+fabricated-span figure stays withdrawn rather than restated, and it stays reported separately for PDF and
+HTML sources.
+
+**The general shape.** Item 13 was a document claiming something the code did not do. This is a document
+correctly describing what the code did, and wrongly explaining why it had to. A limitation with a reason
+attached reads as settled, and this one was repeated in four places: `pdf.py`, `DATA_CONTRACT.md` §5,
+`STATUS.md` and `TODO.md`. Nothing in the suite can check the word "beyond", which is exactly why a stated
+limitation deserves the same suspicion as a stated result.
+

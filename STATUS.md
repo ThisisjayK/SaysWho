@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-11, day 5 of ten. 690 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
+Last updated 2026-08-12, day 5 of ten. 727 tests, and `tests/test_documents.py` now checks that this number is true rather than leaving it to rot.
 
 `SCOPE.md` §0a carries the same nine core-and-stretch rows in summary form, because a reader of the design
 document needs them there. **This file is the detailed one and the two are updated in the same commit.**
@@ -31,7 +31,7 @@ Everything below is either done, or blocked on that row, or explicitly out of sc
 | 1 | No confidence score anywhere | **done** | Two checks per surface: the key gate over every payload, and a vocabulary scan of every rendered file. The word "score" survives in four sentences, all refusing to produce one, allowlisted in the test |
 | 1 | Unauditable claims excluded from every denominator by a hard contract check | **done** | Two levels, sources and claim-source pairs, plus voided verdicts. All three raise rather than warn |
 | 2 | One stratum: professional-research queries, scrubbed | **not done** | See the blocker |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **not done, tooling now actually usable** | Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. The labelling itself is human work and needs the stratum |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **not done, tooling now actually usable** | Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. A third and a fourth fault came out of the same walk: launched without a terminal the tool raised `EOFError` at the first prompt, and an answer audited earlier left verdicts that would anchor a labeller while tripping neither the timestamp refusal nor G4. `sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and refuses a blind session, with `--supplemental` as the way through rather than an override. Run against this repository it refuses, which is the correct answer. The labelling itself is human work and needs the stratum |
 | 3 | n and confidence intervals reported honestly | **done** | `Rate` carries its n, a Wilson interval and its split count, and `Rate.render` is the only formatter, so no surface can print a bare percentage |
 | 4 | Break attempt 5, prompt injection through a fetched page | **done** | Narrowed a published claim rather than confirming it. `BREAK_ATTEMPTS.md` |
 | 4 | Break attempt 6, denominator contamination | **done** | Fires at both levels, and writing it found a third contamination path |
@@ -49,7 +49,7 @@ answer" are different claims and only one of them is currently true.
 | Judge-human agreement | No gold set, which needs the stratum |
 | ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer: 56,352 characters, `SOURCE_OK`. Two extraction bugs came straight out of that, both found by re-auditing voided spans rather than by any test. See the day 5 note below |
 | The thin-page flag on live data | Tested, never fired on a real capture |
-| The fabricated-span count as a finding about the judge | **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. A count over PDF sources is still inflated by the symbol-font bullet. The figure is recomputed only after a run whose extraction has been checked, and reported separately for PDF and HTML |
+| The fabricated-span count as a finding about the judge | **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
 | `EXTRACTION_SUSPECT`'s error direction | Only the gold set can measure it. Until then the writeup says the direction is chosen and the rate is unknown |
 | The PDF garbled test's error direction | Same shape, one layer down. Two ratios, printable characters and spaces, decide whether decoded text is language or glyph numbers. Neither threshold is measured. It is set to refuse in the ambiguous case, because refusing costs coverage and passing garbled text produces a verdict that accuses a source |
 
@@ -100,15 +100,21 @@ reader had broken. Fixed by reading the operands: only a vertical move is a line
 the horizontal threshold from 0 to 8 against the real document, where only inserting nothing gave the right
 answer.
 
-The second is unfixed and recorded rather than hidden. This document renders bullets through a symbol font
-whose glyphs sit at letter code points, so a line reading "\u2022 Adults who..." extracts as "x Adults
-who...". Two of the four voided spans are that. Following font encodings is beyond a stdlib reader, so a
-fabricated-span count over PDF sources is inflated by an unknown amount and must be reported separately from
-one over HTML until it is fixed. `FINDINGS.md` item 14.
+The second was recorded as unfixed and was fixed on 2026-08-12, which is `FINDINGS.md` item 17 and is worth
+reading as a finding about the note rather than about the PDF. This document renders bullets through a symbol
+font whose glyphs sit at letter code points, so a line reading "\u2022 Adults who..." extracted as "x Adults
+who...", and the note here said that following font encodings is beyond a stdlib reader. The document carried
+its own reverse table, as an ordinary Flate stream, inside a compressed object stream. Two two-byte fonts,
+nineteen codes, no conflicts, and a second bullet bug nobody had noticed: WinAnsi 0x95, decoded into a control
+code and stripped as never-content, which deleted evidence rather than corrupting it.
 
 Of the four voids re-audited: one was the `Td` bug, two are the bullet, and one is a genuine catch, where the
 judge stitched two passages together with an ellipsis rather than quoting contiguously. Three of four were
-this tool's fault.
+this tool's fault. **The two bullet voids are still not overturned**, and the fix is why: re-checked against
+the corrected extraction they now get 305 of 549 characters through, where the bullet used to stop them at
+about 170, and then fail on `non-Boston`, because the judge quoted `nonBoston` from an extraction that had
+dropped an en dash. A span quoted from text this tool no longer produces cannot be settled by re-checking. So
+the fabricated-span count over PDF sources stays separate from one over HTML, and stays withdrawn.
 
 ## What changed on day 5, and what it means
 

@@ -12,6 +12,14 @@ an input carrying a `verdict`, `judgements` or `void_reason` key is rejected by 
 judge's answer visible in another window is still possible and no tool can prevent it, but the tool will not
 be the thing that puts it there.
 
+**And it will not start a blind session over an answer that has already been audited.** That is a separate
+refusal with a separate failure behind it, and until it existed the two guards above both missed it: an
+answer judged last week leaves a report on disk, a fresh split of it carries a different `split_sha256`, and
+G4 compares hashes rather than answers. So the session runs, the labels say blind, and nothing raises.
+`sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and this
+tool exits 3 rather than asking the first question. The way through is `--supplemental`, which is not a
+weaker version of blind: those labels are excluded from kappa and reported on their own.
+
 **How the sample is chosen.** Round-robin across products and then across G2 source codes, from a shuffle
 with a recorded seed, so the selection is reproducible and was not steered by hand toward interesting pairs.
 
@@ -44,12 +52,13 @@ from sayswho.extract import extract_text, raw_text  # noqa: E402
 from sayswho.fetch import decode_body  # noqa: E402
 from sayswho.goldset import LABELS, UNAUDITABLE, UNDECIDABLE, GoldLabel, GoldSet, coverage  # noqa: E402
 from sayswho.judge import JUDGE_PROMPT_VERSION, span_is_present  # noqa: E402
+from sayswho.prior_audit import JUDGE_KEYS, scan as scan_for_prior_audit  # noqa: E402
 from sayswho.records import SOURCE_OK, Capture  # noqa: E402
 from sayswho.splits import StoredSplit  # noqa: E402
 
-#: Keys whose presence means the file carries judge output. Checked by name rather than by file extension,
-#: because the failure this prevents is passing the wrong path, not passing a hostile file.
-JUDGE_KEYS = ("judgements", "verdict", "void_reason", "span_verified")
+#: `JUDGE_KEYS` is imported rather than restated. One module owns what judge output looks like in a file, and
+#: it holds both rules: presence for refusing an input here, a truthy value for the prior-audit scan. They are
+#: different tests of the same list and keeping the list in two places is how they would stop being that.
 
 
 class NotBlind(Exception):
@@ -198,6 +207,12 @@ def main(argv: list[str] | None = None) -> int:
                              "reported on their own, because a sample chosen using the judge's output is "
                              "not an agreement measurement")
     parser.add_argument("--plan", action="store_true", help="print the sample and exit, labelling nothing")
+    parser.add_argument(
+        "--audit-scan", type=Path, action="append", default=None,
+        help="where to look for an earlier audit of these answers. Repeatable. Defaults to reports/ and "
+             "runs/, which is where the server and the harness write. There is no flag to skip the scan: a "
+             "prior audit is answered with --supplemental, not with an override",
+    )
     args = parser.parse_args(argv)
 
     splits = [StoredSplit.load(p) for p in args.split]
@@ -212,6 +227,30 @@ def main(argv: list[str] | None = None) -> int:
     if not pool:
         print("no claim-source pairs in these splits. Nothing to label.", file=sys.stderr)
         return 2
+
+    # Before anything is printed about the sample, and long before the first question. A refusal that arrives
+    # after a labeller has read three claims has already cost them the blindness it was protecting.
+    prior_audit = scan_for_prior_audit({s.answer_sha256 for s in splits}, roots=args.audit_scan)
+    print()
+    print(prior_audit.render())
+    if prior_audit.found and not args.supplemental and not args.plan:
+        print()
+        print("A blind label written now would not be blind. The verdicts for this answer already exist on")
+        print("disk, so labelling it and calling the result agreement measures nothing: a labeller who has")
+        print("seen them cannot unsee them, and this tool cannot tell whether you have.")
+        print()
+        print("Two ways forward, and neither is an override:")
+        print("  1. label a different answer, one that has never been judged. --split-only makes the split")
+        print("  2. rerun with --supplemental. Those labels carry blind: false, they are excluded from kappa,")
+        print("     and they are reported on their own, which is the honest thing they can still be")
+        print()
+        print("There is no flag to skip this check, for the same reason rates.py has no override for an")
+        print("API-sourced rate: a decision that lives in a flag is one a tired person overrides at 2am.")
+        return 3
+    if prior_audit.found and args.plan and not args.supplemental:
+        # --plan writes nothing, so it is allowed to continue. Saying so is not the same as passing.
+        print()
+        print("  --plan labels nothing, so it continues. A blind session here would be refused.")
 
     existing: list[GoldLabel] = []
     labelled_splits: set[str] = set()
@@ -234,15 +273,18 @@ def main(argv: list[str] | None = None) -> int:
     print()
     # It used to say "nothing here has been judged yet", which is a claim about the world rather than about
     # this process, and it was false the first time anyone read it: every capture on disk had already been
-    # audited. The tool knows what it opened and nothing else, so it says only that.
-    print(f"{len(sample)} pairs to label. This tool has not opened any file containing a verdict.")
+    # audited. Then it said this tool had opened no file containing a verdict, which the prior-audit scan made
+    # false in turn: the scan opens exactly those files. What is true of both is that neither shows you one.
+    print(f"{len(sample)} pairs to label. No verdict has been shown to you here: an input carrying judge")
+    print("output is refused by name, and the scan above reads reports without printing what is in them.")
     if args.supplemental:
         print("These labels are SUPPLEMENTAL: they carry blind: false, they are excluded from kappa, and")
         print("they are reported on their own. Use this whenever the verdicts for this answer already")
         print("exist, whether or not you believe you have read them.")
     else:
-        print("Recorded as blind. That is a claim about you, not about this tool: if a verdict for this")
-        print("answer exists anywhere, rerun with --supplemental instead.")
+        print("Recorded as blind. The scan above checked the artefacts on disk and found none for these")
+        print("answers. It cannot see what you have read, so this is still partly a claim about you: if a")
+        print("verdict for this answer exists somewhere it could not look, rerun with --supplemental.")
     print()
     print("For each pair: open the URL, read the page, and say whether it supports the claim.")
     print("Labels: S supported, P partially, N not found in source, C contradicted,")
@@ -320,7 +362,8 @@ def main(argv: list[str] | None = None) -> int:
             labeller=args.labeller,
             note=(
                 f"Sampled with seed {args.seed} across products and G2 source codes. Verdict-class "
-                "stratification is not possible in a blind sample; see tools/label_goldset.py."
+                "stratification is not possible in a blind sample; see tools/label_goldset.py. "
+                f"Prior-audit scan: {prior_audit.summary()}."
             ),
         ).save(args.out)
 

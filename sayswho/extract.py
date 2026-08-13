@@ -237,6 +237,19 @@ _SPAN_FOLD = {
 #: word quoted by a judge does not.
 _SPAN_DROP = frozenset("\u00ad\u200b\u200c\u200d\u2060\ufeff")
 
+#: The Combining Diacritical Marks block, U+0300 to U+036F, and nothing else.
+#:
+#: These are the marks that fall out of decomposing a precomposed Latin, Greek or Cyrillic letter: the acute
+#: on an "e", the umlaut on an "u", the cedilla on a "c". Dropping them makes a decomposed accent and a
+#: precomposed one the same character to the span guard, which is the whole point.
+#:
+#: The range is a deliberate line rather than `category(c) == "Mn"`, which would have been shorter and wrong.
+#: Hebrew points, Arabic vowels and the Devanagari virama are all `Mn`, and none of them is typography: the
+#: virama suppresses a vowel, so removing it changes the word rather than how it was typeset. A guard that
+#: quietly rewrote Hindi to make a match easier would be doing the thing this project exists to catch, and it
+#: would be doing it to the citations least likely to be checked by hand.
+_COMBINING_TYPOGRAPHY = (0x0300, 0x036F)
+
 
 def fold_for_span(ch: str) -> str:
     """One character as the span guard sees it. May return zero, one, or several characters.
@@ -245,6 +258,13 @@ def fold_for_span(ch: str) -> str:
     answer by building a parallel index from folded positions back to raw ones, and that index is only valid
     if folding can be done character by character. A whole-string `unicodedata.normalize` would silently
     desync it and put a highlight on the wrong words.
+
+    Accents are folded by decomposing rather than by composing, which is what makes them fixable here at all.
+    Composing is a many-to-one operation and cannot be done one character at a time: nothing this function
+    can see turns an "e" followed by a combining acute into a single character, because it never sees the two
+    together. Decomposing is one-to-many in the other direction, which the index already handles, and it
+    reaches the same place from both sides. A precomposed "\u00e9" becomes "e", and a bare combining acute
+    becomes nothing at all, which is a return value this function was already allowed to produce.
     """
     if ch in _SPAN_DROP:
         return ""
@@ -252,7 +272,11 @@ def fold_for_span(ch: str) -> str:
         return _SPAN_FOLD[ch]
     # NFKC per character handles ligatures, full-width forms and ordinals. It does not touch curly quotes or
     # en dashes, which is why the table above exists as well.
-    return unicodedata.normalize("NFKC", ch).casefold()
+    folded = unicodedata.normalize("NFKC", ch).casefold()
+    low, high = _COMBINING_TYPOGRAPHY
+    return "".join(
+        c for c in unicodedata.normalize("NFD", folded) if not low <= ord(c) <= high
+    )
 
 
 def normalise_for_span(text: str) -> str:
@@ -261,10 +285,11 @@ def normalise_for_span(text: str) -> str:
     Kept here so the fetcher, the harness and the drift check all normalise identically. If they diverged,
     one could confirm a span another rejects.
 
-    **Known gap, stated rather than half-fixed.** A precomposed accent and a decomposed one still differ, so
-    an "e" plus a combining acute does not match a single "\u00e9". Fixing that means normalising the whole
-    string, which breaks the per-character index `report.py` depends on. It is a narrower gap than the one
-    this replaced and it is on `TODO.md` rather than in a comment nobody reads.
+    **The accent gap this used to declare is closed**, and by decomposing rather than by normalising the whole
+    string, so the per-character index in `report.py` still holds. See `fold_for_span`. What replaces it is
+    narrower and is stated in the same place: accents inside the Combining Diacritical Marks block are folded
+    away, so "resume" now matches "r\u00e9sum\u00e9", and marks outside that block are left alone because removing them
+    would change the word rather than its typography.
     """
     folded = "".join(fold_for_span(ch) for ch in text)
     return re.sub(r"\s+", " ", folded).strip()

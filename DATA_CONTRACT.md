@@ -93,20 +93,24 @@ code does is the same failure this project audits other people for.
 
   What that buys and what it costs is stated rather than implied. It reads a digitally-created PDF, which is
   most government and journal citations. It cannot read a scan, because there is no text layer and OCR is
-  not something to hand-roll, and it cannot follow a custom CID font encoding, where the bytes in the stream
-  are glyph numbers rather than letters. Both of those are refusals with their own outcome code, never text
-  passed on to the judge. A garbled read would produce `NOT_FOUND_IN_SOURCE`, the one verdict with no span
-  and therefore no G3 check, and the one that accuses the product of miscitation. `FINDINGS.md` item 11 is
-  that bug found once already.
+  not something to hand-roll. A CID font encoding it cannot resolve is still refused, and the line moved on
+  2026-08-12: a two-byte font that carries its own `/ToUnicode` table is now read through it, so the symbol
+  font that turned a bullet into the letter "x" is resolved rather than refused. Everything it still cannot
+  resolve is a refusal with its own outcome code, never text passed on to the judge. A garbled read would
+  produce `NOT_FOUND_IN_SOURCE`, the one verdict with no span and therefore no G3 check, and the one that
+  accuses the product of miscitation. `FINDINGS.md` items 11 and 17 are that bug found twice.
 
   The garbled test is two ratios, printable characters and spaces, both heuristics and neither measured.
   They are set to refuse in the ambiguous case: a refusal loses coverage, and passing garbage on invents a
   finding.
 
 - Formats with no parser are `SOURCE_NOT_HTML`, decided by the `Content-Type` header and by a `%PDF-` magic
-  number sniff that runs even when the header claims otherwise. **No PDF parsing and no OCR.** A cited PDF is
-  unauditable, which is a real limitation and a common one, since government reports and papers are the
-  citations most likely to be PDFs
+  number sniff that runs even when the header claims otherwise. **Still no OCR**, so a scan is
+  `SOURCE_NO_TEXT_LAYER` and stays unauditable. This bullet said "no PDF parsing" until 2026-08-12 and had
+  been false since `sayswho/pdf.py` landed, which is the second time this section has described a tool it was
+  no longer describing. `tests/test_documents.py` now checks the paths a document names and cannot check a
+  sentence like that one, so it is worth saying plainly: government reports and papers are the citations most
+  likely to be PDFs, and they are read
 - `img alt` text and SVG text nodes are extracted. A claim resting on a chart has nowhere else to be found,
   and dropping them made those claims read as absent from the source
 - `SOURCE_EMPTY` threshold: fewer than 200 characters of extracted text

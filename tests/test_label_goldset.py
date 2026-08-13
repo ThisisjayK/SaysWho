@@ -257,24 +257,173 @@ def test_quitting_after_one_label_still_reports_coverage(tmp_path, monkeypatch, 
 def test_the_banner_claims_only_what_the_tool_can_check(tmp_path, monkeypatch, capsys):
     """It used to open with "nothing here has been judged yet", which is a claim about the world rather
     than about this process, and it was false the first time anyone read it: every capture on disk had
-    already been audited. The tool knows what it opened and nothing else."""
+    already been audited.
+
+    Then it said this tool had opened no file containing a verdict, and the prior-audit scan made that false
+    in turn, because the scan opens exactly those files. What is true of both is that neither shows the
+    labeller one, so that is what it says now. The old sentences are asserted absent, because a claim that
+    stopped being true is worse than one that was never made."""
     s = split(product="chatgpt", n=4)
     p = tmp_path / "split.json"
     s.save(p)
     monkeypatch.setattr("builtins.input", lambda *_: "q")
 
     label_goldset.main(["--split", str(p), "--out", str(tmp_path / "g.json"),
-                        "--cache", str(tmp_path / "cache"), "--target", "3"])
+                        "--cache", str(tmp_path / "cache"), "--target", "3",
+                        "--audit-scan", str(tmp_path / "reports")])
     blind = capsys.readouterr().out
-    assert "has not opened any file containing a verdict" in blind
+    assert "No verdict has been shown to you here" in blind
+    assert "has not opened any file containing a verdict" not in blind
     assert "Nothing here has been judged yet" not in blind
     assert "--supplemental" in blind, "the blind path has to name the way out of it"
 
     label_goldset.main(["--split", str(p), "--out", str(tmp_path / "g2.json"),
-                        "--cache", str(tmp_path / "cache"), "--target", "3", "--supplemental"])
+                        "--cache", str(tmp_path / "cache"), "--target", "3", "--supplemental",
+                        "--audit-scan", str(tmp_path / "reports")])
     supplemental = capsys.readouterr().out
     assert "SUPPLEMENTAL" in supplemental
     assert "excluded from kappa" in supplemental
+
+
+# ---------------------------------------------------------------- the prior-audit refusal
+
+
+def audited(directory, answer, verdict="SUPPORTED"):
+    """A report of the kind `sayswho/report.py` writes, over one answer. What the scan is looking for."""
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / f"report-{answer[:8]}.json").write_text(json.dumps({
+        "meta": {"product": "chatgpt", "answer_sha256": answer},
+        "claims": [{"id": "c0", "sources": [{"verdict": verdict, "judged": True}]}],
+        "judged": True,
+    }))
+
+
+def test_a_blind_session_over_an_already_audited_answer_is_refused(tmp_path, monkeypatch):
+    """The fault this closes. `goldset.agreement` compares label times against the run they are compared
+    with, so labels written today pass against a run made tomorrow, and G4 ties to the split, which differs
+    because Phase 1 does not repeat itself. An answer judged last week therefore leaves verdicts that anchor
+    a labeller and trip nothing at all.
+
+    The refusal has to land before the first question, which is what the input trap here asserts: a labeller
+    who has already read three claims has spent the blindness this was protecting."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    audited(tmp_path / "reports", s.answer_sha256)
+
+    def never(*_):
+        raise AssertionError("the refusal must come before the first prompt")
+
+    monkeypatch.setattr("builtins.input", never)
+
+    out = tmp_path / "gold.json"
+    code = label_goldset.main(["--split", str(p), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "3",
+                               "--audit-scan", str(tmp_path / "reports")])
+    assert code == 3, "a distinct exit code, so a script can tell this refusal from a usage error"
+    assert not out.exists()
+
+
+def test_the_refusal_names_the_file_and_the_way_through(tmp_path, monkeypatch, capsys):
+    """A refusal a person cannot act on gets worked around. It names the file, so the claim can be checked,
+    and it names --supplemental, so there is somewhere to go."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    audited(tmp_path / "reports", s.answer_sha256)
+    monkeypatch.setattr("builtins.input", lambda *_: "q")
+
+    label_goldset.main(["--split", str(p), "--out", str(tmp_path / "gold.json"),
+                        "--cache", str(tmp_path / "cache"), "--target", "3",
+                        "--audit-scan", str(tmp_path / "reports")])
+    printed = capsys.readouterr().out
+    assert "PRIOR AUDIT" in printed
+    assert "report-" in printed, "the file has to be named or the refusal cannot be argued with"
+    assert "--supplemental" in printed
+    assert "SUPPORTED" not in printed, "the refusal must not print the verdict it found"
+
+
+def test_supplemental_proceeds_over_an_audited_answer_and_says_what_it_is(tmp_path, monkeypatch, capsys):
+    """The way through is not a weaker kind of blind. These labels carry blind: false, which excludes them
+    from kappa in `goldset.agreement` rather than merely annotating them."""
+    from sayswho.goldset import GoldSet
+
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    audited(tmp_path / "reports", s.answer_sha256)
+
+    answers = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+
+    out = tmp_path / "gold.json"
+    code = label_goldset.main(["--split", str(p), "--out", str(out), "--supplemental",
+                               "--cache", str(tmp_path / "cache"), "--target", "3",
+                               "--audit-scan", str(tmp_path / "reports")])
+    assert code == 0
+    gold = GoldSet.load(out)
+    assert gold.labels and not gold.labels[0].blind
+    assert not gold.blind, "a supplemental label must not reach the kappa sample"
+    assert "PRIOR AUDIT" in capsys.readouterr().out, "it still says what it found"
+
+
+def test_plan_mode_is_not_refused_but_says_the_session_would_be(tmp_path, capsys):
+    """--plan writes nothing, so blocking it would only stop somebody looking at the sample. Letting it
+    through silently would read as the check having passed."""
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    audited(tmp_path / "reports", s.answer_sha256)
+
+    code = label_goldset.main(["--split", str(p), "--out", str(tmp_path / "gold.json"),
+                               "--target", "3", "--plan",
+                               "--audit-scan", str(tmp_path / "reports")])
+    assert code == 0
+    printed = capsys.readouterr().out
+    assert "A blind session here would be refused" in printed
+    assert "selected" in printed, "the plan still printed"
+
+
+def test_a_clean_scan_is_recorded_in_the_saved_set(tmp_path, monkeypatch):
+    """The gold set carries the scan's own summary, so a set read a month later says whether the check ran
+    and over how much. Provenance rather than a hash, and it is not treated as one."""
+    from sayswho.goldset import GoldSet
+
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+    (tmp_path / "reports").mkdir()
+    audited(tmp_path / "reports", "f" * 64)  # a real audit, of a different answer
+
+    answers = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+
+    out = tmp_path / "gold.json"
+    assert label_goldset.main(["--split", str(p), "--out", str(out),
+                               "--cache", str(tmp_path / "cache"), "--target", "3",
+                               "--audit-scan", str(tmp_path / "reports")]) == 0
+
+    note = GoldSet.load(out).note
+    assert "Prior-audit scan" in note
+    assert "1 file(s)" in note, "how many files were read is the part that makes the claim checkable"
+
+
+def test_a_scan_that_could_not_look_anywhere_says_so_in_the_saved_set(tmp_path, monkeypatch):
+    """Not checked is not clean, and the set has to carry which of the two it was."""
+    from sayswho.goldset import GoldSet
+
+    s = split(product="chatgpt", n=4)
+    p = tmp_path / "split.json"
+    s.save(p)
+
+    answers = iter(["S", "", "", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(answers))
+
+    out = tmp_path / "gold.json"
+    label_goldset.main(["--split", str(p), "--out", str(out),
+                        "--cache", str(tmp_path / "cache"), "--target", "3",
+                        "--audit-scan", str(tmp_path / "absent")])
+    assert "not checked" in GoldSet.load(out).note
 
 
 # ---------------------------------------------------------------- when there is nobody at the keyboard
