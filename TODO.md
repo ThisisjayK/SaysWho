@@ -165,8 +165,10 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
 - [ ] Teach the extension to carry a query id. `saysWhoBuildCapture` takes `queryId` and no caller passes one,
       which is why order is load-bearing at all. The fix is a field in the popup, and it would make the
       pairing above a checksum rather than the only link
-- [ ] Decide how many of the 24 frozen consumer queries the day-7 run covers, and say so. A run over a subset
-      of a frozen set is legitimate and it is not the same claim as a run over the set, so whichever it is
+- [x] Decide how many of the 24 frozen consumer queries the day-7 run covers, and say so. **24 of 24.** Every
+      frozen consumer query was asked, captured, bound and judged, so the run is over the whole stratum rather
+      than a subset of it and no selection question arises. Superseded note follows.
+- [x] ~~A run over a subset of a frozen set~~ is legitimate and it is not the same claim as a run over the set, so whichever it is
       gets stated next to the n rather than left to be inferred
 
 ## Day 1: the data contract
@@ -803,19 +805,32 @@ The machinery is built and tested. What is left on this list is the labelling it
 
 ## Deliverables, by rubric row
 
-- [ ] Contribution works, 60 points. Installable MV3 extension, headless harness, pytest proving each gate
-      fails on its target bug, parity check
+- [x] Contribution works, 60 points. Installable MV3 extension loaded and run on real pages, headless harness
+      that has now produced a real run, a test per gate that makes it fire on the bug it exists to catch, and
+      the parity check running the real renderer in node against a payload the real Python built
 - [x] Two-customer pair, 30 points. `recipes/audit-citations.md` in nine sections, plus
       `recipes/audit-citations.card.md` covering six failure modes. Five of the six look like "the citation
       failed" and only one of them is, which is the card's organising idea
-- [ ] Verified-data attestation, 35 points. Two of the three parts are done. The §4 boundary table is
+- [x] Verified-data attestation, 35 points. All three parts exist as of day 6, and the blocker named here was
+      the trace table never having run over real data, which it now has: `runs/day7/TRACE.md` is generated
+      from the run rather than typed. The §4 boundary table is generated from `sayswho/boundary.py` and
+      `tests/test_documents.py` fails if the document and the code disagree. The gate output is
+      `python3 tools/ethics_gate.py`. What this replaces, kept because deleting it would hide the change:
+- [x] ~~Verified-data attestation, blocked on the trace table.~~ Two of the three parts were done. The §4 boundary table is
       generated from `sayswho/boundary.py` rather than typed, carries all seven classifications, and
       `tests/test_documents.py` fails if the document and the code disagree or if a run record emits a field
       no row covers. The privacy and honesty gate output is `python3 tools/ethics_gate.py`. The per-number
       trace table exists and is generated, but it has never run over real data, which is the blocker
-- [ ] The honest run, 35 points. Terminal output, plausibility audit, the two core break attempts, metric
-      readout, §7 limitations
-- [ ] GitHub PR, 25 points. `contrib/jayanth-says-who` branch with a maintainer-ready description.
+- [x] The honest run, 35 points. All five parts exist: `runs/day7/` holds the transcript and the metric
+      readout, the plausibility audit is written and signed as a judgement in `FINDINGS.md` item 21, break
+      attempts 5 and 6 have written results in `BREAK_ATTEMPTS.md`, and §7 carries ten limitations including
+      the ones this run added
+- [ ] GitHub PR, 25 points. **Description drafted to the two open answers: `PR_DESCRIPTION.md`.** Title, the
+      ten-minute review path, the limitations stated up front, the three design decisions worth arguing with,
+      and the table of six bugs found by running the tool rather than by the suite. Two blanks marked in the
+      file, and they are the same two as before: which repo this targets and which chapters it satisfies.
+      Original note follows.
+- [ ] ~~GitHub PR~~ `contrib/jayanth-says-who` branch with a maintainer-ready description.
       **Mine to do first, two answers:** which repo this targets, and which chapters SaysWho satisfies. The
       requirement asks for the chapters by name and nothing in this repo cites one, so that is a decision
       rather than a lookup. Nothing else about the description can be written until both are known, since a
@@ -832,8 +847,9 @@ The machinery is built and tested. What is left on this list is the labelling it
       specified step by step on `CO-22`, the three sentences to get exactly right, and what not to do on
       camera. Recording it is yours. The refusal is the middle of the demo rather than a caveat at the end,
       because a claim the tool declines to score is the argument
-- [ ] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named, the §5a failure condition
-      declared before the data existed, the §0a status table
+- [x] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named and verified against its own
+      documentation twice, the §5a failure condition declared before any data existed, and the §0a status
+      table maintained rather than assembled at the end
 
 ## Honesty obligations, regardless of how the numbers come out
 
@@ -850,20 +866,29 @@ These are not tasks that can be traded away for time. They are the reason the pr
       number makes weak evidence feel settled, and two of the four are not doing this task at all. §1b now
       carries a table of what each says it does, plus the academic attribution work it never named, plus the
       one thing CiteGuardian does that SaysWho does not. `FINDINGS.md` item 12
-- [ ] Re-check §1b before submission. Marketing pages change, and every claim in that table is dated
-      2026-08-11 rather than timeless. **Mine to do,** or worth one more pass if the writeup slips past a week
+- [x] Re-check §1b before submission. Done 2026-08-14 against all four pages. Every quoted phrase still
+      appears where it is attributed, including FactSentinel's warning that a single confidence number makes
+      weak evidence feel settled. One correction: "across several frontier models" was this document's phrase
+      and not theirs, and it is removed. The claim that none of them documents what it does with an
+      unfetchable source was asked directly of the two doing this task and holds. Original note follows.
+- [x] ~~Marketing pages change, and every claim in that table is dated 2026-08-11 rather than timeless.~~ or worth one more pass if the writeup slips past a week
 - [ ] Until the head-to-head runs, the differentiator is described as structural rather than measured, and
       incumbent behaviour is attributed to their marketing copy
-- [ ] The frozen query set is published in full so a reader can judge the sample instead of taking my word
-      for it. Cheaper than it was and more important: the set that runs is synthetic, so a reader judging it
+- [x] The frozen query set is published in full so a reader can judge the sample instead of taking my word
+      for it. `queries/consumer.toml` holds all 24 with their `cost_of_error`, and `queries/FREEZE.json` holds
+      the hashes. Original note follows. Cheaper than it was and more important: the set that runs is synthetic, so a reader judging it
       is judging questions I wrote, and there is no provenance claim standing between them and that judgement
 - [ ] ~~The scrub drop count is published alongside the support rates~~ **Withdrawn on day 6, and named as
       withdrawn.** There was no intake, so there is no drop rate. A promised number that cannot be
       produced is reported as absent rather than quietly dropped from the list
-- [ ] The judge-fabricated-span rate is published rather than quietly fixed, **and it is only described as a
-      finding about the judge once the extraction behind each void has been checked.** That precondition is new
+- [x] The judge-fabricated-span rate is published rather than quietly fixed, **and it is only described as a
+      finding about the judge once the extraction behind each void has been checked.** Honoured twice now. On
+      the day-6 run all four voids were re-checked before any of them were described: 3 of 96 are the judge
+      stitching non-contiguous passages and 1 of 96 was this tool inlining a footnote marker, now fixed. The
+      original wording follows. That precondition is new
       and it is here because the obligation as originally worded would have published the wrong thing: three
       of the first four voids were caused by this tool, and the honest phrasing separates a void caused by the
       model from one caused by the extractor. `FINDINGS.md` item 14
-- [ ] §7 stays in: it cannot check whether a source is true, it is blind to omission, and it cannot tell a
-      peer reviewed paper from a blog post
+- [x] §7 stays in, and grew rather than shrank: ten limitations now, including the ones the honest run added.
+      It cannot check whether a source is true, it is blind to omission, and it cannot tell a peer reviewed
+      paper from a blog post

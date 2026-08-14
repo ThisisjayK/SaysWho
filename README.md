@@ -119,7 +119,7 @@ every capture bound to a frozen query and writes four files: the run record, the
 an interval on every rate, `RUN_LOG.md`, and a per-number trace table generated from the run rather than
 typed alongside it.
 
-781 tests, all offline except a node process for the parity check. Two of them pin failures rather than
+783 tests, all offline except a node process for the parity check. Two of them pin failures rather than
 fixes: an injection that dictates its own span defeats the guard, and a judge can quote a real but irrelevant
 sentence. Deleting either test would delete the finding. `BREAK_ATTEMPTS.md` writes both up.
 

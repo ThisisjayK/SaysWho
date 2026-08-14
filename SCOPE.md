@@ -125,7 +125,7 @@ live in one of them.
 
 | # | Item | State | Evidence, or what it waits on |
 |---|---|---|---|
-| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 781 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
+| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 783 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
 | 2 | One stratum, now the consumer set | **Changed on day 6, and reported rather than substituted** | The professional set cannot be assembled: the sessions it was to be transcribed from are gone, and retyping from memory breaks two of `queries/README.md`'s own selection rules. The consumer set is written, frozen since day 1, and honestly synthetic, so the core runs on it. `queries/professional.toml` stays empty, because inventing one would make a published sentence false |
 | 3 | Gold set of 30 to 40 hand-labelled claims | **6 of 45 labelled, and that is what withheld every rate in the day-6 run** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Four faults in the workflow were found by walking it rather than by the suite, the last being that an answer audited earlier leaves verdicts which anchor a labeller and trip no existing guard: `sayswho/prior_audit.py` refuses a blind session over one. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
 | 4 | Two break attempts: injection, denominator contamination | **Done** | `BREAK_ATTEMPTS.md` attempts 5 and 6, both with written results. Attempt 5 revised §6: an injection that dictates its own span defeats the guard, because dictating the span puts it on the page. Kept as a passing test of the failure |
@@ -192,14 +192,18 @@ install and watch.
 
 This space is occupied, and one of the tools in it is very close to this one. **The general idea is not
 novel, and the writeup says so plainly.** All four were checked against their own documentation on
-2026-08-11, and the paragraph below was corrected twice as a result. What each one actually says:
+2026-08-11, and the paragraph below was corrected twice as a result. **Re-checked 2026-08-14, before
+submission, because a marketing page is not a fixed object and a claim about one rots.** Every quoted phrase
+below still appears on the page it is attributed to, including FactSentinel's warning about confidence
+numbers. One description was too generous to itself and is corrected in the table. What each one actually
+says:
 
 | Tool | What it does, by its own description | What it outputs |
 |---|---|---|
 | [CiteGuardian](https://www.citeguardian.com/docs/extension) | Verifies claims against their cited sources in AI answers, as a Manifest V3 Chrome extension, invoked by right-clicking a highlighted answer. This is the same product | "Each claim with its verdict badge, confidence, and any flags", plus a support-rate badge: 80%+ green, 50 to 79% yellow, under 50% red. It also runs a "scrub test" for decorative citations, which SaysWho does not do |
 | [CiteTrue](https://citetrue.com/) | Checks whether a citation is *real*: authors, year, journal and DOI against Crossref, PubMed, OpenAlex and others. Academic citations, not AI answers | A confidence score for the authenticity of the citation. Not a judgement about whether a source supports a claim |
 | [GPTZero Source Finder](https://gptzero.me/sources) | Finds sources *for* text, matching claims to online and academic data. The opposite direction from auditing citations an answer already has | Whether evidence "contradicts, debates, or supports a claim", and formatted citations. It says it "does not take a stance on whether your claims or the claims in the sources cited are true". No confidence number is documented on that page |
-| [FactSentinel](https://factsentinel.com/ai-source-checker) | Fact-checks claims against sources across several frontier models, in a browser workflow | "verdict, confidence, reasoning, model split, caveats, and source links" |
+| [FactSentinel](https://factsentinel.com/ai-source-checker) | Fact-checks claims against sources in a browser workflow, reporting where models disagree. The words "frontier models" were this document's, not theirs, and are removed on the 2026-08-14 re-check | "verdict, confidence, reasoning, model split, caveats, and source links" |
 
 **Two corrections to what this section used to claim**, kept here rather than quietly edited, because a
 section about other people's citation accuracy is the worst possible place to be loose with citations.
@@ -229,7 +233,9 @@ would be precisely the error this tool exists to detect.
 
 **So the differentiator, stated at the strength the evidence supports.** Three of the four attach a
 confidence number to a verdict. None of the four documents what it does when a cited source cannot be
-fetched, is paywalled, or has changed since the answer was written. That is a claim about their
+fetched, is paywalled, or has changed since the answer was written, and that was asked directly of the two
+doing this task on the 2026-08-14 re-check: CiteGuardian's extension documentation and FactSentinel's source
+checker both say nothing about it. That is a claim about their
 documentation and nothing more: it is not evidence about their behaviour, and finding out would need the
 §5a head-to-head, which has not run. Until it does, the difference below is **structural**, demonstrable on
 SaysWho's own tool, and not a measured comparison.

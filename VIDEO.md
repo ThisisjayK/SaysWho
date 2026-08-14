@@ -17,12 +17,12 @@ at all, because no gold set covered those splits. A tool that prints a number in
 
 | # | Length | Shot | What is said |
 |---|---|---|---|
-| 1 | 0:00–0:30 | Screen: a Perplexity answer with footnotes, scrolling | "This answer has nine footnotes. I have never once opened all nine. Nobody has. The footnote does the persuading and nothing does the checking." |
-| 2 | 0:30–1:00 | `queries/consumer.toml` on screen, then `freeze_queries.py check` passing | "Twenty-four questions, frozen before any run, hash-checked before every one. If I tuned a question after seeing a result, this command fails." |
-| 3 | 1:00–2:30 | **The uncut segment.** Live browser, extension loaded | See below. This is the shot that carries the video. |
-| 4 | 2:30–3:15 | Terminal: the day-7 readout, scrolled to `STRATUM RATE withheld` | "Here is the run over all 24. And here is the support rate: there isn't one." |
-| 5 | 3:15–4:15 | `FINDINGS.md` item 21 on screen | The four voided spans, and the one that was ours. |
-| 6 | 4:15–5:00 | `STATUS.md` blocker row and the not-done rows | "The professional stratum never ran. Here is the row that says so." |
+| 1 | 0:00 to 0:30 | Screen: a Perplexity answer with footnotes, scrolling | "This answer has nine footnotes. I have never once opened all nine. Nobody has. The footnote does the persuading and nothing does the checking." |
+| 2 | 0:30 to 1:00 | `queries/consumer.toml` on screen, then `freeze_queries.py check` passing | "Twenty-four questions, frozen before any run, hash-checked before every one. If I tuned a question after seeing a result, this command fails." |
+| 3 | 1:00 to 2:30 | **The uncut segment.** Live browser, extension loaded | See below. This is the shot that carries the video. |
+| 4 | 2:30 to 3:15 | Terminal: the day-7 readout, scrolled to `STRATUM RATE withheld` | "Here is the run over all 24. And here is the support rate: there isn't one." |
+| 5 | 3:15 to 4:15 | `FINDINGS.md` item 21 on screen | The four voided spans, and the one that was ours. |
+| 6 | 4:15 to 5:00 | `STATUS.md` blocker row and the not-done rows | "The professional stratum never ran. Here is the row that says so." |
 
 ## Shot 3, the uncut segment, in order
 
