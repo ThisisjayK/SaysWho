@@ -554,12 +554,16 @@ The machinery is built and tested. What is left on this list is the labelling it
       the access difference above. The other two are real disagreement on the same document, where the human
       read the page as silent and the model quoted a passage from our own extraction. That is the number the
       writeup reports, with its n, and it is why the human labels could not be replaced
-- [ ] **`extracted_pair` in `tools/label_goldset.py` runs the HTML extractor over raw bytes**, so for a PDF
-      source it compares the labeller's passage against `endstream endobj` noise and always records the pair
+- [x] **`extracted_pair` in `tools/label_goldset.py` ran the HTML extractor over raw bytes**, so for a PDF
+      source it compared the labeller's passage against `endstream endobj` noise and always recorded the pair
       as unchecked rather than as a real comparison. `tools/reaudit_spans.py` fixed exactly this once and
-      carries a docstring warning about it, which is the second time this assumption has shipped. Two of the
-      45 sampled pairs are IRS PDFs. The fix is to route through `kind_of` and `extract_pdf_text` the way the
-      re-audit tool does
+      carries a docstring warning about it, which made it the second time the assumption shipped. Two of the
+      45 sampled pairs are IRS PDFs, so the extraction check could never have fired on either. Fixed in
+      `c52a808` on day 7, and fixed once rather than twice: both tools now read cached bytes through
+      `fetch.text_pair`, which is the read-only half of `Fetcher._classify` and routes by document kind. Two
+      tests hold it, one asserting a PDF is read as a PDF rather than as markup, and one running the same
+      bytes through the helper and the fetcher and asserting they agree. This row stayed unticked after the
+      work landed, which is the failure `TODO.md` exists to prevent
 - [ ] Try to recruit a classmate to double-label 10 to 15 claims. **Mine to do.** If nobody is available, say so plainly and
       treat my labels as a single-rater ceiling rather than ground truth
 
