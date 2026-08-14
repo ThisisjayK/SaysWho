@@ -32,6 +32,7 @@ from .records import (
     SOURCE_NO_TEXT_LAYER,
     SOURCE_NOT_HTML,
     SOURCE_OK,
+    SOURCE_BOT_BLOCKED,
     SOURCE_PAYWALLED,
     SOURCE_ROBOTS_EXCLUDED,
     SOURCE_UNREACHABLE,
@@ -157,6 +158,54 @@ def decode_body(body: bytes, headers: dict) -> tuple[bytes | None, str]:
     # brotli and zstd need a dependency. Returning the raw bytes would let binary noise through the length
     # threshold as though it were an article, so this is an explicit refusal instead.
     return None, f"unsupported content-encoding: {encoding}"
+
+
+#: Markers that a response is a bot-detection interstitial rather than the document, whatever status code it
+#: arrived with.
+#:
+#: Every entry is from a real response. The FDA's Akamai edge answered a cited page with **404** and a
+#: `location` header pointing at `/apology_objects/abuse-detection-apology.html`, over a body that redirects
+#: to an excessive-requests apology. `code_for_status` turned that into `SOURCE_DEAD_LINK`, which is the one
+#: unauditable code that is a statement about the citation rather than about us: it says the product cited a
+#: page that does not exist. A person opened the same URL and read the full article. The run was one step
+#: from publishing a false accusation, and the evidence was in the response headers the whole time.
+#:
+#: A 404 is normally an answer and this does not change that. What it changes is that a 404 whose own body
+#: says it is an abuse-detection page is not an answer about the document.
+_BOT_BLOCK_MARKERS = (
+    "abuse-detection",
+    "abuse detection",
+    "excessive-requests",
+    "excessive requests",
+    "/apology_objects/",
+    "unusual traffic",
+    "are you a robot",
+    "verify you are human",
+    "checking your browser before accessing",
+    "cf-browser-verification",
+)
+
+#: A block page is small. A real document that happens to discuss bot detection is not, and this is the guard
+#: that keeps an article about CAPTCHAs from being reported as one. The FDA response was 420 bytes.
+MAX_BOT_BLOCK_BYTES = 8_000
+
+
+def looks_bot_blocked(headers: dict, body: bytes) -> str:
+    """The marker proving this response is a refusal aimed at automated clients, or an empty string.
+
+    Applied only to responses that already failed, deliberately. A 200 carrying a challenge page is a real
+    thing and is not handled here: catching it would need a wider net cast over ordinary documents, and this
+    catches the case that actually cost something without putting every readable page at risk of being called
+    a block. That gap is stated in `SCOPE.md` §7 rather than left for somebody to find.
+    """
+    if len(body) > MAX_BOT_BLOCK_BYTES:
+        return ""
+    haystack = " ".join(str(v) for v in (headers or {}).values()).lower()
+    haystack += " " + body.decode("utf-8", errors="replace").lower()
+    for marker in _BOT_BLOCK_MARKERS:
+        if marker in haystack:
+            return marker
+    return ""
 
 
 def text_pair(headers: dict, body: bytes) -> tuple[str, str, str]:
@@ -408,6 +457,22 @@ class Fetcher:
             # 404 and 403 are both "no document", and they are different findings: one says the citation is
             # broken, the other says it is unreadable to anything automated while a person clicking it would
             # see the page. See records.code_for_status.
+            #
+            # Unless the response says otherwise. A server may refuse a robot with any status it likes, and
+            # one cited page in the first honest run came back 404 from an interstitial that named itself an
+            # abuse-detection page in its own headers. Reading that is the difference between recording a fact
+            # about this pipeline's access and publishing a false statement about somebody's citation.
+            marker = looks_bot_blocked(headers or {}, body)
+            if marker:
+                return FetchRecord(
+                    code=SOURCE_BOT_BLOCKED,
+                    text_length=0,
+                    **{**base, "detail": (
+                        f"HTTP {status}, and the response is a bot-detection page rather than the document "
+                        f"(matched {marker!r}). Recorded as blocked rather than as the status implies, "
+                        f"because a person opening this URL is very likely to see the page"
+                    )},
+                )
             return FetchRecord(code=code_for_status(status), text_length=0, **base)
 
         decoded, note = decode_body(body, headers or {})

@@ -385,3 +385,72 @@ def test_text_pair_agrees_with_the_fetcher_on_the_same_bytes(server, cache):
         assert strict == record.text, f"{path}: strict pass disagrees with the fetcher"
         assert permissive == record.raw, f"{path}: permissive pass disagrees with the fetcher"
 
+
+# ---------------------------------------------------------------- a refusal wearing a status code
+
+
+def test_a_404_that_is_really_a_bot_block_is_recorded_as_blocked(cache, monkeypatch):
+    """The one unauditable code that accuses a citation rather than this pipeline, applied to a page that is
+    not dead. The FDA's Akamai edge answered a cited URL with 404 and a `location` header pointing at
+    `/apology_objects/abuse-detection-apology.html`. A person opened the same URL and read the article in
+    full. `SOURCE_DEAD_LINK` would have published "the product cited a page that does not exist".
+
+    The evidence was in the response headers the whole time, which is why this is a bug about reading rather
+    than about the web. `FINDINGS.md` item 21."""
+    f = fetcher(cache)
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+    body = (
+        b'<!DOCTYPE html><html><head><title>FDA Apology</title></head><body><script>'
+        b'window.location.href = "/apology_objects/excessive-requests-apology.html";</script></body></html>'
+    )
+    monkeypatch.setattr(f, "_raw_request", lambda url: (
+        404, {"content-type": "text/html", "location": "/apology_objects/abuse-detection-apology.html"}, body,
+    ))
+
+    record = f.fetch("https://example.gov/scripts/record.cfm?id=1")
+
+    assert record.code == SOURCE_BOT_BLOCKED, "a 404 that says it is an abuse page is not a dead link"
+    assert record.http_status == 404, "the status is still recorded truthfully"
+    assert "abuse-detection" in record.detail
+    assert not record.auditable, "the arithmetic is unchanged: it is unauditable either way"
+
+
+def test_an_ordinary_404_is_still_a_dead_link(cache, monkeypatch):
+    """The other half. A 404 is normally an answer about the document, and this must not turn every one of
+    them into a story about robots."""
+    f = fetcher(cache)
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+    monkeypatch.setattr(f, "_raw_request", lambda url: (
+        404, {"content-type": "text/html"}, b"<html><body><h1>Not Found</h1></body></html>",
+    ))
+
+    assert f.fetch("https://example.org/gone").code == SOURCE_DEAD_LINK
+
+
+def test_a_long_page_about_bot_detection_is_not_reported_as_one(cache, monkeypatch):
+    """The precision guard. A block page is small; an article discussing abuse detection is not, and the
+    words appear in both. Without a size bound this would misread a real document about the subject."""
+    f = fetcher(cache)
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+    article = (
+        b"<html><body><article><p>This paper studies abuse detection and unusual traffic on the web. </p>"
+        + b"<p>" + b"Discussion of the topic continues at length. " * 400 + b"</p></article></body></html>"
+    )
+    monkeypatch.setattr(f, "_raw_request", lambda url: (404, {"content-type": "text/html"}, article))
+
+    assert len(article) > 8_000, "the fixture has to be past the size bound or it proves nothing"
+    assert f.fetch("https://example.org/paper").code == SOURCE_DEAD_LINK
+
+
+def test_a_403_block_page_stays_blocked_and_says_why(cache, monkeypatch):
+    """A 403 already mapped to blocked, so this asserts the detail improves rather than the code changing."""
+    f = fetcher(cache)
+    monkeypatch.setattr(f, "allowed", lambda url: True)
+    monkeypatch.setattr(f, "_raw_request", lambda url: (
+        403, {"content-type": "text/html"}, b"<html><body>Checking your browser before accessing.</body></html>",
+    ))
+
+    record = f.fetch("https://example.org/blocked")
+    assert record.code == SOURCE_BOT_BLOCKED
+    assert "checking your browser" in record.detail
+

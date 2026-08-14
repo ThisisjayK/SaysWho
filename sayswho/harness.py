@@ -347,6 +347,32 @@ class _Unbound:
 # ------------------------------------------------------------------ the readout
 
 
+#: What every rate from a stratum has to be read as, printed with the rates rather than remembered for the
+#: writeup. `TODO.md` day 7 carried this as an obligation on prose, and an obligation on prose is one a tired
+#: person drops at 2am: the whole reason `rates.py` holds the no-API-rate rule rather than a document does.
+#:
+#: The consumer set is synthetic and says so in `queries/consumer.toml`. Nobody asked those questions, so a
+#: rate over them describes what this tool does on questions of that shape and not what anyone's real research
+#: looks like. The professional set, which would have supplied the second half, does not run: §0 records why.
+_STRATUM_CAVEAT = {
+    "consumer": (
+        "reads as        single-stratum and SYNTHETIC. These questions were written, not asked, so no rate "
+        "here describes real use by anyone"
+    ),
+    "professional_research": (
+        "reads as        single-stratum, one person's real research, representative of that and nothing wider"
+    ),
+}
+
+
+def _stratum_caveat(stratum: str) -> str:
+    """The sentence that has to sit next to any rate from this stratum, or a refusal to characterise one."""
+    return _STRATUM_CAVEAT.get(
+        stratum,
+        "reads as        an unnamed stratum, so nothing here may be described as a rate over anything",
+    )
+
+
 def readout(run: StratumRun) -> str:
     """The metric readout, `SCOPE.md` §5 and §12 day 7. Every rate with its n and its interval."""
     lines: list[str] = []
@@ -357,6 +383,7 @@ def readout(run: StratumRun) -> str:
     add(f"judge        {run.judge_class} {run.judge_model}")
     add(f"versions     {JUDGE_PROMPT_VERSION}, {CLAIM_PROMPT_VERSION}")
     add(f"gold set     {run.goldset_path or 'none labelled for this configuration'}")
+    add(_stratum_caveat(run.stratum))
     add("=" * 96)
     add("")
 

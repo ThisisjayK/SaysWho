@@ -592,13 +592,16 @@ The machinery is built and tested. What is left on this list is the labelling it
       inlining a `[44]` footnote marker the judge dropped. That one is now fixed, so a rerun of this stratum
       would report 3 of 96 rather than 4, and the writeup says the figure moved because the checker was
       corrected rather than because the judge improved
-- [ ] Label every rate as single-stratum **and as synthetic**. Not a rate for AI citations generally, and
-      not a rate over anyone's real research either, since the stratum that would have supplied that does
-      not run. Both halves go next to the number rather than into §7 alone. **Mine to do:** no rate has been
-      printed yet, so this is a rule for the writeup rather than a change to any output
-- [ ] Plausibility audit of the numbers. **Mine to do**, and the run gives it three specific things to chew
-      on rather than a blank page: `CONTRADICTED` came back empty across 130 verdicts, the thin-page flag
-      still has not fired after 51 more sources, and 42 of 158 claims carry no citation at all
+- [x] Label every rate as single-stratum **and as synthetic**. Made structural rather than promised:
+      `harness.readout` prints the caveat in its header, from a table keyed by stratum, so a consumer run
+      says the questions were written rather than asked and an unnamed stratum refuses to be characterised at
+      all. An obligation on prose is one a tired person drops at 2am, which is the argument `rates.py` already
+      makes by holding the no-API-rate rule in code
+- [x] Plausibility audit of the numbers. Written into `FINDINGS.md` item 21 and signed as a judgement rather
+      than an output. What looks right, what looks wrong (`CONTRADICTED` empty across 130 verdicts when break
+      attempt 1 shows the class is reachable), what looks too good (58% supported, and three reasons to
+      distrust it before anyone quotes it), and what is missing rather than measured (42 of 158 claims carry
+      no citation and this tool is blind to whether they needed one)
 - [x] Fix the footnote-marker void. Fixed in the guard rather than in the extractor, deliberately: the
       document keeps saying what we extracted, and the comparison learns that a bracketed number is not part
       of the sentence. `span_is_present` tries twice, the second pass stripping bracketed numbers of up to
@@ -607,10 +610,12 @@ The machinery is built and tested. What is left on this list is the labelling it
       `drift.span_predates_generation` routed through the same function so the identical marker cannot void
       the identical span under a different code. The widening is stated where it is made: a span differing
       from the page only in bracketed numbers is now accepted
-- [ ] The `SOURCE_DEAD_LINK` that is not one. `accessdata.fda.gov` answered 404 from an Akamai interstitial
-      naming itself an abuse-detection page in its own `location` header, and a person opens the same URL and
-      reads the article. `SOURCE_DEAD_LINK` is the one unauditable code that accuses a citation rather than
-      this pipeline. Evidence is in the cache; the fetch layer is untouched pending a decision
+- [x] The `SOURCE_DEAD_LINK` that is not one. Fixed: a non-200 whose own headers or body name it an
+      abuse-detection page is `SOURCE_BOT_BLOCKED` whatever status it arrived with, bounded to responses under
+      8 KB so an article about bot detection is not mistaken for one. Re-derived from the cache with no new
+      requests: **the run's corrected table is 42 `SOURCE_OK`, 8 `SOURCE_BOT_BLOCKED`, 1 `SOURCE_UNREACHABLE`
+      and zero dead links.** Not one of the fifty-one cited sources was a broken citation, which makes the
+      unauditable rate a measurement of our access rather than of anyone's citation hygiene
 - [x] §0a status table. `STATUS.md`, filled in for day 5 and updated as things land. Core items whose
       machinery exists but has never run on real data are listed separately rather than ticked, because
       "the code path exists" and "we have seen it work" are different claims
@@ -823,8 +828,10 @@ The machinery is built and tested. What is left on this list is the labelling it
       thirty-second path is not padded with the five-minute one
 - [ ] Portfolio piece, the case study half: the other part of this row. The
       install works today; the thirty-second claim needs someone who is not me to try it
-- [ ] Explainer video, 20 points. **Mine to do.** Three to six minutes, one uncut segment showing a real answer marked live,
-      including a claim it refuses to score
+- [ ] Explainer video, 20 points. **Script and shot list written: `VIDEO.md`.** Six shots, the uncut segment
+      specified step by step on `CO-22`, the three sentences to get exactly right, and what not to do on
+      camera. Recording it is yours. The refusal is the middle of the demo rather than a caveat at the end,
+      because a claim the tool declines to score is the argument
 - [ ] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named, the §5a failure condition
       declared before the data existed, the §0a status table
 

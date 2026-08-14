@@ -863,7 +863,7 @@ nothing halted, no capture errored.
 | | |
 |---|---|
 | captures | 24, all bound, all one product |
-| sources | 51: **42 `SOURCE_OK`**, 7 `SOURCE_BOT_BLOCKED`, 1 `SOURCE_DEAD_LINK`, 1 `SOURCE_UNREACHABLE` |
+| sources | 51: **42 `SOURCE_OK`**, 8 `SOURCE_BOT_BLOCKED`, 1 `SOURCE_UNREACHABLE`, **0 `SOURCE_DEAD_LINK`** |
 | document kinds | 49 HTML, 2 PDF |
 | claims | 158, of which 42 carry no citation |
 | claim-source pairs | 139 |
@@ -912,7 +912,44 @@ which is a fact about this sample rather than a reassurance: only two of the fif
 unauditable because of us or because of a server refusing robots, not because of a broken citation: seven
 403s, one TLS failure, and one 404 that a person can open in a browser and read in full. That last one is
 still classified `SOURCE_DEAD_LINK`, which is the one unauditable code that accuses a citation rather than
-this pipeline, and it is wrong. It is recorded here and not yet fixed.
+this pipeline, and it was wrong. It is now fixed: a non-200 whose own headers or body name it as an
+abuse-detection page is recorded as `SOURCE_BOT_BLOCKED` whatever status it arrived with, bounded to responses
+under 8 KB so an article discussing bot detection is not mistaken for one. Re-derived from the cache with no
+new requests, the table above is the corrected one.
+
+**Which makes the sentence stronger and worth stating plainly: not one of the fifty-one cited sources was a
+broken citation.** Nine were unreadable to us, and all nine are a server refusing an automated client or a
+TLS chain we could not verify. The unauditable rate this run would publish is a measurement of our access,
+not of anyone's citation hygiene, and `DATA_CONTRACT.md` §3 forbids the only thing that would change that.
+
+## The plausibility audit
+
+`SCOPE.md` §12 day 7 asks for one. It is a judgement rather than an output, so it is signed as such: this is
+mine to defend and the numbers behind each point are in `runs/day7/`.
+
+**What looks right.** 42 of 51 sources readable is plausible for consumer questions answered from government
+and health-service pages. 158 claims from 24 answers, at 6.6 claims per answer, matches the length of what
+Perplexity returns. 139 claim-source pairs against 51 sources means most sources carry two or three claims,
+which is what a cited paragraph looks like.
+
+**What looks wrong, and is.** `CONTRADICTED` came back empty across 130 verdicts. Break attempt 1 found this
+judge reading a page's disclaimer as a contradiction 4 times out of 4 (item 15), so the class is clearly
+reachable; a run that produces none of it either got lucky with 24 well-cited answers or the judge is
+reluctant to use it on real pages, and those two are not distinguishable from here. It is the class §3 Phase 4
+says to fill first in a gold set, and no run so far can supply an example.
+
+**What looks too good.** 75 `SUPPORTED` of 130 is 58%, and every one of those quoted a span the guard
+confirmed is on the page. That is a higher support rate than the project's own framing would have predicted.
+Three reasons to distrust it before anyone quotes it: no rate was published from it and none may be; the
+questions are synthetic and short, which makes them easier to answer well than real research questions; and
+Perplexity cites densely, so a claim has more chances to find a supporting source than an answer with one
+footnote per paragraph.
+
+**What is missing rather than measured.** 42 of 158 claims carry no citation at all, and this tool is blind to
+whether they needed one. That is 27% of the extracted claims, and §7's omission limitation covers exactly that
+gap. The thin-page flag has now seen 51 more sources without firing, which is either a well-built flag or a
+flag that does not work, and nothing here separates those.
+
 
 **Two things that did not happen, worth stating because they were expected to.** The thin-page flag has still
 never fired on real data, over fifty-one more sources. And `CONTRADICTED` came back empty across 130 verdicts,

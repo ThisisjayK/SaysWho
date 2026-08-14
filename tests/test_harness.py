@@ -435,3 +435,18 @@ def test_the_run_writes_its_four_artefacts_after_a_mixed_stratum(tmp_path, serve
     for key in ("json", "readout", "log", "trace"):
         assert written[key].exists() and written[key].stat().st_size > 0, key
 
+
+def test_the_readout_says_what_stratum_its_rates_would_be_over(tmp_path, server, capture_file, frozen):
+    """`TODO.md` day 7 carried "label every rate single-stratum and synthetic" as an obligation on the
+    writeup. An obligation on prose is one a tired person drops, which is the whole reason `rates.py` holds
+    the no-API-rate rule rather than a document. So the readout prints it beside the rates."""
+    from sayswho.harness import _stratum_caveat, readout
+
+    run = go([capture_file()], tmp_path / "cache", judge=all_supported())
+    printed = readout(run)
+
+    assert "reads as" in printed
+    assert "SYNTHETIC" in _stratum_caveat("consumer")
+    assert "real research" in _stratum_caveat("professional_research")
+    assert "unnamed stratum" in _stratum_caveat("")
+
