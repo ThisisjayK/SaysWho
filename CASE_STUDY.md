@@ -1,8 +1,8 @@
 # SaysWho: building a tool that refuses to give you a number
 
 A case study for a technical reader. What the problem was, which decisions were load bearing, what they cost,
-and what is still unmeasured. Written on day 5 of a ten-day build, so the last section is longer than the
-results section, which is the accurate shape at this point.
+and what is still unmeasured. Written on day 7 of a ten-day build, so the last section is
+still longer than the results section, which remains the accurate shape.
 
 Repo: https://github.com/ThisisjayK/SaysWho
 
@@ -123,7 +123,7 @@ on a sample the judge chose.
 
 Runs end to end on a real captured answer: capture, hash, fetch every cited URL under a written data
 contract, check drift against the Wayback archive, split into claims, judge each against its source, verify
-every span. 343 tests, each gate with a test that makes it fire on the bug it exists to catch.
+every span. 781 tests, each gate with a test that makes it fire on the bug it exists to catch.
 
 What has actually been observed, all at n=1 and reported as such: a Claude research report that named fifteen
 sources and linked one. A drift check that flagged churning reference lists as drift until it was asked the
@@ -132,10 +132,12 @@ the answer was written". A gzip bug that made every archived comparison report d
 consistent, entirely artefactual result. And an extraction guard that fired twice and was wrong both times,
 because the permissive parser it depended on had been written, tested, and never wired in.
 
-**No measured rate exists yet, and the tool currently refuses to print one.** Gate G4 withholds every rate
-that depends on a calibrated judge until a gold set is labelled by hand. That gold set needs the query set,
-which needs the transcription work. The refusal is the system behaving correctly, and it is also the reason
-there is no results section here.
+**No measured rate exists yet, and the run that could have produced one refused to print it.** Twenty-four
+answers, 51 sources, 130 verdicts, and no support rate: gate G4 withholds every rate that depends on a
+calibrated judge, the gold set covers four of the twenty-four splits, and two more answers were withheld on
+`INSUFFICIENT_EVIDENCE` before G4 got to them. The refusal is the system behaving correctly. It is also the
+reason there is no results section here, and watching it happen on real data is the closest thing to a result
+this project has.
 
 `STATUS.md` lists every core and stretch item as done or not-done with a reason, including the ones that
 would be more flattering to leave out.

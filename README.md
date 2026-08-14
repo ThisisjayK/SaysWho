@@ -49,13 +49,17 @@ starting and failing an hour later. Nothing is sent anywhere except to the pages
 
 ## Status
 
-Day 5 of ten. The pipeline runs end to end on a real answer: it captures, fetches, splits into claims, judges
-each one against its source, and refuses to print an aggregate rate because no gold set exists yet.
+Day 7 of ten, and the honest run has happened. Twenty-four Perplexity answers against the frozen consumer
+stratum: 51 sources, 158 claims, 130 verdicts of which 125 stand. It printed no support rate, because the
+gold set covers four of the twenty-four splits and gate G4 will not calibrate a rate it cannot calibrate. That
+refusal is the deliverable rather than a shortfall, and `FINDINGS.md` item 21 has the whole run.
 
-`STATUS.md` is the honest version of this section, item by item, and `TODO.md` is the working list. The one
-row that matters: the professional query stratum is still empty, and it is the input to everything that
-produces a number, so several parts below are built and have never run on real data. They are marked as such
-rather than counted as working.
+`STATUS.md` is the honest version of this section, item by item, and `TODO.md` is the working list. The row
+that used to matter here has changed: the professional stratum was to be transcribed out of my own AI history,
+the sessions turned out to be gone on day 6, and inventing or retyping the questions would have made a
+published sentence false. The core runs on the consumer stratum instead, which is synthetic and says so
+everywhere it appears. The professional set is reported not-done with that reason rather than quietly
+substituted.
 
 **In the browser.** A Manifest V3 extension captures an answer from claude.ai, chatgpt.com, perplexity.ai or
 Google AI Overviews. It scrolls the answer into existence first, since a long answer is not fully in the DOM
@@ -75,12 +79,17 @@ substring match that the span is in the document that was actually retrieved. A 
 the verdict and logs `JUDGE_FABRICATED_SPAN`.
 
 **That count is published as a finding about the judge only once the extractor has been checked**, and the
-reason is the most useful thing this project has found out about itself. Re-auditing the voided spans by hand
-showed three of four were caused by SaysWho, not by the model: two by a PDF reader that put a space between
-every digit of "(61.1%)", one by a span comparison that treated a curly quote and a straight quote as
-different characters. One was a genuine catch, where the judge joined two passages with an ellipsis instead of
-quoting contiguously. Both bugs are fixed, one remaining cause is known and unfixed and named, and the
-earlier "1 of 16" figure is withdrawn rather than restated. `FINDINGS.md` item 14.
+reason is the most useful thing this project has found out about itself. It has now happened twice. The first
+time, three of four voided spans turned out to be SaysWho rather than the model: two from a PDF reader that
+put a space between every digit of "(61.1%)", one from a span comparison that read a curly quote and a
+straight quote as different characters.
+
+The honest run voided four more, and the same check was run before any of them were described. Three are the
+judge stitching non-contiguous passages together, two of those announcing it with a literal ellipsis inside
+the span. The fourth was ours again: the span was the page verbatim apart from a `[44]` footnote marker, which
+our extractor keeps inline where a reader sees a superscript. So the figure is 3 of 96 attributable to the
+judge and 1 of 96 to this tool, the second now fixed. Every one of those numbers moved because the checker was
+corrected, not because the model improved, and the writeup says which. `FINDINGS.md` items 14 and 21.
 
 `python3 -m sayswho.reextract <page.html> --capture <capture.json>` re-runs extraction over the stored bytes
 and compares it to what the extension produced. Two implementations, one in JavaScript against a live DOM and
@@ -110,16 +119,16 @@ every capture bound to a frozen query and writes four files: the run record, the
 an interval on every rate, `RUN_LOG.md`, and a per-number trace table generated from the run rather than
 typed alongside it.
 
-453 tests, all offline except a node process for the parity check. Two of them pin failures rather than
+781 tests, all offline except a node process for the parity check. Two of them pin failures rather than
 fixes: an injection that dictates its own span defeats the guard, and a judge can quote a real but irrelevant
 sentence. Deleting either test would delete the finding. `BREAK_ATTEMPTS.md` writes both up.
 
-**Not built yet:** marking the product's own sentences in place, the gold set labels, and the head-to-head. The
-professional query stratum is empty by design until real queries are scrubbed into it, and that is what
-everything producing a number is waiting on.
+**Not built yet:** marking the product's own sentences in place, and the head-to-head against the tools in
+§1b. The gold set stands at six labels of a planned thirty to forty, which is exactly why the run above
+published nothing, and the professional stratum is not-done for the reason given there.
 
-No number this project produces is a measurement yet. `FINDINGS.md` records what has been observed so far,
-and every entry there is n=1.
+No rate this project produces is a measurement yet, and the run that could have produced one declined to.
+`FINDINGS.md` records what has been observed, at the sample sizes it was observed at.
 
 Start here if you want to use it: [`recipes/audit-citations.md`](recipes/audit-citations.md), and the
 one-page card of [six ways it goes wrong](recipes/audit-citations.card.md).
