@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-12, day 6 of ten, where day 5 was 2026-08-11. 768 tests, and `tests/test_documents.py`
+Last updated 2026-08-14, day 7 of ten, where day 5 was 2026-08-11. 768 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot.
 
 **Day 7 is next, and day 7 is the line the core has to be behind.** Day 6's own deliverable, the two core
@@ -61,12 +61,12 @@ answer" are different claims and only one of them is currently true.
 
 | Item | Why it has not run |
 |---|---|
-| Honest run over the frozen stratum | No captures. The stratum exists now that the core runs on the consumer set, and no answer has been captured against it, so `tools/run_stratum.py` still correctly prints nothing and names which kind of nothing |
-| Metric readout with n and CIs over real data | Same. The readout is exercised by tests against a scripted judge |
-| Judge-human agreement | No gold set, which now needs captures rather than a stratum |
+| ~~Honest run over the frozen stratum~~ | **Run, 2026-08-13.** 24 captures, 51 sources, 158 claims, 130 verdicts of which 125 stand, 7 minutes, 130 model calls, nothing halted. It printed no support rate, which is the deliverable rather than a shortfall: G4 withheld on 18 answers and `INSUFFICIENT_EVIDENCE` on 2 more, each naming its reason and both split hashes. `FINDINGS.md` item 21 |
+| ~~Metric readout with n and CIs over real data~~ | **Produced.** `runs/day7/` holds the run record, the readout, `RUN_LOG.md` and the per-number trace table. Every rate it is entitled to print carries its n; every rate it is not names the gate that stopped it |
+| Judge-human agreement | **Computed, and n=2.** Six human labels exist and four are on sources the judge was never asked about, so two were comparable and kappa came out 0.0 over them. At that n it is an arithmetic result rather than a measurement, and it is reported as one |
 | ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811 characters as of 2026-08-12. The count is dated because it has moved twice: 57,067, then 56,352, then this, as each fix stopped the reader inventing characters. Two earlier figures were left standing here and in `tools/reaudit_spans.py` after they stopped being true, which is the rot a prose gate cannot catch, since a number is not a path. Three extraction bugs came out of this one document, none of them from a test. See "The first live PDF, and what it cost" below |
-| The thin-page flag on live data | Tested, never fired on a real capture |
-| The fabricated-span count as a finding about the judge | **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
+| The thin-page flag on live data | Tested, and still never fired on a real capture: 51 more sources in the day-6 run and not one |
+| The fabricated-span count as a finding about the judge | **Recomputed 2026-08-13, after checking the extraction behind every void, which §8 requires before it may be called a finding about the judge: 3 of 96 span-bearing verdicts are the judge stitching non-contiguous passages, and 1 of 96 is this tool inlining a `[44]` footnote marker the judge dropped.** All four voids were HTML sources and only 2 of 51 sources were PDFs, so the PDF-versus-HTML split is a fact about the sample. What follows is the earlier figure this replaces. **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
 | `EXTRACTION_SUSPECT`'s error direction | Only the gold set can measure it. Until then the writeup says the direction is chosen and the rate is unknown |
 | The PDF garbled test's error direction | Same shape, one layer down. Two ratios, printable characters and spaces, decide whether decoded text is language or glyph numbers. Neither threshold is measured. It is set to refuse in the ambiguous case, because refusing costs coverage and passing garbled text produces a verdict that accuses a source |
 

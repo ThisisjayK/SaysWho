@@ -852,3 +852,57 @@ that would have caught this runs that extractor in node against the same markup 
 compares the two citation sets, the way the renderer is already treated. Until that exists, the extractor's
 half of §9 rests on somebody running `reextract` by hand and reading the output.
 
+---
+
+## 21. The first honest run, and the four voided spans that had to be checked before any of it could be said
+
+Day 6, 2026-08-13. Twenty-four Perplexity answers against the frozen consumer stratum, judged against stored
+splits so the claims are the ones a labeller could have read. Seven minutes, 130 model calls, 532,970 tokens,
+nothing halted, no capture errored.
+
+| | |
+|---|---|
+| captures | 24, all bound, all one product |
+| sources | 51: **42 `SOURCE_OK`**, 7 `SOURCE_BOT_BLOCKED`, 1 `SOURCE_DEAD_LINK`, 1 `SOURCE_UNREACHABLE` |
+| document kinds | 49 HTML, 2 PDF |
+| claims | 158, of which 42 carry no citation |
+| claim-source pairs | 139 |
+| G1 skipped | 213 blocks, 219 units |
+| verdicts returned | 130: 75 `SUPPORTED`, 21 `PARTIALLY_SUPPORTED`, 34 `NOT_FOUND_IN_SOURCE`, **0 `CONTRADICTED`** |
+| verdicts standing | **125**, after the five voids below. A voided verdict is not a weaker verdict, it is no verdict, and it leaves the numerator and the denominator together |
+| voided | 5: four `JUDGE_FABRICATED_SPAN`, one `SPAN_ADDED_AFTER_GENERATION` |
+
+**No support rate was printed, and that is the deliverable.** Gate G4 withheld it on 18 of the 24 answers,
+naming both split hashes each time: the gold set holds six labels covering four splits, the run judged
+twenty-four. `INSUFFICIENT_EVIDENCE` withheld two more on its own ground, `CO-04` and `CO-08`, where more than
+half the cited claims produced no standing verdict. `CO-08` is the starker one: two sources, both
+`SOURCE_OK`, and zero standing verdicts out of them. The stratum aggregate then refused on the grounds that an
+aggregate over the runs that happened to be measurable is an aggregate over measurability.
+
+**The four fabricated spans, checked before being described.** `SCOPE.md` §8 carries an obligation added after
+item 14: the fabricated-span count is published rather than quietly fixed, **and it is only called a finding
+about the judge once the extraction behind each void has been checked.** So all four were re-checked against
+the cached bytes, with the reader that now routes PDFs correctly.
+
+- **Three are genuine.** The judge stitched non-contiguous passages into one quote. Two of them announce it
+  with a literal `...` in the span, and the third silently skips items from a bulleted list. This is exactly
+  what the guard is for, and it is the same failure the one genuine catch in item 14 was.
+- **One is ours.** `CO-15`'s span is the page verbatim except for a `[44]` footnote marker, which our
+  extractor keeps inline and the judge dropped. Strip footnote markers from both sides and the span matches
+  exactly. A reader of that page sees a superscript, not four characters mid-sentence.
+
+So the honest figure is **3 of 96 span-bearing verdicts attributable to the judge, and 1 of 96 to this tool**.
+All four sources were HTML, so the PDF and HTML split that item 17 requires reports zero PDF-sourced voids,
+which is a fact about this sample rather than a reassurance: only two of the fifty-one sources were PDFs.
+
+**What the run says about the guards rather than about the products.** Every unauditable source in the run is
+unauditable because of us or because of a server refusing robots, not because of a broken citation: seven
+403s, one TLS failure, and one 404 that a person can open in a browser and read in full. That last one is
+still classified `SOURCE_DEAD_LINK`, which is the one unauditable code that accuses a citation rather than
+this pipeline, and it is wrong. It is recorded here and not yet fixed.
+
+**Two things that did not happen, worth stating because they were expected to.** The thin-page flag has still
+never fired on real data, over fifty-one more sources. And `CONTRADICTED` came back empty across 130 verdicts,
+which is the class `SCOPE.md` §3 Phase 4 says to fill first in a gold set: a class the judge never produces
+cannot be calibrated against, and a run that never produces one cannot supply the examples.
+

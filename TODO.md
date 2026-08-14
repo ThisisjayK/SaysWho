@@ -49,6 +49,11 @@ longer than the thing limiting it.
 
 ## Where things actually stand
 
+Day 7 of ten, where day 5 was 2026-08-11. **The honest run happened on day 6 and printed no support rate,
+which is what it was built to do when there is no calibration behind one.** What day 7 owes now is the
+writeup's obligations rather than the pipeline's: labelling every rate single-stratum and synthetic, and the
+plausibility audit. `FINDINGS.md` item 21 has the numbers.
+
 Day 6 of ten, where day 5 was 2026-08-11. Day 6's own deliverable, the two core break attempts and the parity
 check, was already complete before day 6 began. Day 5's own deliverable is the gold set, which was blocked for
 two days on a stratum that has now been given up rather than delivered: the core runs on the frozen consumer
@@ -572,16 +577,35 @@ The machinery is built and tested. What is left on this list is the labelling it
 
 ## Day 7: the core is done
 
-- [ ] Honest run over the frozen consumer stratum, terminal transcript pasted. The command is
-      `python3 tools/run_stratum.py --captures captures/ --judge --goldset <set> --out runs/day7`, and it
-      writes the transcript, the readout, `RUN_LOG.md` and the trace table. Blocked on captures, not on a
-      stratum
-- [ ] Metric readout: citation support rate, unauditable rate, judge-fabricated-span rate, judge-human
-      agreement, source drift rate. Every one with its n and a confidence interval
+- [x] Honest run over the frozen consumer stratum. Run 2026-08-13 over the 24 bound captures with the 24
+      stored splits, so the judge saw the claims a labeller could have read. Seven minutes, 130 model calls,
+      532,970 tokens, nothing halted, no capture errored. Four artefacts in `runs/day7/`: the run record, the
+      readout, `RUN_LOG.md` and the trace table. `FINDINGS.md` item 21
+- [x] Metric readout. Produced, and **it printed no support rate, which is the deliverable rather than a
+      shortfall.** G4 withheld on 18 of the 24 answers, naming both split hashes each time, because the gold
+      set holds 6 labels over 4 splits and the run judged 24. `INSUFFICIENT_EVIDENCE` withheld 2 more on its
+      own ground. The stratum aggregate then refused, on the grounds that an aggregate over the runs that
+      happened to be measurable is an aggregate over measurability
+- [x] The judge-fabricated-span figure, checked before being described, which is what §8 requires. All four
+      voids re-checked against the cached bytes: 3 of 96 span-bearing verdicts are the judge stitching
+      non-contiguous passages, two of them announcing it with a literal ellipsis, and **1 of 96 is this tool**
+      inlining a `[44]` footnote marker the judge dropped. Strip footnote markers from both sides and that
+      span matches exactly
 - [ ] Label every rate as single-stratum **and as synthetic**. Not a rate for AI citations generally, and
       not a rate over anyone's real research either, since the stratum that would have supplied that does
-      not run. Both halves go next to the number rather than into §7 alone
-- [ ] Plausibility audit of the numbers
+      not run. Both halves go next to the number rather than into §7 alone. **Mine to do:** no rate has been
+      printed yet, so this is a rule for the writeup rather than a change to any output
+- [ ] Plausibility audit of the numbers. **Mine to do**, and the run gives it three specific things to chew
+      on rather than a blank page: `CONTRADICTED` came back empty across 130 verdicts, the thin-page flag
+      still has not fired after 51 more sources, and 42 of 158 claims carry no citation at all
+- [ ] Fix the footnote-marker void. `extract.py` keeps `[44]` inline where a reader sees a superscript, and it
+      cost one correct verdict in the first run. Narrower than the PDF bullet and the same shape: an
+      extraction artefact charged to the judge. Until it is fixed the fabricated-span figure is reported as
+      3 of 96 plus 1 of 96, split by cause rather than summed
+- [ ] The `SOURCE_DEAD_LINK` that is not one. `accessdata.fda.gov` answered 404 from an Akamai interstitial
+      naming itself an abuse-detection page in its own `location` header, and a person opens the same URL and
+      reads the article. `SOURCE_DEAD_LINK` is the one unauditable code that accuses a citation rather than
+      this pipeline. Evidence is in the cache; the fetch layer is untouched pending a decision
 - [x] §0a status table. `STATUS.md`, filled in for day 5 and updated as things land. Core items whose
       machinery exists but has never run on real data are listed separately rather than ticked, because
       "the code path exists" and "we have seen it work" are different claims
