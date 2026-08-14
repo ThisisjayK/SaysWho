@@ -1,8 +1,8 @@
 # SaysWho
 
 <p align="center">
-  <img src="docs/monkey-letter.svg" width="200"
-       alt="A monkey pulls a letter out of an envelope, reads it, and narrows its eyes">
+  <img src="docs/bird-letter.svg" width="200"
+       alt="A pastel pink bird hovering in place, wings beating, a letter held in its legs">
 </p>
 
 AI search tools cite their sources. Nothing in the pipeline checks whether those sources say what the answer
