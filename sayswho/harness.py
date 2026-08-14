@@ -76,6 +76,17 @@ class CaptureRun:
     error: str = ""
     halted: str = ""
 
+    #: The G4 result for this capture. A field rather than an attribute set on the way past, which is what it
+    #: was until the first run that had anything to aggregate.
+    #:
+    #: It was assigned inside the judging branch only, so any capture that errored or was never judged reached
+    #: the per-domain block without it. That block reads `item.calibration is not None`, so it always expected
+    #: the None case; the dataclass simply never provided one and the read raised AttributeError instead. The
+    #: branch only executes when the run has publishable pairs, which is why it survived every run before the
+    #: consumer stratum existed: there were no pairs, so it was skipped. The first real run reached it after
+    #: judging all 29 captures and lost the lot.
+    calibration: Any = None
+
     @property
     def eligible_for_aggregate(self) -> bool:
         """Bound to a frozen query, judged, and not from a product whose vendor supplies the judge."""

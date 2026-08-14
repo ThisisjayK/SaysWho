@@ -367,3 +367,71 @@ def test_a_gold_set_labelled_before_the_run_produces_an_agreement_number(
     assert run.agreement is not None
     assert run.agreement.compared == 2
     assert "kappa" in readout(run)
+
+
+def test_a_capture_with_no_readable_source_does_not_break_the_run_that_has_pairs(
+    tmp_path, server, capture_file, frozen
+):
+    """The bug that ended the first honest run after every model call had been spent.
+
+    `run_stratum` skips the judging branch entirely when a capture has no auditable source, and
+    `item.calibration` was assigned inside that branch rather than being a field on `CaptureRun`. Any capture
+    that was blocked on every citation therefore reached the per-domain block without the attribute, and that
+    block reads `item.calibration is not None`, so it had always expected the None case and the dataclass
+    simply never supplied one.
+
+    It needs two captures to reproduce, which is why no existing test caught it: one that produces publishable
+    pairs, since the per-domain block only runs when there are any, and one that produces none. In the real
+    run that second capture was CO-16, whose only two citations are `travel.state.gov` pages that both answer
+    403 to an automated client.
+
+    29 captures were judged, 169 verdicts were produced, and then this raised and nothing was written."""
+    gold = gold_for(server.url("/ok.html"), [(t, SUPPORTED) for t in CLAIM_TEXTS], tmp_path)
+
+    blocked = Capture(
+        query_id="PR-01", product="chatgpt", model_id="test",
+        generated_at="2026-08-08T00:00:00+00:00", captured_at="2026-08-08T00:00:01+00:00",
+        answer_text=ANSWER,
+        citations=[Citation(marker="[1]", url=server.url("/blocked"))],
+    )
+    blocked_path = tmp_path / "blocked.json"
+    blocked_path.write_text(json.dumps(blocked.to_dict()))
+
+    run = go(
+        [capture_file(name="good.json"), blocked_path],
+        tmp_path / "cache", judge=all_supported(), goldset_path=gold,
+    )
+
+    unauditable = next(r for r in run.runs if r.path == blocked_path)
+    assert not unauditable.judgements, "no source could be read, so nothing was judged"
+    assert unauditable.calibration is None, "and it carries the field rather than lacking the attribute"
+
+    judged = next(r for r in run.runs if r.path != blocked_path)
+    assert judged.judgements and judged.calibration is not None
+    assert run.per_domain, "the per-domain block is what raised, so it has to have produced something"
+
+
+def test_the_run_writes_its_four_artefacts_after_a_mixed_stratum(tmp_path, server, capture_file, frozen):
+    """The other half of the same loss: the artefacts are written at the end, so a crash anywhere in the
+    aggregation costs every model call the run has already paid for. This asserts the whole path from judging
+    to files on disk, with a scripted judge, so the expensive version does not have to be the one that finds
+    out."""
+    from sayswho.harness import save
+
+    gold = gold_for(server.url("/ok.html"), [(t, SUPPORTED) for t in CLAIM_TEXTS], tmp_path)
+    blocked = Capture(
+        query_id="PR-01", product="chatgpt", model_id="test",
+        generated_at="2026-08-08T00:00:00+00:00", captured_at="2026-08-08T00:00:01+00:00",
+        answer_text=ANSWER,
+        citations=[Citation(marker="[1]", url=server.url("/blocked"))],
+    )
+    blocked_path = tmp_path / "blocked.json"
+    blocked_path.write_text(json.dumps(blocked.to_dict()))
+
+    run = go([capture_file(name="good.json"), blocked_path], tmp_path / "cache",
+             judge=all_supported(), goldset_path=gold)
+
+    written = save(run, tmp_path / "out")
+    for key in ("json", "readout", "log", "trace"):
+        assert written[key].exists() and written[key].stat().st_size > 0, key
+
