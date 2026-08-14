@@ -411,7 +411,9 @@ against a handwritten fixture. It does not yet work against a real answer, becau
 - [x] Pipeline runs end to end on a real capture: 9 sources, 6 auditable, 20 claims, 13 judgements
 - [x] 0 fabricated spans out of 7 span-bearing verdicts. Small sample, reported as one
 - [x] G4 held: the run refused to print an aggregate support rate, with the reason
-- [ ] The open items above are all from reading that run's output rather than from the plan
+Note, not a task: the open items above all came from reading that run's output rather than from the plan.
+It carried a checkbox until day 8 and could never satisfy one, so it was counted as outstanding work every
+time this file was totalled.
 
 Re-run on 2026-08-07, same capture, after the drift fix. 9 sources, 7 auditable, 20 claims, 15 judgements.
 PubMed survived. One verdict voided as `JUDGE_FABRICATED_SPAN`, 1 of 9 span-bearing, against 0 of 7 on day 3.
@@ -845,8 +847,12 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Portfolio piece, the install half. `README.md` now opens with it: clone, load unpacked, two buttons.
       Capture needs nothing running; the extra three lines for verdicts are separated out and labelled, so the
       thirty-second path is not padded with the five-minute one
-- [ ] Portfolio piece, the case study half: the other part of this row. The
-      install works today; the thirty-second claim needs someone who is not me to try it
+- [ ] Portfolio piece, the install claim tried by somebody who is not me. Both halves of the row above are
+      written and ticked: `CASE_STUDY.md` for the technical reader, and the `README.md` opening for the
+      install. What is untested is the thirty seconds, since the only person who has ever run those steps is
+      the person who wrote them and already knows which folder to pick. One outsider following the README
+      cold, and whatever they trip on, is the whole of this row. It was worded as "the case study half"
+      until day 8, which read as though `CASE_STUDY.md` were outstanding when it has existed since day 5
 - [ ] Explainer video, 20 points. **Script and shot list written: `VIDEO.md`.** Six shots, the uncut segment
       specified step by step on `CO-22`, the three sentences to get exactly right, and what not to do on
       camera. Recording it is yours. The refusal is the middle of the demo rather than a caveat at the end,
