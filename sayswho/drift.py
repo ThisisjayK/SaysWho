@@ -239,4 +239,10 @@ def span_predates_generation(span: str, drift: DriftRecord) -> bool | None:
     """
     if not drift.can_check_spans or not span.strip():
         return None
-    return normalise_for_span(span) in normalise_for_span(drift.archived_text)
+    # The same comparison G3 uses, rather than a second copy of it. These two are the only places a span is
+    # checked against a document, and when G3 learned to tolerate a footnote marker this one would otherwise
+    # have kept voiding the same span as SPAN_ADDED_AFTER_GENERATION: one bug, two codes, and the second one
+    # blames the page for changing rather than the judge for quoting.
+    from .judge import span_is_present
+
+    return span_is_present(span, drift.archived_text)

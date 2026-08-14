@@ -588,9 +588,10 @@ The machinery is built and tested. What is left on this list is the labelling it
       happened to be measurable is an aggregate over measurability
 - [x] The judge-fabricated-span figure, checked before being described, which is what §8 requires. All four
       voids re-checked against the cached bytes: 3 of 96 span-bearing verdicts are the judge stitching
-      non-contiguous passages, two of them announcing it with a literal ellipsis, and **1 of 96 is this tool**
-      inlining a `[44]` footnote marker the judge dropped. Strip footnote markers from both sides and that
-      span matches exactly
+      non-contiguous passages, two of them announcing it with a literal ellipsis, and **1 of 96 was this tool**
+      inlining a `[44]` footnote marker the judge dropped. That one is now fixed, so a rerun of this stratum
+      would report 3 of 96 rather than 4, and the writeup says the figure moved because the checker was
+      corrected rather than because the judge improved
 - [ ] Label every rate as single-stratum **and as synthetic**. Not a rate for AI citations generally, and
       not a rate over anyone's real research either, since the stratum that would have supplied that does
       not run. Both halves go next to the number rather than into §7 alone. **Mine to do:** no rate has been
@@ -598,10 +599,14 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [ ] Plausibility audit of the numbers. **Mine to do**, and the run gives it three specific things to chew
       on rather than a blank page: `CONTRADICTED` came back empty across 130 verdicts, the thin-page flag
       still has not fired after 51 more sources, and 42 of 158 claims carry no citation at all
-- [ ] Fix the footnote-marker void. `extract.py` keeps `[44]` inline where a reader sees a superscript, and it
-      cost one correct verdict in the first run. Narrower than the PDF bullet and the same shape: an
-      extraction artefact charged to the judge. Until it is fixed the fabricated-span figure is reported as
-      3 of 96 plus 1 of 96, split by cause rather than summed
+- [x] Fix the footnote-marker void. Fixed in the guard rather than in the extractor, deliberately: the
+      document keeps saying what we extracted, and the comparison learns that a bracketed number is not part
+      of the sentence. `span_is_present` tries twice, the second pass stripping bracketed numbers of up to
+      three digits from both sides, and only when the first fails. Re-checked against the same cached bytes:
+      `CO-15` is overturned and the other three stay voided, which is the blast radius it was meant to have.
+      `drift.span_predates_generation` routed through the same function so the identical marker cannot void
+      the identical span under a different code. The widening is stated where it is made: a span differing
+      from the page only in bracketed numbers is now accepted
 - [ ] The `SOURCE_DEAD_LINK` that is not one. `accessdata.fda.gov` answered 404 from an Akamai interstitial
       naming itself an abuse-detection page in its own `location` header, and a person opens the same URL and
       reads the article. `SOURCE_DEAD_LINK` is the one unauditable code that accuses a citation rather than

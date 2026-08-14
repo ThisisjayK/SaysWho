@@ -186,11 +186,37 @@ def span_is_present(span: str, document: str) -> bool:
 
     Normalised on both sides for whitespace and case, because a judge that reflows a line break has not
     invented anything. Nothing else is normalised: a changed word is a changed span.
+
+    **Except a footnote marker, and that exception was bought with a voided verdict.** The first honest run
+    threw out a `SUPPORTED` on `CO-15` whose span was the USCIS page verbatim apart from a `[44]` our
+    extractor keeps inline and the judge dropped. A reader of that page sees a superscript; `extract.py` puts
+    four characters mid-sentence. Strip footnote markers from both sides and the span matched exactly.
+    `FINDINGS.md` item 21.
+
+    So the comparison is tried twice: once as it stands, and once with bracketed numbers removed from both
+    sides. The second pass runs only when the first fails, so an ordinary span never touches it.
+
+    **Which way this errs, stated because it is a widening of the one gate that accuses the judge.** It can
+    now accept a span that differs from the page only in bracketed numbers, which includes a judge quoting
+    "see [44]" where the page says "see [45]". That is a real false accept and it is a narrow one. The
+    alternative is what actually happened: a correct verdict discarded, and a count published against the
+    judge for a character sequence this pipeline inserted. Every entry in `extract._SPAN_FOLD` was bought the
+    same way, and this is the same trade.
     """
     if not span.strip():
         return False
-    return normalise_for_span(span) in normalise_for_span(document)
 
+    wanted, haystack = normalise_for_span(span), normalise_for_span(document)
+    if wanted in haystack:
+        return True
+    without = _FOOTNOTE_MARKER.sub("", wanted).strip()
+    return bool(without) and without in _FOOTNOTE_MARKER.sub("", haystack)
+
+
+#: A footnote reference as `extract.py` renders it into running text: a bracketed number, up to three digits,
+#: which is what a page's superscript citation markers come out as. Deliberately not `\[[^\]]+\]`, which would
+#: eat a legal citation like "[1998] 2 AC 1" and bracketed editorial insertions.
+_FOOTNOTE_MARKER = re.compile(r"\[\d{1,3}\]")
 
 #: Numbers of two digits or more, percentages and decimals. A "3" is not evidence of anything; a "78%" or a
 #: "2022" appearing in the markup and not in the extraction is.

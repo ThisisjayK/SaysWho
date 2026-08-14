@@ -887,11 +887,24 @@ the cached bytes, with the reader that now routes PDFs correctly.
 - **Three are genuine.** The judge stitched non-contiguous passages into one quote. Two of them announce it
   with a literal `...` in the span, and the third silently skips items from a bulleted list. This is exactly
   what the guard is for, and it is the same failure the one genuine catch in item 14 was.
-- **One is ours.** `CO-15`'s span is the page verbatim except for a `[44]` footnote marker, which our
-  extractor keeps inline and the judge dropped. Strip footnote markers from both sides and the span matches
-  exactly. A reader of that page sees a superscript, not four characters mid-sentence.
+- **One is ours, and is now fixed.** `CO-15`'s span is the page verbatim except for a `[44]` footnote marker,
+  which our extractor keeps inline and the judge dropped. Strip footnote markers from both sides and the span
+  matches exactly. A reader of that page sees a superscript, not four characters mid-sentence.
 
-So the honest figure is **3 of 96 span-bearing verdicts attributable to the judge, and 1 of 96 to this tool**.
+  `span_is_present` now tries the comparison twice, the second time with bracketed numbers of up to three
+  digits removed from both sides, and it runs only when the first pass fails. Re-checked against the same
+  cached bytes: `CO-15` is overturned and the other three stay voided, which is the blast radius the fix was
+  supposed to have. The widening is real and stated where it is made: the guard can now accept a span whose
+  only difference from the page is a bracketed number, which includes quoting "see [44]" where the page says
+  "see [45]". Every entry in `extract._SPAN_FOLD` was bought with the same trade, and the alternative here was
+  a count published against the judge for characters this pipeline inserted.
+
+  `drift.span_predates_generation` was routed through the same function rather than keeping its own copy of
+  the comparison, because otherwise the identical marker would have voided the identical span as
+  `SPAN_ADDED_AFTER_GENERATION` instead: one bug, two codes, and the second one blames the page for changing.
+
+So the honest figure is **3 of 96 span-bearing verdicts attributable to the judge, and 1 of 96 to this tool,
+the latter now fixed rather than carried**.
 All four sources were HTML, so the PDF and HTML split that item 17 requires reports zero PDF-sourced voids,
 which is a fact about this sample rather than a reassurance: only two of the fifty-one sources were PDFs.
 

@@ -431,3 +431,68 @@ def test_the_prompt_version_moved_with_the_prompt():
     assert "missing_qualifiers" in SYSTEM
     assert "missing_qualifiers" in SCHEMA["required"]
     assert JUDGE_PROMPT_VERSION != "judge-v1"
+
+
+# ---------------------------------------------------------------- footnote markers in a quoted span
+
+
+def test_a_span_differing_only_by_a_footnote_marker_is_present():
+    """Bought with a voided verdict. The first honest run threw out a `SUPPORTED` on `CO-15` whose span was
+    the USCIS page verbatim apart from a `[44]`, which `extract.py` keeps inline where a reader sees a
+    superscript. `JUDGE_FABRICATED_SPAN` is the one code published as a finding about the judge, so this was a
+    count against the model for four characters this pipeline inserted. `FINDINGS.md` item 21."""
+    document = (
+        "F-1 students authorized by the DSO to withdraw from classes are allowed a 15-day period for "
+        "departure from the United States.[44] However, F-1 students who fail to maintain a full course of "
+        "study without the approval of the DSO are not eligible.[45]"
+    )
+    quoted_as_a_reader_would = (
+        "F-1 students authorized by the DSO to withdraw from classes are allowed a 15-day period for "
+        "departure from the United States. However, F-1 students who fail to maintain a full course of "
+        "study without the approval of the DSO are not eligible."
+    )
+    assert span_is_present(quoted_as_a_reader_would, document)
+
+
+def test_the_fold_does_not_rescue_a_non_contiguous_quote():
+    """The three voids in that same run which were genuine, and which the fix must leave voided: the judge
+    stitching two passages into one span. Two announced it with a literal ellipsis and the third silently
+    skipped items from a list. Widening the guard far enough to accept those would empty it."""
+    document = "First item. Second item. Third item. Fourth item."
+    assert not span_is_present("First item. ... Fourth item.", document)
+    assert not span_is_present("First item. Fourth item.", document)
+
+
+def test_a_changed_word_is_still_a_changed_span():
+    document = "students are allowed a 15-day period for departure.[44]"
+    assert not span_is_present("students are allowed a 30-day period for departure.", document)
+
+
+def test_a_span_that_is_only_an_absent_marker_matches_nothing():
+    """The hole the second pass could have opened. A span stripping to an empty string must not be present in
+    every document, which is what an unguarded `"" in haystack` would say."""
+    assert not span_is_present("[99]", "the rule applies.[44] However it does not.")
+    assert not span_is_present("   [99] ", "the rule applies.[44] However it does not.")
+
+
+def test_a_bracketed_year_is_not_treated_as_a_footnote():
+    """`[1998] 2 AC 1` is a law report citation and part of the sentence. The pattern is bounded to three
+    digits so a four-digit year survives, which matters in exactly the government and legal sources this
+    stratum is full of."""
+    assert span_is_present("[1998] 2 AC 1", "see [1998] 2 AC 1 for the rule")
+    assert not span_is_present("[1998] 2 AC 1", "see [1999] 2 AC 1 for the rule")
+
+
+def test_the_drift_check_uses_the_same_comparison_as_the_guard():
+    """One bug, two codes. If the archived-span check kept the stricter comparison, the same footnote marker
+    would void the same verdict as `SPAN_ADDED_AFTER_GENERATION` instead, which blames the page for changing
+    rather than the judge for quoting."""
+    from sayswho.drift import DriftRecord, span_predates_generation
+
+    archived = "students are allowed a 15-day period for departure.[44] However, others are not."
+    drift = DriftRecord(
+        url="https://example.gov/x", status="DRIFT_NONE", detail="", archived_text=archived,
+    )
+    assert drift.can_check_spans, "the fixture has to be one the check will actually run on"
+    assert span_predates_generation("students are allowed a 15-day period for departure.", drift) is True
+
