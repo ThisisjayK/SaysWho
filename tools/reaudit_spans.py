@@ -29,10 +29,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sayswho.cache import FetchCache
-from sayswho.extract import extract_text, normalise_for_span
-from sayswho.fetch import content_type_of, kind_of
+from sayswho.extract import normalise_for_span
+from sayswho.fetch import text_pair
 from sayswho.judge import JUDGE_FABRICATED_SPAN
-from sayswho.pdf import extract_pdf_text
 
 #: Void reasons this tool can re-check. The others are not about string comparison: a span that postdates the
 #: answer or a judge that refused are facts the fold cannot change.
@@ -116,15 +115,12 @@ def text_of(meta: dict, body: bytes) -> tuple[str | None, str]:
     this reader rather than a property of the document: this line said 57,067 until today, and it was true
     when written and stopped being true twice, as each fix removed characters the reader had been inventing.
     """
-    content_type = content_type_of(meta.get("headers") or {})
-    kind = kind_of(content_type, body)
-
-    if kind == "pdf":
-        read = extract_pdf_text(body)
-        return (read.text if read.ok else None), "an unreadable PDF"
-    if kind == "none":
-        return None, content_type or "an unknown type"
-    return extract_text(body.decode("utf-8", "replace")), kind
+    strict, _permissive, kind = text_pair(meta.get("headers") or {}, body)
+    if not strict:
+        # No parser, an unreadable PDF, or bytes we could not decode. Which of those it was is the `kind`,
+        # and the caller reports it rather than treating an unreadable source as an absent span.
+        return None, kind
+    return strict, kind
 
 
 def recheck(report_paths: list[Path], cache_dir: Path) -> Summary:

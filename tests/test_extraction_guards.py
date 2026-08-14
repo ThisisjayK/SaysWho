@@ -245,3 +245,59 @@ def test_the_guard_never_touches_a_supported_verdict():
     assert result.verdict == SUPPORTED
     assert not result.voided
     assert result.span_verified
+
+
+# ---------------------------------------------------------------- re-reading cached bytes
+
+
+def test_text_pair_reads_a_pdf_as_a_pdf_rather_than_as_markup():
+    """The bug that shipped twice. `tools/reaudit_spans.py` and `tools/label_goldset.py` both need the text
+    behind a cached URL, and both began by running the HTML extractor over the raw bytes. Over a PDF that
+    yields `endstream endobj` and binary noise, which is neither empty nor obviously wrong, so a pasted
+    passage simply never matches and records as unchecked. Two of the forty-five pairs in the first real
+    labelling session were IRS PDFs."""
+    from conftest import READABLE_PDF, READABLE_PDF_TEXT
+    from sayswho.fetch import text_pair
+
+    strict, permissive, kind = text_pair({"Content-Type": "application/pdf"}, READABLE_PDF)
+
+    assert kind == "pdf"
+    assert "endstream" not in strict, "this is the failure: PDF internals read as though they were text"
+    assert READABLE_PDF_TEXT.split(".")[0] in " ".join(strict.split())
+    assert strict == permissive, "a PDF has no furniture to strip, so the two passes are one string"
+
+
+def test_text_pair_returns_nothing_for_a_format_with_no_parser():
+    """An unreadable source is not a source whose spans are absent. A caller has to be able to tell those
+    apart, so this returns empty rather than something that compares as a miss."""
+    from sayswho.fetch import text_pair
+
+    strict, permissive, kind = text_pair(
+        {"Content-Type": "image/png"}, b"\x89PNG\r\n\x1a\n" + b"0" * 400
+    )
+    assert kind == "none"
+    assert strict == "" and permissive == ""
+
+
+def test_the_labelling_tool_can_check_a_passage_against_a_cited_pdf(tmp_path):
+    """The end the fix exists for. `goldset.attribution` can only separate an extractor failure from a judge
+    failure on pairs where the labeller's passage was checkable at all, and for a PDF source it never was."""
+    import sys
+    from pathlib import Path as _Path
+
+    sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "tools"))
+
+    from conftest import READABLE_PDF, READABLE_PDF_TEXT
+    from sayswho.cache import FetchCache
+    from sayswho.judge import span_is_present
+
+    import label_goldset
+
+    cache = FetchCache(tmp_path / "cache")
+    url = "https://example.gov/report.pdf"
+    cache.put(url, 200, {"Content-Type": "application/pdf"}, READABLE_PDF)
+
+    pair = label_goldset.extracted_pair(cache, url)
+    assert pair is not None, "the cached PDF has to be readable at all"
+    text, _raw = pair
+    assert span_is_present(READABLE_PDF_TEXT.split(".")[0], text)

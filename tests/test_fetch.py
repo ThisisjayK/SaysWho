@@ -361,3 +361,27 @@ def test_a_malformed_response_is_retried_like_any_other_failure(cache, monkeypat
     assert len(calls) == 3, "one attempt plus two retries, the same as a timeout"
     assert record.attempts == 3
 
+
+def test_text_pair_agrees_with_the_fetcher_on_the_same_bytes(server, cache):
+    """What keeps a helper from turning into a second implementation. `fetch.text_pair` is the read-only half
+    of `Fetcher._classify`, and the classifier is what assigns outcome codes, so the two can only be trusted to
+    agree if something runs the same bytes through both and checks.
+
+    Per document kind, because the kinds are where they would diverge: the PDF path, the markup path, and the
+    permissive pass that only markup has. The routing was duplicated in two tools before this, and both copies
+    had the same bug."""
+    from sayswho.fetch import text_pair
+
+    f = fetcher(cache)
+    # One per parser: the PDF path, markup, a feed and a .docx. Each is a place the two could diverge, and
+    # the permissive pass is only different from the strict one for markup.
+    for path in ("/readable.pdf", "/ok.html", "/feed.xml", "/notes.docx"):
+        record = f.fetch(server.url(path))
+        entry = cache.latest(server.url(path))
+        assert entry is not None, path
+        meta, body = entry
+        strict, permissive, _kind = text_pair(meta.get("headers", {}), body)
+
+        assert strict == record.text, f"{path}: strict pass disagrees with the fetcher"
+        assert permissive == record.raw, f"{path}: permissive pass disagrees with the fetcher"
+

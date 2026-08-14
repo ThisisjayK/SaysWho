@@ -48,8 +48,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sayswho.cache import FetchCache, now_iso  # noqa: E402
-from sayswho.extract import extract_text, raw_text  # noqa: E402
-from sayswho.fetch import decode_body  # noqa: E402
+from sayswho.fetch import text_pair  # noqa: E402
 from sayswho.goldset import LABELS, UNAUDITABLE, UNDECIDABLE, GoldLabel, GoldSet, coverage  # noqa: E402
 from sayswho.judge import JUDGE_PROMPT_VERSION, span_is_present  # noqa: E402
 from sayswho.prior_audit import JUDGE_KEYS, scan as scan_for_prior_audit  # noqa: E402
@@ -97,16 +96,22 @@ def extracted_pair(cache: FetchCache, url: str) -> tuple[str, str] | None:
 
     Cache only, deliberately. Labelling is not a fetch pass, and a labelling session should not be sending
     requests to the sources while a person reads them.
+
+    Routed by document kind through `fetch.text_pair`. This function used to run the HTML extractor over the
+    raw bytes whatever they were, so a cited PDF was compared against `endstream endobj` and binary noise and
+    every pasted passage recorded as unchecked. Two of the forty-five pairs in the first real labelling
+    session were IRS PDFs, so the extraction check could not have fired on either. `tools/reaudit_spans.py`
+    had made the same assumption and fixed it once already, which is why the routing now lives in one place
+    with a test holding it to what the fetcher does.
     """
     hit = cache.latest(url)
     if hit is None:
         return None
     meta, body = hit
-    decoded, _ = decode_body(body, meta.get("headers", {}))
-    if decoded is None:
+    strict, permissive, _kind = text_pair(meta.get("headers", {}), body)
+    if not strict:
         return None
-    markup = decoded.decode("utf-8", errors="replace")
-    return extract_text(markup), raw_text(markup)
+    return strict, permissive
 
 
 def build_pool(splits, captures, cache) -> list[dict]:

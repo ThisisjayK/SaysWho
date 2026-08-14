@@ -159,6 +159,51 @@ def decode_body(body: bytes, headers: dict) -> tuple[bytes | None, str]:
     return None, f"unsupported content-encoding: {encoding}"
 
 
+def text_pair(headers: dict, body: bytes) -> tuple[str, str, str]:
+    """The text of a cached response, both ways, and which parser produced it.
+
+    Returns `(strict, permissive, kind)`. `strict` is what `extract.py` stands behind and `permissive` is the
+    wider pass that keeps site furniture, which is what lets a caller tell "this passage is on the page and we
+    dropped it" apart from "this passage is not on the page". Both are empty when there is nothing readable.
+
+    **This exists because the same mistake shipped twice.** `tools/reaudit_spans.py` and
+    `tools/label_goldset.py` each need the text behind a cached URL, and each began by running the HTML
+    extractor over the raw bytes. For a PDF that produces `endstream endobj` and binary noise. `reaudit_spans`
+    caught it early and left a docstring warning about it; `label_goldset` had the same bug, found in the first
+    real labelling session, where two of the forty-five sampled pairs are IRS PDFs whose extraction check
+    therefore could never have run and always recorded as unchecked.
+
+    It is the read-only half of `Fetcher._classify` and deliberately not the whole of it: the classifier also
+    assigns outcome codes, PDF diagnostics and the thin-page flag, and folding those in here would make this
+    the classifier rather than a helper for re-reading cached bytes. What keeps the two from drifting is a test
+    that runs the same bytes through both and asserts they agree, per document kind, rather than a comment
+    asking them to.
+
+    For anything without markup the two passes are the same string, which is what `_classify` already does for
+    a PDF: there is no furniture to strip, so a permissive pass that differed would report every span as
+    dropped by an extractor that never ran.
+    """
+    decoded, _note = decode_body(body, headers or {})
+    if decoded is None:
+        return "", "", "undecodable"
+
+    kind = kind_of(content_type_of(headers or {}), decoded)
+    if kind == "pdf":
+        read = extract_pdf_text(decoded)
+        return (read.text, read.text, kind) if read.ok else ("", "", kind)
+    if kind == "docx":
+        text, why_not = extract_docx_text(decoded)
+        return ("", "", kind) if why_not else (text, text, kind)
+    if kind == "xml":
+        text = extract_xml_text(decoded)
+        return text, text, kind
+    if kind == "none":
+        return "", "", kind
+
+    html = decoded.decode("utf-8", errors="replace")
+    return extract_text(html), raw_text(html), kind
+
+
 class Fetcher:
     """Politeness, retries, caching and G2 assignment.
 
