@@ -3,12 +3,16 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-14, day 7 of ten, where day 5 was 2026-08-11. 783 tests, and `tests/test_documents.py`
-now checks that this number is true rather than leaving it to rot.
+Last updated 2026-08-14, day 8 of ten, where day 5 was 2026-08-11. 783 tests, and `tests/test_documents.py`
+now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
+2026-08-14 while its own anchor made that date day 8, which is corrected here and is the smaller half of what
+day 8 found.
 
-**Day 7 is next, and day 7 is the line the core has to be behind.** Day 6's own deliverable, the two core
-break attempts and the parity check, was complete before day 6 began. Day 5's own deliverable, the gold set,
-did not happen on day 5 and has not happened since.
+**Day 7's line has been crossed and the core is behind it, with one row still open.** Every day 7 item is
+done: the honest run, the metric readout, the fabricated-span figure checked before being described, the
+plausibility audit, the trace table. What is not done is day 5's own deliverable, the gold set, which stands
+at 6 human labels of a planned 30 to 40 and is the reason the run published no support rate. Labelling is
+scheduled for day 9. Nothing else on the critical path is waiting on anything but that.
 
 **The stratum changed on day 6, and it changed by being given up rather than delivered.** The
 professional-research set was to be transcribed from my own AI history and that history is gone. Retyping
@@ -132,6 +136,46 @@ the corrected extraction they now get 305 of 549 characters through, where the b
 about 170, and then fail on `non-Boston`, because the judge quoted `nonBoston` from an extraction that had
 dropped an en dash. A span quoted from text this tool no longer produces cannot be settled by re-checking. So
 the fabricated-span count over PDF sources stays separate from one over HTML, and stays withdrawn.
+
+## What changed on day 8, and what it means
+
+Nothing measurable. No run, no labels, no new rate. What day 8 did was check the documents against the code
+they describe, and the result belongs here because it is the same failure this project keeps finding in
+itself.
+
+**The working list was reporting work that had already shipped.** `TODO.md` carried a row saying
+`extracted_pair` in `tools/label_goldset.py` ran the HTML extractor over raw bytes, so a cited PDF was
+compared against `endstream endobj` noise and every passage recorded as unchecked. That was fixed on day 7 in
+`c52a808`, routed through `fetch.text_pair` for both tools that need it, with a test asserting a PDF is read
+as a PDF and a second running the same bytes through the helper and the fetcher to check they agree. The row
+stayed unticked, so the file spent a day describing a bug that no longer existed, and the fix was nearly done
+twice. This is the shape `FINDINGS.md` item 17 named: a written limitation outliving the thing it limits.
+Item 17 counted two instances of it. This is the same pattern pointing the other way, since here the document
+overstated what was broken rather than what was impossible.
+
+**So the other 48 open rows were audited against the repo rather than reread.** All 48 are correctly open.
+Checked directly: `tests/parity/` holds only `render_in_node.mjs`, so there is still no node parity test for
+the extractor; the installed watcher plist still names `/Users/jayanthadityak/Finall Project/` with two Ls;
+`content.js` still calls `saysWhoBuildCapture` without a `queryId`, so `query_id` defaults to `UNASSIGNED`;
+`extract.py` still imports only `re`, `unicodedata` and `html.parser`; `verifiedSelectors` is empty for
+ChatGPT, Perplexity and Google, and Claude holds only the Research artifact selector, not the chat one; the
+thin-page flag appears nowhere in `runs/day7/run.json`; and no head-to-head artefact, hand-marked answer,
+grounded API call or `contrib/jayanth-says-who` branch exists anywhere.
+
+**Two rows misreported themselves and were reworded.** One was a sentence carrying a checkbox it could never
+satisfy, which counted as outstanding work every time the file was totalled. The other was labelled "the case
+study half" while `CASE_STUDY.md` is written and ticked two rows above it; what is actually open there is
+that nobody but the author has ever run the install steps, so the thirty-second claim is a guess by the one
+person who already knows which folder to pick.
+
+**The README was rewritten for somebody arriving at the repo rather than somebody who built it**, and
+checking it against the code found two things it had wrong. Its verdict list mixed the judge's internal
+classes with the six states `report.py` renders, so it advertised a `NOT_SUPPORTED` verdict the judge never
+emits, the real one being `NOT_FOUND_IN_SOURCE`. And the gold set tools were listed without the `--split` and
+`--out` arguments they require, so the commands as printed would have failed. Both are fixed. The limits and
+the withheld-rate section stayed, shortened rather than dropped, because a README that cut them to read
+better is the move §8 forbids. Separately, `--judge`'s help string still named `ANTHROPIC_API_KEY` from
+before Gemini became the default, which would have sent a reader looking for a paid key to run the free path.
 
 ## What changed on day 6, and what it means
 

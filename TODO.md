@@ -9,45 +9,49 @@ reports it either way.
 
 ## Start here next session
 
-Written 2026-08-12 at the end of the session, so tomorrow does not begin by rereading the file.
+Written 2026-08-14 at the end of day 8, so day 9 does not begin by rereading the file.
 
-**The professional stratum is withdrawn, not pending, and the core now runs on the consumer set.** Decided
-on day 6: the sessions the professional queries were to be transcribed from are gone, and retyping them from
-memory is refused for the two reasons `queries/README.md` wrote down before there was any reason to want an
-exception. `SCOPE.md` §0 and §10 carry the decision, §7 carries the limitation, and §0a reports the
-professional stratum not-done rather than deferred.
+**Everything the code can do on its own is done, and one human afternoon is what the project is waiting on.**
+The captures happened on day 6, the honest run on day 7, and it published no support rate because the gold
+set holds 6 human labels against 24 judged splits. G4 is not going to calibrate its way out of that. No
+amount of further building changes it.
 
-**So the critical path is now captures, not transcription.** The consumer stratum is frozen and nothing has
-been asked yet.
+Day 9's queue, in order:
 
-Tomorrow's queue, in order:
+1. **Pick the target first, because it is a trade and not a default.** The pool is 145 pairs and the sampler
+   takes all 15 unauditable ones before anything else, and `goldset.agreement` excludes those from kappa
+   because the judge was never asked about them. So `--target 35` yields 20 comparable pairs, `--target 45`
+   yields 30, and `--target 55` yields 40. §0a asked for 30 to 40. Roughly an hour of labelling per step,
+   and whichever is picked the writeup reports the comparable n rather than the label count
+2. **Label.** `tools/prep_goldset.py --split splits/*.json` first, which sends no requests because the split
+   pass already warmed the cache, then the session itself. `LABELLING.md` is the decision guide and it
+   deliberately discusses vocabulary rather than claims. The prior-audit scan is clean over all 24 answers,
+   so these labels are blind in fact and not by assertion. The PDF extraction check now works during the
+   session, fixed on day 7, which matters because two of the sampled pairs are IRS PDFs
+3. **Re-run with the gold set attached.** `tools/run_stratum.py` over the same captures with `--goldset`, so
+   the rate is computed over the same claims a human read. This is the first moment the project is entitled
+   to print a support rate, and it is still entitled to refuse
+4. **The PR description.** Still blocked on the same two answers only I have: which repo
+   `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies. `PR_DESCRIPTION.md` is drafted
+   around both blanks
 
-1. **Capture answers against the frozen consumer stratum.** Browser work: ask the questions, capture each
-   answer with the extension, bind each capture to its query id. This is the whole of what stands between the
-   code and a number, and it is the first item on this list in six days that is not transcription
-2. **Make the split, then label.** `--split-only --save-split` for the captures that will be labelled, then
-   `tools/prep_goldset.py` to warm the cache and say what the session will be, then 30 to 40 blind labels.
-   These are fresh captures, so the prior-audit guard will pass and the labels are genuinely blind, which is
-   the first time that has been true here
-3. **The honest run**, which is `tools/run_stratum.py` over the captures with the gold set attached
-4. **The PR description.** **Blocked on two answers only I have:** which repo `contrib/jayanth-says-who`
-   targets, and which chapters SaysWho satisfies. The requirement asks for chapters by name and this repo
-   cites none. Everything else about the description can be drafted the moment those two are known
+After that, days 9 and 10 are the video, an outsider trying the install, and whichever stretch rows fit.
+The stretch rows that do not fit get a state and a reason here rather than being dropped, per §0a.
 
-Landed 2026-08-12 and needing nothing further: break attempts 1 to 4 run against a live judge with 1b added
-(`FINDINGS.md` item 15), the gold set workflow made performable at all (item 16), the two-customer pair
-rebuilt to the required format, the ethics gate, and the §4 boundary table generated from
-`sayswho/boundary.py`.
-
-Landed later the same day, all three of them things the file had recorded as blocked on something they turned
-out not to need. The prior-audit guard, which was the weakest control in the project and is now the one that
-refuses this repo's own split. Precomposed against decomposed accents in the span guard, which was blocked on
-a belief about `report.py`'s index rather than on the index. And symbol-font bullets in PDFs, which was
-blocked on a sentence saying stdlib could not do it, in a document that had the answer inside it.
-`FINDINGS.md` item 17 is about that pattern, since it is now the second time a stated limitation has held
-longer than the thing limiting it.
+Landed on day 8, none of it measurable: the README rewritten for somebody arriving at the repo, which found
+a verdict name in it the judge never emits and two gold set commands missing required arguments; the
+`--judge` help string still naming the key from before Gemini became the default; and an audit of all 49
+unticked rows against the repo, which found one describing a bug fixed the day before. The other 48 are
+correctly open. `STATUS.md` has the detail under "What changed on day 8".
 
 ## Where things actually stand
+
+Day 8 of ten, where day 5 was 2026-08-11. **Every day 7 row is done and the gold set is the only core item
+left open.** The honest run, the readout, the fabricated-span figure checked before being described, the
+plausibility audit and the trace table all landed on day 7. Day 8 added no measurement: it rewrote the README
+for a reader arriving cold, fixed a help string naming the wrong API key, and audited these rows against the
+repo, which found one describing a bug that had been fixed the day before. 48 rows are open and all 48 were
+verified as genuinely open. `STATUS.md` has the detail.
 
 Day 7 of ten, where day 5 was 2026-08-11. **The honest run happened on day 6 and printed no support rate,
 which is what it was built to do when there is no calibration behind one.** What day 7 owes now is the
