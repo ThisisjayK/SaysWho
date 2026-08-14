@@ -44,8 +44,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--judge",
         action="store_true",
-        help="run Phase 1 and Phase 3. Costs money and needs ANTHROPIC_API_KEY. Off by default so the "
-        "fetch pass can be run freely",
+        help="run Phase 1 and Phase 3. Needs a judge key: GEMINI_API_KEY for the default provider, or "
+        "ANTHROPIC_API_KEY with --judge-provider anthropic, which unlike the default is billed. Off by "
+        "default so the fetch pass can be run freely",
     )
     parser.add_argument("--budget", type=int, default=2_000_000, help="token budget; the run halts at it")
     parser.add_argument(
