@@ -24,11 +24,13 @@ blind kappa at n=2. `FINDINGS.md` item 22.
 
 Day 9's queue, in order:
 
-1. **Capture ChatGPT answers for ten frozen queries.** The subset was drawn with seed 20260812 before any
-   answer was captured, so the selection predates the data: CO-02, CO-03, CO-08, CO-10, CO-14, CO-17, CO-20,
-   CO-21, CO-22, CO-24. A new product means new answer hashes, so the prior-audit scan comes back clean and
-   the labels are blind in fact. This also fixes the stratification §3 asks for and could not have, since one
-   product means the gold set stratifies on G2 codes alone
+1. **Capture ChatGPT answers in the order in `queries/capture-order.md`**, which fixes all 24 rather than
+   just the first ten, and was committed before a single ChatGPT answer existed. The first ten are CO-02,
+   CO-03, CO-08, CO-10, CO-14, CO-17, CO-20, CO-21, CO-22, CO-24, and if those do not yield 30 comparable
+   pairs the next ones are CO-06, then CO-19, then CO-13. Taking the next id is not the same as picking one
+   after seeing which codes the first ten happened to be short of. A new product means new answer hashes, so
+   the prior-audit scan comes back clean and the labels are blind in fact. This also gives the second product
+   §3's stratification always needed, since one product means the gold set stratifies on G2 codes alone
 2. **Verify the ChatGPT adapter while in there.** `verifiedSelectors` is empty, so every capture it makes
    carries `adapter_verified: false`, and a gold set built on those captures inherits it. Read one captured
    answer end to end against the screen and confirm the citation set matches what the extension stored. This

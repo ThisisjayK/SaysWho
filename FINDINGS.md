@@ -1006,6 +1006,15 @@ ChatGPT answer was captured, so the selection predates the data: CO-02, CO-03, C
 CO-20, CO-21, CO-22 and CO-24. A new product means new answer hashes, so the prior-audit scan is clean and the
 labels are blind in fact rather than by assertion.
 
+**All 24 were then put in a fixed order, not just the ten**, in `queries/capture-order.md`, because ten
+answers might not yield the thirty comparable pairs G4 now demands and "capture a few more" is a choice made
+with the data in view. A gold set topped up that way stratifies on whatever the first ten happened to lack.
+The continuation comes from the same generator in the same call, so fixing the rest changed nothing about the
+ten already published, and the file is committed before any ChatGPT answer exists so the git history is the
+evidence rather than the claim. What it does not fix is stated there too: an order decided in advance is not
+a stopping rule, and stopping once the floor is met is still a decision made with the data in view. It is the
+honest one available, and the writeup reports how many answers were captured and why capture stopped.
+
 Two things that carries with it, both stated here rather than discovered later. The ChatGPT adapter has never
 been verified, so every capture it produces carries `adapter_verified: false`, and a gold set built on it
 inherits that until the adapter is checked field by field against a real page. And the unauditable share of
