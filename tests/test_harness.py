@@ -13,6 +13,7 @@ import json
 import pytest
 
 from sayswho.harness import readout, run_stratum, save, trace_table
+from sayswho.gates import MIN_BLIND_COMPARABLE
 from sayswho.judge import JUDGE_PROMPT_VERSION, NOT_FOUND_IN_SOURCE, SUPPORTED
 from sayswho.records import Capture, Citation
 
@@ -70,6 +71,24 @@ def scripted_split_sha() -> str:
     return split_digest([Claim(id="", text=t, markers=["[1]"]) for t in CLAIM_TEXTS])
 
 
+def padding_to_the_g4_floor(url, matched, at="2026-08-08T00:00:00+00:00"):
+    """Blind labels for claims this scripted split does not contain, up to G4's floor.
+
+    G4 requires `MIN_BLIND_COMPARABLE` blind comparable labels before it will call a gold set a calibration,
+    and these fixtures judge two or three claims. A real gold set spans twenty-odd answers and only the
+    labels whose claim ids match the run in front of it take part in the agreement arithmetic, so padding
+    here reproduces the shape rather than dodging the gate: `goldset.agreement` matches by claim id and
+    ignores every one of these.
+    """
+    from sayswho.goldset import GoldLabel
+    from sayswho.judge import SUPPORTED as _S
+
+    return [
+        GoldLabel(claim_id=f"OTHER-{i:02d}#deadbeef", url=url, label=_S, labelled_at=at, labeller="jayanth")
+        for i in range(MIN_BLIND_COMPARABLE - matched)
+    ]
+
+
 def gold_for(url, labels, tmp_path, name="gold.json"):
     """A gold set bound to the scripted judge's split, so gate G4 passes and a rate may be printed."""
     from sayswho.claims import claim_id
@@ -88,7 +107,7 @@ def gold_for(url, labels, tmp_path, name="gold.json"):
                 labelled_at="2026-08-08T00:00:00+00:00", labeller="jayanth",
             )
             for text, label in labels
-        ],
+        ] + padding_to_the_g4_floor(url, len(labels)),
         labeller="jayanth",
     ).save(tmp_path / name)
 
@@ -357,7 +376,7 @@ def test_a_gold_set_labelled_before_the_run_produces_an_agreement_number(
                       labelled_at="2026-08-08T00:00:00+00:00", labeller="jayanth"),
             GoldLabel(claim_id=claim_id("PR-01", text_b, {}), url=url, label=NOT_FOUND_IN_SOURCE,
                       labelled_at="2026-08-08T00:00:00+00:00", labeller="jayanth"),
-        ],
+        ] + padding_to_the_g4_floor(url, 2),
     )
     path = gold.save(tmp_path / "gold.json")
 

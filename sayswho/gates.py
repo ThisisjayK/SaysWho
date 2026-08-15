@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .goldset import COMPARABLE
 from .records import AUDITABLE_CODES, NO_CITATIONS, Capture, FetchRecord
 
 
@@ -67,9 +68,24 @@ def auditable_denominator(records: list[FetchRecord]) -> int:
 NO_CALIBRATION = "NO_CALIBRATION"
 
 
+#: The smallest number of blind, comparable labels a gold set must carry before G4 calls it a calibration.
+#:
+#: Set to the floor of the range `SCOPE.md` §0a asks for, thirty to forty hand-labelled claims, so the gate
+#: enforces the design document's own promise rather than a threshold invented in this file. Changing it is
+#: a decision about what this project will publish, so it is one constant in one place and it moves by commit
+#: with a reason, never by a flag on a run that wants a number.
+#:
+#: **This counts labels, not agreements, and the difference is not pedantic.** G4 never sees the judgements,
+#: so what it can check is an upper bound on the n that kappa is eventually computed over: a blind comparable
+#: label whose verdict was voided, or never produced, drops out in `goldset.agreement` afterwards. The gate
+#: can refuse a set that cannot possibly calibrate. It cannot promise that one which passes does.
+MIN_BLIND_COMPARABLE = 30
+
+
 def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
                           judge_prompt_version: str, claim_prompt_version: str,
-                          split_sha256: str) -> GateResult:
+                          split_sha256: str,
+                          min_blind_comparable: int = MIN_BLIND_COMPARABLE) -> GateResult:
     """Gate G4. Aggregate rates are refused unless a gold set was labelled for this exact configuration.
 
     Per-claim verdicts still emit. `SCOPE.md` §3: an uncalibrated judge can produce useful individual
@@ -82,8 +98,19 @@ def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
     front of it judges one of them at a time. Equality made a set spanning two answers, which is what
     reaching thirty to forty pairs requires, calibrate neither of them.
 
-    Every mismatch is reported separately rather than as one "no calibration" answer, because the four
-    reasons need four different actions: relabel, revert the prompt, re-pin the split, or swap the judge back.
+    Every mismatch is reported separately rather than as one "no calibration" answer, because the reasons
+    need different actions: relabel, revert the prompt, re-pin the split, swap the judge back, or label more.
+
+    **The label check was added on day 8, and the hole it closes was open the whole time.** Until then this
+    function verified that a gold set existed for the configuration and looked at no label in it. It had no
+    minimum count and did not ask whether a single label was blind, so a set of forty supplemental labels
+    spanning every split in a run would have opened the gate and printed a stratum rate calibrated by
+    whatever blind labels happened to be underneath, which on day 8 was two. Supplemental labels are excluded
+    from kappa by construction in `goldset.agreement`, so a set made only of them calibrates nothing while
+    satisfying every check this gate used to make. `FINDINGS.md` item 22.
+
+    The gate is named for what it should verify, and now does: that a calibration exists, not that a file
+    does.
     """
     if goldset is None:
         return GateResult(
@@ -118,6 +145,20 @@ def g4_calibration_exists(goldset, judge_class: str, judge_model: str,
         mismatches.append(
             f"gold set was labelled against split(s) {labelled}, this run judged split {split_sha256[:16]}. "
             "A gold set is valid for the splits it was labelled against and no others"
+        )
+
+    blind_comparable = [l for l in goldset.blind if l.label in COMPARABLE]
+    if not goldset.blind:
+        mismatches.append(
+            f"gold set holds {len(goldset.labels)} label(s) and not one of them is blind. Supplemental "
+            "labels are excluded from kappa by construction, so this set calibrates nothing however many "
+            "of them there are"
+        )
+    elif len(blind_comparable) < min_blind_comparable:
+        mismatches.append(
+            f"gold set holds {len(blind_comparable)} blind label(s) that can be compared with a verdict and "
+            f"{min_blind_comparable} is the floor. {len(goldset.supplemental)} supplemental label(s) are "
+            "not counted here, because kappa excludes them"
         )
 
     if mismatches:

@@ -77,11 +77,13 @@ def test_g4_passes_for_every_split_a_multi_answer_set_covers():
     for covered in across.split_sha256s:
         result = g4_calibration_exists(
             across, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", covered,
+            min_blind_comparable=1,
         )
         assert result.passed, f"the set holds labels for {covered[:8]} and should calibrate it"
 
     stranger = g4_calibration_exists(
         across, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", "d" * 64,
+        min_blind_comparable=1,
     )
     assert not stranger.passed, "membership, not a free pass to every split in existence"
 
@@ -119,11 +121,76 @@ def test_g4_refuses_after_a_prompt_version_bump():
 
 
 def test_g4_passes_on_the_configuration_it_was_labelled_for():
+    """The tuple check in isolation, so the floor is lowered rather than the set padded to thirty. What the
+    floor does on its own is the four tests below."""
     result = g4_calibration_exists(
         gold([label("c1", SUPPORTED)]),
         "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+        min_blind_comparable=1,
     )
     assert result.passed
+
+
+def test_g4_refuses_a_gold_set_made_entirely_of_supplemental_labels():
+    """The hole day 8 found, and the one that mattered. Forty supplemental labels spanning every split in a
+    run satisfied every check this gate used to make, and `agreement` excludes every one of them from kappa,
+    so the rate that printed would have rested on whatever blind labels happened to exist underneath."""
+    supplemented = gold([label(f"c{i}", SUPPORTED, blind=False) for i in range(40)])
+
+    result = g4_calibration_exists(
+        supplemented, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    )
+    assert not result.passed
+    assert result.code == NO_CALIBRATION
+    assert "not one of them is blind" in result.detail
+    assert "40" in result.detail, "say how many were offered, so the refusal is not mistaken for an empty set"
+
+
+def test_g4_refuses_when_the_blind_labels_are_below_the_floor():
+    """The state this repo was actually in on day 8: six labels, two of them comparable."""
+    thin = gold(
+        [label("c1", SUPPORTED), label("c2", NOT_FOUND_IN_SOURCE)]
+        + [label(f"u{i}", UNAUDITABLE) for i in range(4)]
+    )
+
+    result = g4_calibration_exists(
+        thin, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    )
+    assert not result.passed
+    assert "2 blind label(s)" in result.detail
+    assert "30 is the floor" in result.detail
+
+
+def test_g4_does_not_count_unauditable_labels_towards_the_floor():
+    """`UNAUDITABLE` is a label about the source and the judge is never asked about the pair, so thirty of
+    them is thirty rows and no calibration. Counting labels rather than comparable labels would have made
+    the floor satisfiable by the fastest labels in the session."""
+    padded = gold([label(f"u{i}", UNAUDITABLE) for i in range(30)] + [label("c1", SUPPORTED)])
+
+    result = g4_calibration_exists(
+        padded, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    )
+    assert not result.passed
+    assert "1 blind label(s)" in result.detail
+
+
+def test_g4_passes_at_the_floor_and_says_supplemental_labels_did_not_help():
+    """Thirty comparable blind labels is the promise in §0a, so it is what opens the gate. The supplemental
+    ones alongside are counted in the refusal message and never towards the floor."""
+    at_floor = gold([label(f"c{i}", SUPPORTED) for i in range(30)])
+    assert g4_calibration_exists(
+        at_floor, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    ).passed
+
+    one_short = gold(
+        [label(f"c{i}", SUPPORTED) for i in range(29)]
+        + [label(f"s{i}", SUPPORTED, blind=False) for i in range(20)]
+    )
+    result = g4_calibration_exists(
+        one_short, "GeminiJudge", "gemini-3.5-flash-lite", "judge-v1", "claims-v1", SPLIT,
+    )
+    assert not result.passed, "twenty supplemental labels do not make up the missing blind one"
+    assert "20 supplemental label(s) are not counted" in result.detail
 
 
 # ---------------------------------------------------------------- the timestamp check

@@ -43,6 +43,13 @@ published rate.
 means relabelling before any aggregate rate may be printed again. Do not change `JUDGE_PROMPT_VERSION` or the
 default provider casually.
 
+**G4 also requires blind labels, and counts them.** `gates.MIN_BLIND_COMPARABLE` blind labels that can be
+compared with a verdict, or no aggregate rate. Supplemental labels never count towards it, because
+`goldset.agreement` excludes them from kappa, and `UNAUDITABLE` never counts because the judge was never
+asked. Until day 8 the gate checked the configuration and looked at no label, so a set made entirely of
+supplemental labels would have opened it. Lowering that floor is a decision about what this project will
+publish: it moves by commit with a reason, never by a flag on a run that wants a number.
+
 **No verdict without a verbatim span.** `SUPPORTED` requires a quoted span that a script confirms is present
 in the fetched document. Failures log `JUDGE_FABRICATED_SPAN` and the rate gets published rather than fixed
 quietly.

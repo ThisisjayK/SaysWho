@@ -557,14 +557,21 @@ The machinery is built and tested. What is left on this list is the labelling it
       exits 3 on a blind session and `--supplemental` is the only way in, and those labels never enter kappa.
       **So the set is being rebuilt blind on ChatGPT rather than topped up**, over ten frozen queries drawn
       with seed 20260812 before any capture existed. `FINDINGS.md` item 22
-- [ ] **G4 verifies that a gold set exists for this configuration, not that a calibration does.**
-      `gates.g4_calibration_exists` checks judge class, judge model, both prompt versions and split
-      membership, and looks at no label. It has no minimum count and does not ask whether a single label is
-      blind, so forty supplemental labels across all 24 splits would open it and print a stratum rate
-      calibrated by two blind pairs. Every existing test hands it labels and checks the tuple; none hands it
-      a wholly supplemental set and asks whether a rate should print. Left open deliberately rather than
-      patched, because changing a gate on the day the change would be convenient is the move this project
-      refuses everywhere else. Decide it with the head-to-head, not with the deadline. `FINDINGS.md` item 22
+- [x] **G4 verified that a gold set existed for this configuration, not that a calibration did.** It checked
+      judge class, judge model, both prompt versions and split membership, and looked at no label: no minimum
+      count, no blindness check, so forty supplemental labels across all 24 splits would have opened it and
+      printed a stratum rate calibrated by two blind pairs. Fixed on day 8 rather than deferred, once it was
+      clear the change tightens the gate rather than loosening one: `gates.MIN_BLIND_COMPARABLE` blind
+      comparable labels are now required, set to thirty because that is the floor §0a already promised.
+      Supplemental labels never count, and `UNAUDITABLE` never counts, since the judge was never asked about
+      those pairs. Four tests, each describing a set that would have passed before. **It costs something and
+      that is the point: the current six-label set now fails G4 on the count as well as on coverage.**
+      `FINDINGS.md` item 22
+- [ ] G4 counts labels and kappa is computed over labels that match a verdict which stands, so the gate
+      checks an upper bound on the n behind a rate rather than the n itself. Thirty blind comparable labels
+      whose verdicts were all voided would pass G4 and produce a kappa of nothing. Narrower than the hole
+      closed on day 8 and left open knowingly, because closing it means handing the gate the judgements and
+      G4 runs before they are all in
 - [ ] **No guard refuses a judge run that would spend a labelling session's blindness.** `prior_audit` fires
       one way only: it refuses a labelling session after a run, and nothing refuses a run before a labelling
       session. Day 6 prepped a clean session and day 7 ran the stratum, both correct alone and wrong in that

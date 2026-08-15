@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-14, day 8 of ten, where day 5 was 2026-08-11. 783 tests, and `tests/test_documents.py`
+Last updated 2026-08-14, day 8 of ten, where day 5 was 2026-08-11. 787 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
 2026-08-14 while its own anchor made that date day 8, which is corrected here and is the smaller half of what
 day 8 found.
@@ -158,10 +158,17 @@ here, because they are about the controls rather than the schedule. `prior_audit
 only, refusing a labelling session after a run and never a run before a session, so the order that costs a
 day is the one nothing watches. And `gates.g4_calibration_exists` verifies that a gold set exists for this
 judge, prompt version and split, without looking at whether any label in it is blind or how many there are,
-so forty supplemental labels would open the gate on a kappa of two. The invariant in `CLAUDE.md` that G4 is
-what stands between this project and an uncalibrated rate is, as written, stronger than the code behind it.
-That is recorded rather than patched, because a gate should not be changed on the day the change would be
-convenient.
+so forty supplemental labels would have opened the gate on a kappa of two. The invariant in `CLAUDE.md` that
+G4 is what stands between this project and an uncalibrated rate was, as written, stronger than the code
+behind it.
+
+**Fixed the same day, after the first instinct to leave it open turned out to be guarding the wrong risk.**
+The rule about not changing a gate on the day the change is convenient exists to stop a gate being loosened
+so a result can get out. This tightens it: G4 now requires thirty blind labels that can be compared with a
+verdict, which is the floor §0a already promised, and neither supplemental nor `UNAUDITABLE` labels count
+towards it. The gold set as it stands fails the new check on the count as well as on coverage, which is the
+correct answer and is what makes the change worth having rather than free. `CLAUDE.md` carries it as an
+invariant, four tests hold it, and the floor is one constant in one file so lowering it is a visible act.
 
 **The working list was reporting work that had already shipped.** `TODO.md` carried a row saying
 `extracted_pair` in `tools/label_goldset.py` ran the HTML extractor over raw bytes, so a cited PDF was

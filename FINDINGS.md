@@ -1012,6 +1012,28 @@ inherits that until the adapter is checked field by field against a real page. A
 the new pairs is not knowable in advance: 15 of 145 is a fact about the pages Perplexity cited, and the target
 cannot be chosen until `prep_goldset.py` has fetched ChatGPT's sources and said what the split is.
 
-Whether G4 should refuse a gold set with no blind labels is left open here rather than answered, because
-changing a gate to make a result reachable is the move this project refuses in every other place, and the
-argument for changing it should not be written on the day it would be convenient.
+**Answered the same day, and in the direction that costs something.** This was first written as an open
+question, on the grounds that a gate should not be changed on the day the change would be convenient. That
+argument was about the wrong risk. The move it guards against is loosening a gate so a result can get out,
+and this change does the opposite: G4 now requires `gates.MIN_BLIND_COMPARABLE` blind labels that can be
+compared with a verdict, set to thirty, which is the floor of the range §0a already promised. Supplemental
+labels never count towards it and `UNAUDITABLE` labels never count towards it, since the judge was never
+asked about those pairs. The gate refuses strictly more than it did.
+
+What it costs is worth stating, because a tightening that cost nothing would not have been worth making. The
+gold set as it stands, six labels with two comparable, now fails G4 on the count as well as on coverage. So
+does any set the day 9 session produces below thirty comparable blind labels. The number that has to be
+reached to publish anything went up, deliberately, and it is one constant in one file so that lowering it is
+a visible act rather than a flag on a run.
+
+Four tests hold it, and all four describe a set that would have passed before: forty supplemental labels
+across every split, the six-label state this repo was actually in, thirty `UNAUDITABLE` labels padding the
+count, and twenty supplemental labels failing to make up one missing blind one. The two existing tests that
+now pass an explicit floor of one are the tuple checks, which are about configuration rather than about
+calibration, and lowering the floor there says so out loud rather than padding a fixture to thirty.
+
+One honest limit on the fix. G4 counts labels, and kappa is computed over the labels that match a verdict
+which was produced and not voided, so the gate checks an upper bound on the n behind a rate rather than the n
+itself. A set of thirty blind comparable labels whose verdicts were all voided would pass G4 and yield a
+kappa of nothing. That is a narrower hole than the one closed and it is left open knowingly, because closing
+it means giving the gate the judgements, and G4 runs before they are all in.

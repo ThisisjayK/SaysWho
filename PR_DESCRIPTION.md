@@ -35,7 +35,7 @@ it, e.g. "gate G3 and tests/test_judge.py" rather than "the project demonstrates
 ```bash
 git clone <<< TARGET REPO >>> && cd SaysWho
 python3 -m venv .venv && .venv/bin/pip install google-genai
-.venv/bin/python -m pytest -q          # 783 tests, offline except one node process
+.venv/bin/python -m pytest -q          # 787 tests, offline except one node process
 .venv/bin/python tools/ethics_gate.py  # privacy and honesty, checked rather than promised
 ```
 
