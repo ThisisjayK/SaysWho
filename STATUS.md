@@ -11,8 +11,17 @@ day 8 found.
 **Day 7's line has been crossed and the core is behind it, with one row still open.** Every day 7 item is
 done: the honest run, the metric readout, the fabricated-span figure checked before being described, the
 plausibility audit, the trace table. What is not done is day 5's own deliverable, the gold set, which stands
-at 6 human labels of a planned 30 to 40 and is the reason the run published no support rate. Labelling is
-scheduled for day 9. Nothing else on the critical path is waiting on anything but that.
+at 6 human labels of a planned 30 to 40 and is the reason the run published no support rate.
+
+**And the gold set got harder on day 8 rather than closer.** The honest run put verdicts over all 24 consumer
+answers, so a blind labelling session over them is refused: `label_goldset.py` exits 3 and `--supplemental`
+is the only way in, and supplemental labels are excluded from kappa by construction. The 6 labels that exist
+predate the run by two and a half hours and are blind; two of them are comparable, which is the n=2 kappa.
+Topping the set up would produce forty labels and move that number not at all. So the set is being rebuilt
+blind on ChatGPT over ten frozen queries drawn with seed 20260812 before any capture existed, which also
+gives the second product that §3's stratification always needed. `FINDINGS.md` item 22 has it, including the
+half worth more than the scheduling: G4 checks that a gold set exists for this configuration, not that a
+calibration does, so a wholly supplemental set would have opened it.
 
 **The stratum changed on day 6, and it changed by being given up rather than delivered.** The
 professional-research set was to be transcribed from my own AI history and that history is gone. Retyping
@@ -140,8 +149,19 @@ the fabricated-span count over PDF sources stays separate from one over HTML, an
 ## What changed on day 8, and what it means
 
 Nothing measurable. No run, no labels, no new rate. What day 8 did was check the documents against the code
-they describe, and the result belongs here because it is the same failure this project keeps finding in
-itself.
+they describe, and then check what tomorrow's session would actually produce, which turned out to be the
+larger of the two.
+
+**The blind gold set for the consumer stratum is gone, spent by the run that produced the numbers.** Written
+up as `FINDINGS.md` item 22 and summarised at the top of this file. Two things in it are worth repeating
+here, because they are about the controls rather than the schedule. `prior_audit` fires in one direction
+only, refusing a labelling session after a run and never a run before a session, so the order that costs a
+day is the one nothing watches. And `gates.g4_calibration_exists` verifies that a gold set exists for this
+judge, prompt version and split, without looking at whether any label in it is blind or how many there are,
+so forty supplemental labels would open the gate on a kappa of two. The invariant in `CLAUDE.md` that G4 is
+what stands between this project and an uncalibrated rate is, as written, stronger than the code behind it.
+That is recorded rather than patched, because a gate should not be changed on the day the change would be
+convenient.
 
 **The working list was reporting work that had already shipped.** `TODO.md` carried a row saying
 `extracted_pair` in `tools/label_goldset.py` ran the HTML extractor over raw bytes, so a cited PDF was

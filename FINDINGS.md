@@ -956,3 +956,62 @@ never fired on real data, over fifty-one more sources. And `CONTRADICTED` came b
 which is the class `SCOPE.md` §3 Phase 4 says to fill first in a gold set: a class the judge never produces
 cannot be calibrated against, and a run that never produces one cannot supply the examples.
 
+
+## 22. The honest run spent the blindness, and G4 does not notice
+
+Day 8, 2026-08-15, found while preparing the labelling session rather than by running anything.
+
+**The gold set cannot be labelled blind over these answers any more, and the run that made the numbers is what
+spent it.** `tools/prep_goldset.py` reports 28 files under `reports/` and `runs/` already holding a verdict
+over 25 of 25 answers, so `tools/label_goldset.py` exits 3 rather than asking the first question.
+`--supplemental` is the documented way through and it is not an override: those labels carry `blind: false`,
+and `goldset.agreement` iterates `gold.blind`, so they are counted, reported separately, and excluded from
+kappa by construction.
+
+The six labels that exist were written between 21:09 and 21:20 UTC on 2026-08-13. The run started at 23:51
+UTC the same day, two and a half hours later. So they are blind, `agreement`'s timestamp refusal passes on
+them, and as of day 8 they are the only blind labels this stratum will ever have. Two of the six are
+comparable, the other four being sources the judge was never asked about, which is why the kappa reported on
+day 7 was n=2.
+
+**Nothing was done wrong, which is the part worth recording.** Day 6 prepped a session whose prior-audit scan
+was clean over all 24 answers, and `TODO.md` said so. Day 7 then ran the stratum, because a run that judges
+the stratum is what day 7 owed. Both were correct in isolation. The order was not, and no guard in this
+project watches the order: `prior_audit` refuses a labelling session after a run, and nothing refuses a run
+before a labelling session. The control fires in one direction only, and the direction it does not fire in is
+the one that costs a day.
+
+**Then the sharper half.** `gates.g4_calibration_exists` checks four things: judge class and model, the judge
+prompt version, the claim prompt version, and split membership. It does not look at whether a single label in
+the gold set is blind, and it has no minimum count. So labelling the remaining 39 pairs supplementally would
+extend `split_sha256s` across all 24 splits, G4 would pass, and a stratum support rate would print, calibrated
+by two blind comparable pairs.
+
+That is not a bug in the sense of a wrong result. G4 does exactly what its docstring says: it ties a gold set
+to a judge, a prompt version and a split, and those are the four things whose mismatch needs four different
+actions. But the gate is named `g4_calibration_exists`, and what it verifies is that a gold set exists for
+this configuration rather than that a calibration does. A set of forty supplemental labels satisfies it and
+calibrates nothing, and the invariant in `CLAUDE.md` that G4 is what stands between the project and an
+uncalibrated rate is, as written, stronger than the code behind it.
+
+**It was found by asking what a labelling session would produce, not by a test.** Every test of G4 gives it
+labels and asks whether the tuple matches. None gives it a gold set whose labels are all supplemental and asks
+whether a rate should print. That is the same shape as item 8: the gate was written against the failure that
+was imagined, and the one that arrived came in through the field nobody thought to constrain.
+
+**What is being done about it.** The gold set is being rebuilt blind on a second product rather than topped up
+supplementally, which is the honest route and also the one that fixes the single-product stratification named
+in `SCOPE.md` §3. Ten of the twenty-four frozen consumer queries were drawn with seed 20260812 before any
+ChatGPT answer was captured, so the selection predates the data: CO-02, CO-03, CO-08, CO-10, CO-14, CO-17,
+CO-20, CO-21, CO-22 and CO-24. A new product means new answer hashes, so the prior-audit scan is clean and the
+labels are blind in fact rather than by assertion.
+
+Two things that carries with it, both stated here rather than discovered later. The ChatGPT adapter has never
+been verified, so every capture it produces carries `adapter_verified: false`, and a gold set built on it
+inherits that until the adapter is checked field by field against a real page. And the unauditable share of
+the new pairs is not knowable in advance: 15 of 145 is a fact about the pages Perplexity cited, and the target
+cannot be chosen until `prep_goldset.py` has fetched ChatGPT's sources and said what the split is.
+
+Whether G4 should refuse a gold set with no blind labels is left open here rather than answered, because
+changing a gate to make a result reachable is the move this project refuses in every other place, and the
+argument for changing it should not be written on the day it would be convenient.

@@ -16,24 +16,40 @@ The captures happened on day 6, the honest run on day 7, and it published no sup
 set holds 6 human labels against 24 judged splits. G4 is not going to calibrate its way out of that. No
 amount of further building changes it.
 
+**Corrected on day 8, and the correction is the point.** The plan written here that morning said to pick a
+target and label the existing answers. That plan is dead: the day 7 run put verdicts over all 24 of them, so
+`label_goldset.py` exits 3 and `--supplemental` is the only way in, and supplemental labels carry
+`blind: false` and never enter kappa. Topping up the existing set would produce forty labels and leave the
+blind kappa at n=2. `FINDINGS.md` item 22.
+
 Day 9's queue, in order:
 
-1. **Pick the target first, because it is a trade and not a default.** The pool is 145 pairs and the sampler
-   takes all 15 unauditable ones before anything else, and `goldset.agreement` excludes those from kappa
-   because the judge was never asked about them. So `--target 35` yields 20 comparable pairs, `--target 45`
-   yields 30, and `--target 55` yields 40. §0a asked for 30 to 40. Roughly an hour of labelling per step,
-   and whichever is picked the writeup reports the comparable n rather than the label count
-2. **Label.** `tools/prep_goldset.py --split splits/*.json` first, which sends no requests because the split
-   pass already warmed the cache, then the session itself. `LABELLING.md` is the decision guide and it
-   deliberately discusses vocabulary rather than claims. The prior-audit scan is clean over all 24 answers,
-   so these labels are blind in fact and not by assertion. The PDF extraction check now works during the
-   session, fixed on day 7, which matters because two of the sampled pairs are IRS PDFs
-3. **Re-run with the gold set attached.** `tools/run_stratum.py` over the same captures with `--goldset`, so
-   the rate is computed over the same claims a human read. This is the first moment the project is entitled
-   to print a support rate, and it is still entitled to refuse
-4. **The PR description.** Still blocked on the same two answers only I have: which repo
+1. **Capture ChatGPT answers for ten frozen queries.** The subset was drawn with seed 20260812 before any
+   answer was captured, so the selection predates the data: CO-02, CO-03, CO-08, CO-10, CO-14, CO-17, CO-20,
+   CO-21, CO-22, CO-24. A new product means new answer hashes, so the prior-audit scan comes back clean and
+   the labels are blind in fact. This also fixes the stratification §3 asks for and could not have, since one
+   product means the gold set stratifies on G2 codes alone
+2. **Verify the ChatGPT adapter while in there.** `verifiedSelectors` is empty, so every capture it makes
+   carries `adapter_verified: false`, and a gold set built on those captures inherits it. Read one captured
+   answer end to end against the screen and confirm the citation set matches what the extension stored. This
+   is row L238 and it is the same browser session
+3. **Bind, split, then prep with fetching on.** `tools/bind_capture.py captures/*.json --in-order --stratum
+   consumer`, then `--split-only --save-split`, then `tools/prep_goldset.py` **without** `--no-fetch`, since
+   ChatGPT's sources have never been fetched and nothing about them is cached
+4. **Only then pick the target.** 15 of 145 unauditable is a fact about the pages Perplexity cited, not a
+   constant. Whether ChatGPT's sources are more or less bot-blocked is unknown until step 3 reports it, and
+   the target is a decision with numbers behind it or it is a guess
+5. **Label.** `LABELLING.md` is the decision guide and discusses vocabulary rather than claims, deliberately.
+   `UNAUDITABLE` pairs are the quick ones and buy no kappa, so the target has to exceed the comparable n
+   wanted. The PDF extraction check works during the session as of day 7
+6. **Run the stratum with the gold set attached**, over the ChatGPT captures. First moment the project is
+   entitled to print a support rate, and still entitled to refuse
+7. **The PR description.** Still blocked on the same two answers only I have: which repo
    `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies. `PR_DESCRIPTION.md` is drafted
    around both blanks
+
+Do not run the judge over the ChatGPT captures before the labels exist. That is the mistake day 7 made
+without noticing, and the guard only fires in the other direction.
 
 After that, days 9 and 10 are the video, an outsider trying the install, and whichever stretch rows fit.
 The stretch rows that do not fit get a state and a reason here rather than being dropped, per §0a.
@@ -533,12 +549,28 @@ The machinery is built and tested. What is left on this list is the labelling it
       run record was supplied, from six pages with no unauditable pair to seven including the paywalled and
       the no-text-layer ones. The prep tool says NOT STRATIFIED when it happens, and reports the unauditable
       count as not-known rather than as zero
-- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do.** No longer blocked on
-      a stratum: it needs captured answers from the frozen consumer set. The order is: `--split-only
-      --save-split` to make the split, `tools/prep_goldset.py` to warm the cache and report the session,
-      label against it, then `--split` on the judged run so the rate is over the same claims a human read.
-      Fresh captures mean the prior-audit guard passes and these labels are blind in fact rather than by
-      assertion
+- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do, and no longer
+      possible over the Perplexity answers.** 6 blind labels exist, written 2026-08-13 between 21:09 and
+      21:20 UTC, which is two and a half hours before the day 7 run started at 23:51 and is why they are
+      blind and why `agreement`'s timestamp refusal passes on them. Two of the six are comparable, so the
+      kappa behind everything is n=2. The run then put verdicts over all 24 answers, so `label_goldset.py`
+      exits 3 on a blind session and `--supplemental` is the only way in, and those labels never enter kappa.
+      **So the set is being rebuilt blind on ChatGPT rather than topped up**, over ten frozen queries drawn
+      with seed 20260812 before any capture existed. `FINDINGS.md` item 22
+- [ ] **G4 verifies that a gold set exists for this configuration, not that a calibration does.**
+      `gates.g4_calibration_exists` checks judge class, judge model, both prompt versions and split
+      membership, and looks at no label. It has no minimum count and does not ask whether a single label is
+      blind, so forty supplemental labels across all 24 splits would open it and print a stratum rate
+      calibrated by two blind pairs. Every existing test hands it labels and checks the tuple; none hands it
+      a wholly supplemental set and asks whether a rate should print. Left open deliberately rather than
+      patched, because changing a gate on the day the change would be convenient is the move this project
+      refuses everywhere else. Decide it with the head-to-head, not with the deadline. `FINDINGS.md` item 22
+- [ ] **No guard refuses a judge run that would spend a labelling session's blindness.** `prior_audit` fires
+      one way only: it refuses a labelling session after a run, and nothing refuses a run before a labelling
+      session. Day 6 prepped a clean session and day 7 ran the stratum, both correct alone and wrong in that
+      order, and the cost was the whole blind gold set for that stratum. The cheap version is
+      `run_stratum.py` warning when it is about to judge an answer that a prepped-but-unlabelled session
+      covers
 - [x] Stratification, as far as blind labelling permits. Products and G2 codes are knowable before any model
       runs and are stratified on, with `UNAUDITABLE` reached first. Verdict classes are the judge's output,
       so a blind sample cannot stratify on them and a sample that did would not be blind. If `CONTRADICTED`
