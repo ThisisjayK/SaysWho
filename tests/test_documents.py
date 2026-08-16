@@ -55,11 +55,11 @@ EXPECTED_ABSENT = {
     # gold set holds passages pasted out of fetched pages. LABELLING.md names it as the output.
     "goldset/consumer.gold.json": "written by tools/label_goldset.py, gitignored",
     "goldset/chatgpt-consumer.gold.json": "written by tools/label_goldset.py, gitignored",
-    # Named by STATUS.md and TODO.md as the output of a run that has not been executed. Both documents
-    # say so in the sentence that names it, which is the state this gate exists to keep honest: the
-    # alternative is a document that quietly stops mentioning the step it is waiting on.
-    "runs/day9": "the output directory of a run that has not happened yet, named as absent",
-    "runs/day9/": "the output directory of a run that has not happened yet, named as absent",
+    # The day 9 run's four artefacts. Written at runtime under runs/, which .gitignore excludes, so these
+    # exist on the machine that ran it and on no fresh clone. Same grounds as runs/break above. The reason
+    # this entry is worth reading: between day 8 and day 9 it was here because the run had not happened,
+    # which was a different fact that happened to need the same line.
+    "runs/day9/": "a run output directory, gitignored and absent on a fresh clone",
 }
 
 #: A repo-relative path inside backticks: at least one slash, and a file extension or a trailing slash.

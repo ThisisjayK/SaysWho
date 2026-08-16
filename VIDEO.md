@@ -20,7 +20,7 @@ at all, because no gold set covered those splits. A tool that prints a number in
 | 1 | 0:00 to 0:30 | Screen: a Perplexity answer with footnotes, scrolling | "This answer has nine footnotes. I have never once opened all nine. Nobody has. The footnote does the persuading and nothing does the checking." |
 | 2 | 0:30 to 1:00 | `queries/consumer.toml` on screen, then `freeze_queries.py check` passing | "Twenty-four questions, frozen before any run, hash-checked before every one. If I tuned a question after seeing a result, this command fails." |
 | 3 | 1:00 to 2:30 | **The uncut segment.** Live browser, extension loaded | See below. This is the shot that carries the video. |
-| 4 | 2:30 to 3:15 | Terminal: `runs/day9/readout.txt`, scrolled to `STRATUM RATE withheld` and then to `JUDGE AGAINST HUMAN` | "Here is the run. Here is the support rate: there isn't one, and here is the gate saying why. And here is what happens when I check the judge against myself: kappa 0.30, interval 0.004 to 0.60." |
+| 4 | 2:30 to 3:15 | Terminal: the day 9 readout in `runs/day9/`, scrolled to `STRATUM RATE withheld` and then to `JUDGE AGAINST HUMAN` | "Here is the run. Here is the support rate: there isn't one, and here is the gate saying why. And here is what happens when I check the judge against myself: kappa 0.30, interval 0.004 to 0.60." |
 | 5 | 3:15 to 4:15 | `FINDINGS.md` item 21 on screen | The four voided spans, and the one that was ours. |
 | 6 | 4:15 to 5:00 | `STATUS.md` blocker row and the not-done rows | "The professional stratum never ran. Here is the row that says so." |
 
