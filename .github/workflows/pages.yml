@@ -1,0 +1,76 @@
+# Publishes site/ to GitHub Pages, and builds the download archive on the way.
+#
+# The archive is the reason this is a workflow rather than a branch deployment.
+# site/sayswho.zip is gitignored on purpose: committing it would put a copy of the
+# repository inside the repository, stale from the moment it landed. So it is built
+# here instead, from the commit being deployed, which means the download can never
+# be a version behind the code it claims to be.
+#
+# One manual step, once: Settings, Pages, Source, GitHub Actions.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it. A half-deployed site is
+# worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # tools/make_release_zip.py reads the file list from `git ls-files`, so it
+      # needs the checkout to be a real repository rather than an export. It is,
+      # and the three gates inside it run here exactly as they do locally: a key
+      # or a personal identifier fails the build rather than shipping.
+      - name: Build the download archive
+        run: python3 tools/make_release_zip.py
+
+      # Fails the deploy rather than publishing a download button that 404s. The
+      # first version of this archive shipped a server that could not start, which
+      # is the argument for checking the artefact rather than trusting the step
+      # that made it.
+      - name: Check the archive is there and not empty
+        run: |
+          test -s site/sayswho.zip
+          python3 - <<'PY'
+          import zipfile
+          names = zipfile.ZipFile("site/sayswho.zip").namelist()
+          need = ["sayswho/extension/manifest.json", "sayswho/sayswho/server.py"]
+          missing = [n for n in need if n not in names]
+          assert not missing, f"archive is missing {missing}"
+          print(f"archive ok: {len(names)} files")
+          PY
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
