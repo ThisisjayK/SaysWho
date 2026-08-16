@@ -50,7 +50,22 @@ goldset/
 # writeup publishes the numbers it has chosen and traced, not a directory of every run that ever happened,
 # and a run over the professional stratum carries the answer text behind it. Written by the runner on every
 # invocation, so leaving them untracked rather than ignored is how they end up in a git add -A.
-runs/
+#
+# `runs/*` rather than `runs/`, because git does not descend into an excluded directory and a negation
+# below cannot reach inside one. Excluding the contents leaves the door open for the one exception.
+runs/*
+
+# runs/day9/ is the exception, and the reason above is why it can be: that rule protects the professional
+# stratum's answer text, and day 9 is the consumer stratum, which is synthetic. Nobody asked those ten
+# questions. What the record reproduces is ChatGPT's own sentences split into 71 claims and single quoted
+# passages from cited pages, and DATA_CONTRACT.md §9 publishes exactly those: verdicts, reason codes, URLs
+# and quoted spans, never a page at length.
+#
+# It is committed because two rubric rows name a per-number trace table as their artefact, and a figure a
+# reader cannot trace is a figure they have to take on trust, which is the thing this project refuses to ask
+# for. Every other run stays local. This is one directory by name, not a hole in the rule.
+!runs/day9/
+!runs/day9/*
 
 # correspondence with the professor and the TA. Kept locally, not published.
 email-to-professor.md

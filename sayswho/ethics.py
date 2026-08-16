@@ -46,6 +46,20 @@ REVIEWED_EXCEPTIONS = {
     "runs/span-reaudit.json": (
         "evidence for FINDINGS.md item 14. Public page spans from a consumer-stratum query, reviewed"
     ),
+    # The day 9 run, committed 2026-08-16 so the figures quoted in STATUS.md and FINDINGS.md can be traced
+    # to the record that produced them. Reviewed the same way as the entry above, and the finding is that
+    # the rule this suspends does not describe this run: `runs/` protects the professional stratum's answer
+    # text, and day 9 is the consumer stratum, which is synthetic. Nobody asked those ten questions.
+    #
+    # What it reproduces is ChatGPT's own sentences split into 71 claims, and single quoted passages from
+    # cited public pages, which is exactly the list DATA_CONTRACT.md §9 publishes: verdicts, reason codes,
+    # URLs and quoted spans, never a page at length. The maintainer's contact address appears in the
+    # recorded User-Agent and is left alone, because editing a record of what was sent to a server would
+    # make it stop being a record.
+    "runs/day9/run.json": "the day 9 run record. Consumer stratum, synthetic queries, reviewed",
+    "runs/day9/readout.txt": "the day 9 metric readout, the artefact two rubric rows name",
+    "runs/day9/RUN_LOG.md": "the day 9 run log. Same review as run.json",
+    "runs/day9/TRACE.md": "the day 9 per-number trace table, so a published figure can be checked",
 }
 
 #: Built by concatenation on purpose: written as one literal, each pattern would match this file and the
