@@ -448,12 +448,28 @@ class Attribution:
 
     It is a floor on both counts. It only sees pairs where the labeller pasted a passage, and it cannot see
     a case where the extractor dropped evidence the labeller also missed.
+
+    **`attributable_to_extraction` is a numerator over `disagreements_checked`, not over `disagreements`.**
+    Until day 10 it had no denominator of its own and was read against `disagreements`, which is how the day
+    9 run reported "0 of 13 attributed to the extractor" over a set where the check had run on none of the
+    13. `extraction_missed` is a tri-state: `True` is an extractor fault, `False` is the extractor cleared,
+    and `None` is a check that never happened, because `label_goldset.py` can only run it when the page is
+    in the fetch cache. The old code tested `if l.extraction_missed`, which is false for the last two alike,
+    so a cold cache and an exonerated extractor produced the same 0. `FINDINGS.md` item 24.
     """
 
     disagreements: int
     attributable_to_extraction: int
     unattributed: int
     labels_with_a_passage: int
+    #: Disagreements where `extraction_missed` is not `None`, so the comparison actually produced an answer.
+    #: The denominator `attributable_to_extraction` is over. Zero means this reports nothing about
+    #: `extract.py` in either direction.
+    disagreements_checked: int = 0
+    #: Disagreements carrying a pasted passage. The ceiling on `disagreements_checked`, and distinct from
+    #: `labels_with_a_passage`, which counts agreements too. The day 9 record held two different 13s and the
+    #: writeup read one as the other.
+    disagreements_with_a_passage: int = 0
     kappa_excluding_extraction: float | None = None
     kappa_excluding_extraction_interval_95: tuple[float, float] | None = None
 
@@ -463,32 +479,54 @@ class Attribution:
             "attributable_to_extraction": self.attributable_to_extraction,
             "unattributed": self.unattributed,
             "labels_with_a_passage": self.labels_with_a_passage,
+            "disagreements_checked": self.disagreements_checked,
+            "disagreements_with_a_passage": self.disagreements_with_a_passage,
             "kappa_excluding_extraction": self.kappa_excluding_extraction,
             "kappa_excluding_extraction_interval_95": (
                 list(self.kappa_excluding_extraction_interval_95)
                 if self.kappa_excluding_extraction_interval_95 else None
             ),
             "note": (
-                "A floor on both counts: only pairs where the labeller quoted a passage can be attributed, "
-                "and evidence the labeller also missed is invisible here."
+                "attributable_to_extraction is over disagreements_checked, never over disagreements: "
+                "extraction_missed is None when the page was not cached at labelling time, and an "
+                "unchecked pair is not a cleared one. A floor even then, since evidence the labeller also "
+                "missed is invisible here."
             ),
         }
 
     def render(self) -> str:
         if not self.disagreements:
             return "attribution   no disagreements to attribute"
+
+        # The check never produced an answer on a single disagreement. Printing "0 of 13" here is what the
+        # day 9 writeup did, and it read as an exoneration of `extract.py` that nothing had earned.
+        if not self.disagreements_checked:
+            return "\n".join([
+                f"attribution   not run. 0 of {self.disagreements} judge-human disagreement(s) could be "
+                f"checked against our extraction, so this says nothing about extract.py either way",
+                f"              {self.disagreements_with_a_passage} carried a pasted passage and none of "
+                f"them could be checked, which means the page was not in the fetch cache when it was "
+                f"labelled. Run tools/prep_goldset.py without --no-fetch before a session",
+            ])
+
         lines = [
-            f"attribution   {self.attributable_to_extraction} of {self.disagreements} judge-human "
-            f"disagreements are the extractor's, not the judge's: the labeller's own passage is on the "
-            f"page and missing from what we extracted",
-            f"              {self.unattributed} unattributed, over "
-            f"{self.labels_with_a_passage} label(s) that carried a passage. A floor, not a total",
+            f"attribution   {self.attributable_to_extraction} of {self.disagreements_checked} checkable "
+            f"judge-human disagreements are the extractor's, not the judge's: the labeller's own passage "
+            f"is on the page and missing from what we extracted",
+            f"              {self.disagreements_checked} of {self.disagreements} disagreement(s) could be "
+            f"checked at all, {self.disagreements_with_a_passage} carried a passage. A floor, not a total",
         ]
         if self.kappa_excluding_extraction is not None:
-            lines.append(
-                f"              kappa excluding those pairs: {self.kappa_excluding_extraction:.3f}. "
-                "Reported beside the headline kappa, never instead of it"
-            )
+            if self.attributable_to_extraction:
+                lines.append(
+                    f"              kappa excluding those pairs: {self.kappa_excluding_extraction:.3f}. "
+                    "Reported beside the headline kappa, never instead of it"
+                )
+            else:
+                lines.append(
+                    f"              kappa excluding those pairs: {self.kappa_excluding_extraction:.3f}, "
+                    "identical to the headline because nothing was removed"
+                )
         return "\n".join(lines)
 
 
@@ -502,6 +540,8 @@ def attribution(gold: GoldSet, judgements) -> Attribution:
 
     disagreements = 0
     attributable = 0
+    checked = 0
+    disagreements_with_passage = 0
     with_passage = 0
     remaining: list[tuple[str, str]] = []
 
@@ -517,6 +557,13 @@ def attribution(gold: GoldSet, judgements) -> Attribution:
             remaining.append((l.label, verdict))
             continue
         disagreements += 1
+        if l.human_span:
+            disagreements_with_passage += 1
+        # Tri-state, and the middle case is the one that matters. `None` is a check that never ran, which is
+        # not the same fact as an extractor cleared, and folding them together is what made the day 9
+        # attribution unreadable. Only a non-`None` value counts towards the denominator.
+        if l.extraction_missed is not None:
+            checked += 1
         if l.extraction_missed:
             attributable += 1
         else:
@@ -528,6 +575,8 @@ def attribution(gold: GoldSet, judgements) -> Attribution:
         attributable_to_extraction=attributable,
         unattributed=disagreements - attributable,
         labels_with_a_passage=with_passage,
+        disagreements_checked=checked,
+        disagreements_with_a_passage=disagreements_with_passage,
         kappa_excluding_extraction=kappa,
         kappa_excluding_extraction_interval_95=interval,
     )

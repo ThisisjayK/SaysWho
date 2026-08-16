@@ -18,6 +18,7 @@ from sayswho.goldset import (
     UNAUDITABLE,
     UNDECIDABLE,
     agreement,
+    attribution,
     cohens_kappa,
     coverage,
 )
@@ -368,3 +369,103 @@ def test_the_rendered_agreement_names_itself_a_wide_interval_estimate():
     text = agreement(g, judgements).render()
     assert "single-rater" in agreement(g, judgements).note.lower()
     assert "wide-interval estimate" in text or "interval undefined" in text
+
+
+# ---------------------------------------------------------------- attribution: the tri-state
+
+
+def spanned(claim_id, value, missed, url="https://a.example/1", passage="quoted from the page"):
+    """A label carrying a pasted passage and a given `extraction_missed`, which is a tri-state.
+
+    `None` is the case this file exists to pin: the labeller pasted a passage and the check never ran,
+    because `label_goldset.py` can only run it when the page is in the fetch cache.
+    """
+    return GoldLabel(
+        claim_id=claim_id, url=url, label=value, labelled_at="2026-08-12T09:00:00+00:00",
+        labeller="jayanth", blind=True, human_span=passage, extraction_missed=missed,
+    )
+
+
+def test_an_unchecked_disagreement_is_not_counted_as_a_cleared_one():
+    """The day 9 bug, at the unit that produced it. `extraction_missed=None` means the comparison never
+    happened, and the old code tested `if l.extraction_missed`, which is false for `None` and for `False`
+    alike. A cold cache and an exonerated extractor printed the same 0 of 13."""
+    g = gold([spanned("c1", SUPPORTED, None)])
+    a = attribution(g, [verdict("c1", NOT_FOUND_IN_SOURCE)])
+
+    assert a.disagreements == 1
+    assert a.disagreements_with_a_passage == 1, "the labeller did paste a passage"
+    assert a.disagreements_checked == 0, "and it was never checked, so it is not a denominator"
+    assert a.attributable_to_extraction == 0
+
+
+def test_a_checked_and_cleared_disagreement_counts_towards_the_denominator():
+    """The other half of the tri-state, and the one that makes the count mean something. Same 0 in the
+    numerator as the test above, and a denominator that says the 0 was earned."""
+    g = gold([spanned("c1", SUPPORTED, False)])
+    a = attribution(g, [verdict("c1", NOT_FOUND_IN_SOURCE)])
+
+    assert a.disagreements == 1
+    assert a.disagreements_checked == 1
+    assert a.attributable_to_extraction == 0
+
+
+def test_an_extractor_fault_is_attributed_and_leaves_the_kappa():
+    g = gold([spanned("c1", SUPPORTED, True)])
+    a = attribution(g, [verdict("c1", NOT_FOUND_IN_SOURCE)])
+
+    assert a.attributable_to_extraction == 1
+    assert a.disagreements_checked == 1
+    assert a.unattributed == 0
+
+
+def test_disagreements_with_a_passage_does_not_count_agreements():
+    """`labels_with_a_passage` counts agreements too. Reading it as a disagreement denominator is the second
+    half of the day 9 error: the run record held two different 13s and the writeup read one as the other."""
+    g = gold([
+        spanned("c1", SUPPORTED, None),                                  # disagreement, passage
+        spanned("c2", SUPPORTED, None, url="https://a.example/2"),       # agreement, passage
+    ])
+    a = attribution(g, [
+        verdict("c1", NOT_FOUND_IN_SOURCE),
+        verdict("c2", SUPPORTED, url="https://a.example/2"),
+    ])
+
+    assert a.labels_with_a_passage == 2
+    assert a.disagreements == 1
+    assert a.disagreements_with_a_passage == 1
+    assert a.labels_with_a_passage != a.disagreements_with_a_passage
+
+
+def test_a_run_where_nothing_was_checked_says_so_rather_than_printing_a_zero():
+    """The render is where the false sentence came from, so it is pinned separately from the arithmetic. It
+    has to refuse to read as an exoneration of extract.py."""
+    g = gold([spanned("c1", SUPPORTED, None)])
+    text = attribution(g, [verdict("c1", NOT_FOUND_IN_SOURCE)]).render()
+
+    assert "not run" in text
+    assert "says nothing about extract.py either way" in text
+    # The bug was the shape "N of <disagreements> are the extractor's". Saying 0 of 1 could be *checked* is
+    # the honest sentence, so the assertion is on the attribution claim, not on the digits.
+    assert "are the extractor's" not in text, "an unchecked run must make no attribution claim at all"
+
+
+def test_a_checked_run_prints_the_checkable_denominator():
+    g = gold([
+        spanned("c1", SUPPORTED, True),
+        spanned("c2", SUPPORTED, None, url="https://a.example/2"),
+    ])
+    text = attribution(g, [
+        verdict("c1", NOT_FOUND_IN_SOURCE),
+        verdict("c2", NOT_FOUND_IN_SOURCE, url="https://a.example/2"),
+    ]).render()
+
+    assert "1 of 1 checkable" in text
+    assert "1 of 2 disagreement(s) could be checked at all" in text
+
+
+def test_the_attribution_record_passes_the_no_confidence_number_gate():
+    from sayswho.gates import assert_no_confidence_number
+
+    g = gold([spanned("c1", SUPPORTED, None)])
+    assert_no_confidence_number(attribution(g, [verdict("c1", NOT_FOUND_IN_SOURCE)]).to_dict())

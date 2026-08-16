@@ -352,6 +352,13 @@ def main(argv: list[str] | None = None) -> int:
                     else:
                         print("  noted: that passage is in neither the extracted text nor the raw markup.")
                         print("         Recorded as unchecked rather than as an extraction failure.")
+                else:
+                    # Silent until day 10, and 13 of day 9's 14 passages landed here. A labeller who pastes
+                    # a passage has every reason to think it bought the extractor check, and it did not.
+                    print("  noted: this page is not in the fetch cache, so your passage cannot be checked")
+                    print("         against our extraction and this pair will count as unchecked rather")
+                    print("         than as the extractor cleared. Run tools/prep_goldset.py without")
+                    print("         --no-fetch before a session to avoid this.")
 
         notes = ask("  notes (optional): ")
         labelled_splits.add(row["split_sha256"])

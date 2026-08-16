@@ -1237,10 +1237,25 @@ because removing them changed nothing. **The extractor's contribution to these 1
 unmeasured.** Neither direction is ruled out. This does not touch the kappa, the per-class figures or the
 verdicts, all of which are computed without it.
 
-`attribution` should distinguish "not checked" from "checked and clean" and report the checkable denominator
-beside the count. Until it does, its output cannot be read as evidence about `extract.py` in either
-direction. On `TODO.md` rather than fixed here, because it changes what the run record emits and §8's
-classification table covers those fields.
+**Fixed on day 10.** `attribution` now counts `extraction_missed is not None` into `disagreements_checked`
+and reports `attributable_to_extraction` over that rather than over `disagreements`, with
+`disagreements_with_a_passage` beside it so the two counts that got conflated can no longer be read as one
+another. When nothing was checked the readout refuses to print an attribution figure at all, which is the
+part that matters: the old render would have printed "0 of 13" over this run forever. Recomputed over the
+same gold set and the same judgements, it now says
+
+```
+attribution   not run. 0 of 13 judge-human disagreement(s) could be checked against our extraction, so
+              this says nothing about extract.py either way
+              8 carried a pasted passage and none of them could be checked, which means the page was not
+              in the fetch cache when it was labelled
+```
+
+`label_goldset.py` also says so at the prompt now, since a labeller who pastes a passage has every reason to
+think it bought the check. Seven tests in `tests/test_goldset.py` pin the tri-state, including one asserting
+an unchecked run makes no attribution claim in its rendered output. The run record in `runs/day9/` is left as
+it was written, because it is the record of what that run emitted rather than of what the fixed code would
+have emitted, and the corrected figures are the ones above.
 
 **The span guard fired once in 76 span-bearing verdicts**, on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION`
 on `CO-21` where a source had drifted to containment 0.2215. Neither has been re-checked against the cached

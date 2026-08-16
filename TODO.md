@@ -105,13 +105,20 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    `extraction_missed` only when `extracted_pair` finds the page in the fetch cache, and 13 of the 14
    passages were labelled against uncached pages. Withdrawn in `FINDINGS.md`, `STATUS.md` and `LABELLING.md`.
    The kappa, the per-class figures and every verdict are computed without this and are untouched
-10. **Not done: `goldset.attribution` reports "not checked" as "checked and clean".** `if l.extraction_missed`
-   is false for `None` and for `False` alike, so a run where the cache was cold and a run where the extractor
-   was exonerated print the same 0. It should carry the checkable denominator, so the reader sees 0 of 8
-   examinable rather than a bare 0, and `label_goldset.py` should say at the prompt when a passage cannot be
-   checked because the page is not cached. Not done here because it changes what the run record emits and
-   §8's field-classification table in `DATA_CONTRACT.md` covers those fields, which is a schema decision
-   rather than a prose fix
+10. **Fixed: `goldset.attribution` reported "not checked" as "checked and clean".** `if l.extraction_missed`
+   is false for `None` and for `False` alike, so a cold cache and an exonerated extractor printed the same 0.
+   `disagreements_checked` counts `extraction_missed is not None` and is the denominator
+   `attributable_to_extraction` is now over; `disagreements_with_a_passage` sits beside it so it can no
+   longer be confused with `labels_with_a_passage`, which counts agreements. When nothing was checked the
+   render prints no attribution figure at all rather than a 0 over the wrong denominator, which is the half
+   that would otherwise have kept the false sentence available to the next reader. `label_goldset.py` now
+   says at the prompt when a page is not cached and the passage therefore buys nothing. Seven tests in
+   `tests/test_goldset.py`. Recomputed over day 9's own gold set and judgements it reads "not run, 0 of 13
+   could be checked, 8 carried a passage", which matches the hand count exactly. Two things this did **not**
+   need, contrary to the note that stood here: `DATA_CONTRACT.md` names none of these fields, and §4's
+   classification table is generated from `boundary.py` over the run record's **top-level** keys, of which
+   `attribution` was already one. So the schema decision the row anticipated did not exist.
+   `runs/day9/run.json` is left as written, because it records what that run emitted
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
