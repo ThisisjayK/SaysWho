@@ -41,10 +41,6 @@ DEFAULT_GEMINI_MODEL = os.environ.get("SAYSWHO_GEMINI_MODEL", "gemini-3.5-flash-
 REFUSAL_REASONS = {"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION"}
 
 
-class RateLimited(Exception):
-    """The free tier said no. Distinguished from a refusal: this one is worth waiting out."""
-
-
 class GeminiJudge:
     """A `JudgeClient` backed by the Gemini free tier.
 
@@ -113,6 +109,11 @@ class GeminiJudge:
                 break
             except errors.ClientError as exc:
                 if getattr(exc, "code", None) != 429 or attempt > self.max_retries:
+                    # Provider error, raised through unchanged. There is deliberately no rate-limit
+                    # exception of our own: a caller that caught one would have to name a provider to do
+                    # anything with it, and the point of `JudgeClient` is that no caller knows which
+                    # provider is running. The halt vocabulary the pipeline does read, `BudgetExceeded` and
+                    # `ModelRefused`, lives in `model.py` and is shared by both clients.
                     raise
                 # Free-tier rate limit. Wait it out rather than dropping the claim: a claim skipped because
                 # of a quota is a hole in the denominator, and holes are what this project refuses.

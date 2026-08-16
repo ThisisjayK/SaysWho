@@ -72,6 +72,29 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    narration script timed to the cut, and a voice has to be chosen. And the browser take has not been shot:
    `video/RECORDING.md` says what to record, and the scene, the match cut into it and both camera pushes
    switch on from one flag in `video/src/footage.ts` once `video/public/footage/audit.mp4` exists
+8. **Fixed: a staleness sweep over the whole repo, and the gate that should have caught most of it.**
+   `tests/test_documents.py` read the root, `recipes/` and `extension/README.md`, and had never read
+   `queries/` or `video/`. Six tracked documents were making unchecked claims about paths, not because
+   anybody excluded them but because the list was written by hand before those directories existed. They are
+   read now, and `test_every_tracked_document_is_either_read_or_excluded_on_a_stated_ground` compares
+   `DOCUMENTS` against `git ls-files '*.md'` so the next directory of prose fails until somebody decides
+   which it is. Verified by dropping `video/` back out and watching it name all six. What the sweep found
+   that no gate could have: **`SCOPE.md`'s status table was still the day 8 one**, saying 6 of 45 labelled
+   and no rate printable, while `STATUS.md` had been updated to day 9. Both files claim in their own words to
+   be updated in the same commit, and they were not. Row 3 now reads done with the kappa and its interval,
+   row 9 records that expansion is unblocked rather than blocked, and the cost paragraph no longer says item
+   3 is the critical path. **`SCOPE.md`'s second line still said "Nothing built yet. No numbers in this
+   document are measurements"**, which stopped being true on day 6 and is the second thing a reader sees.
+   `BREAK_ATTEMPTS.md` and `recipes/audit-citations.md` both said the gold set did not exist yet;
+   `BREAK_ATTEMPTS.md` now carries the day 9 measurement of `PARTIALLY_SUPPORTED`, precision 16.7 per cent
+   (n=6) and recall 25.0 per cent (n=4), which points the same way as attempt 1b at a comparably useless n.
+   **`LABELLING.md` was the dangerous one**: it told a labeller that nothing on disk held a verdict for the
+   24 consumer answers, which the day 7 run made false, so the guide asserted a blindness the repo no longer
+   had. It now says to run `prior_audit.py` and read what it says. Its sample numbers were day 7's, and the
+   replacement is day 9's own: 14 of 45 labels carried a passage, so `attribution` could only ever have
+   examined 13 of the 35 compared pairs, which is a real caveat on "0 of 13 attributed to the extractor".
+   Dead code: `RateLimited` in `sayswho/gemini.py`, defined day 4, never raised, never caught, never
+   imported, and its docstring described a distinction the retry loop does not make
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 

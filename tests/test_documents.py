@@ -30,10 +30,17 @@ REPO = Path(__file__).resolve().parent.parent
 
 #: Documents this gate reads. `email-to-professor.md` and `reply-to-professor.md` are gitignored
 #: correspondence and `CLAUDE.md` is instructions to a tool, so neither is a published claim about the repo.
+#:
+#: `queries/` and `video/` were outside this list until day 9 for no reason anybody wrote down, which is six
+#: documents making unchecked claims about paths. They are in now. The rule is that a markdown file tracked
+#: in this repo is either read by this gate or excluded on a stated ground, and the two grounds above are the
+#: only ones there are.
 DOCUMENTS = sorted(
     p for p in REPO.glob("*.md")
     if p.name not in {"email-to-professor.md", "reply-to-professor.md", "CLAUDE.md"}
-) + sorted((REPO / "recipes").glob("*.md")) + [REPO / "extension" / "README.md"]
+) + sorted((REPO / "recipes").glob("*.md")) + sorted((REPO / "queries").glob("*.md")) + sorted(
+    (REPO / "video").glob("*.md")
+) + [REPO / "extension" / "README.md"]
 
 #: Paths a document may name that do not exist on disk, with the reason each is legitimate. Anything not
 #: here has to exist. Keeping this list short is the point: every entry is a claim that a reader cannot
@@ -142,6 +149,31 @@ def test_the_expected_absent_list_stays_short():
     ceiling. If this fails, the honest fix is usually to stop naming runtime paths in prose."""
     assert len(EXPECTED_ABSENT) <= 15
     assert all(reason.strip() for reason in EXPECTED_ABSENT.values())
+
+
+#: The only grounds on which a tracked markdown file may sit outside this gate. Gitignored correspondence
+#: never reaches this list, so it is not named here.
+NOT_A_CLAIM_ABOUT_THE_REPO = {"CLAUDE.md": "instructions to a tool, not a published claim about the repo"}
+
+
+def test_every_tracked_document_is_either_read_or_excluded_on_a_stated_ground():
+    """`queries/` and `video/` sat outside `DOCUMENTS` for six days because the list was written by hand and
+    directories were added to the repo afterwards. Nothing failed, which is the problem: an unread document
+    is not a passing document. This makes adding a directory of prose fail until somebody decides which it
+    is, rather than defaulting it to unchecked."""
+    import subprocess
+
+    tracked = subprocess.run(
+        ["git", "ls-files", "*.md"], cwd=REPO, capture_output=True, text=True, check=True
+    ).stdout.split()
+
+    read = {str(p.relative_to(REPO)) for p in DOCUMENTS}
+    unread = sorted(set(tracked) - read - set(NOT_A_CLAIM_ABOUT_THE_REPO))
+
+    assert not unread, (
+        f"tracked documents no gate reads: {unread}. Add them to DOCUMENTS, or to "
+        "NOT_A_CLAIM_ABOUT_THE_REPO with the ground for excluding them."
+    )
 
 
 # ---------------------------------------------------------------- load-bearing specific claims

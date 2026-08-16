@@ -149,9 +149,16 @@ the day 5 work doing what it was built for, and it does not rescue the verdict: 
 source never states, cited to that source, is not partially supported by it. The reader gets a partial-support
 card with a caveat attached rather than the refusal the page warrants.
 
-**What this changes.** The gold set is now the only thing that can say how often this happens, and this is a
-second, independent reason it is the bottleneck. Until it exists, `PARTIALLY_SUPPORTED` is the verdict class
-with the weakest evidence behind it, and the writeup says so.
+**What this changes.** The gold set is the only thing that can say how often this happens, and this was a
+second, independent reason it was the bottleneck.
+
+**Measured on day 9, and it points the same way.** The gold set exists as of 2026-08-15 and the run against
+it computed per-class agreement. `PARTIALLY_SUPPORTED` came out at precision 16.7 per cent (n=6) and recall
+25.0 per cent (n=4): of six claims the judge called partially supported, one human label agreed. Both n are
+single figures and both intervals are accordingly enormous, so this is a second small sample agreeing with a
+first small sample rather than a rate. What it is not is a contradiction, which is the outcome that would
+have mattered here, and `PARTIALLY_SUPPORTED` remains the verdict class with the weakest evidence behind it.
+`runs/day9/` and `FINDINGS.md` item 24.
 
 ### What the paywall result is worth
 

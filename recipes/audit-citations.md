@@ -253,8 +253,9 @@ Stop and hand back to a human when any of these happens. Do not work around them
   passed. Rerun rather than publishing the partial run.
 - **A source needs a login or sits behind a paywall.** `SOURCE_PAYWALLED` is a legitimate outcome. Routing
   around it corrupts the measurement and violates `DATA_CONTRACT.md` §3.
-- **The gold set does not exist yet.** No stored script can produce one. Labelling is human work and it has to
-  happen before the judge runs.
+- **No gold set covers this judge, prompt version and split.** One exists for the day 9 ChatGPT consumer
+  configuration and covers nothing else, and G4 is per-configuration rather than global. No stored script can
+  produce another. Labelling is human work and it has to happen before the judge runs.
 - **The professional query stratum is empty.** No stored script can fill it. The queries must be real questions
   actually asked, scrubbed by hand, or the limitations argument in `SCOPE.md` §7 becomes false.
 

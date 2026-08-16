@@ -47,7 +47,7 @@ label about the source, not about the claim: the judge was never asked about tho
 agreement information and are excluded from kappa and reported on their own.
 
 **And `U` means *you* could not read it, not that this pipeline could not.** Try the link before reaching for
-it. The two unauditable codes in this sample are not the same situation:
+it. The two unauditable codes you are most likely to meet are not the same situation:
 
 - `SOURCE_DEAD_LINK` is a 404. You will see what we saw, and `U` is the honest label.
 - `SOURCE_BOT_BLOCKED` is a 403 aimed at an automated client. A person clicking that link will very often see
@@ -59,6 +59,12 @@ against, so nothing is lost by labelling them properly and something real is gai
 citation is broken" and "this citation is unreadable to anything automated" is the difference between a
 finding about a product and a limitation of this tool. `SOURCE_BOT_BLOCKED` exists as a separate code for
 exactly that reason (`FINDINGS.md` item 3), and nothing has ever measured how far apart the two are.
+
+Day 9 did not get the chance to. Its pool was 31 `SOURCE_OK` and 2 `SOURCE_DEAD_LINK` and contained no
+blocked source at all, so all nine of its `U` labels came from four dead links and the distinction above went
+untested. The day 6 Perplexity pool ran the other way, 7 blocked against 1 dead and 1 unreachable, which is
+where the paragraph came from. Which codes a session meets is a fact about the product it captured, so check
+what is in front of you rather than expecting either shape.
 
 **`?` is a real answer.** A forced label on an ambiguous pair is noise entered as signal. `?` is recorded,
 excluded from kappa, and its count is published. Use it when the honest answer is that the page is unclear or
@@ -72,10 +78,13 @@ not from the claim.
 It is not paperwork. `goldset.attribution` checks your passage against what `extract.py` produced from the
 same page: if your passage is on the page and missing from our extraction, that disagreement is the
 extractor's fault rather than the judge's, and it gets reported that way. Without a pasted passage the pair
-cannot be attributed at all and any disagreement lands on the judge whether it belongs there or not. In this
-sample, 20 of the 45 pairs can be attributed this way.
+cannot be attributed at all and any disagreement lands on the judge whether it belongs there or not.
 
-Blank is allowed and costs that check.
+Blank is allowed and costs that check, and the day 9 session is the evidence for how much it costs. 14 of its
+45 labels carried a passage, 13 of those were comparable against a standing verdict, and the run attributed
+0 of 13 disagreements to the extractor. So the reported conclusion, that the gap is between judge and human
+rather than between judge and `extract.py`, rests on 13 pairs out of 35 compared. The other 22 could not have
+shown an extractor fault however badly `extract.py` had performed on them. Paste the passage.
 
 ## Consistency, which is the thing kappa is actually measuring
 
@@ -88,18 +97,26 @@ Stopping is free. `q` saves and quits, the count is reported, and resuming conti
 
 ## While you are labelling
 
-- **Do not start the server and do not press the audit button.** Nothing on disk currently holds a verdict for
-  any of these 24 answers, and `sayswho/prior_audit.py` confirmed that before the session. One audit of one of
-  these answers ends the blindness for it.
+- **Do not start the server and do not press the audit button.** One audit of one of the answers you are
+  labelling ends the blindness for it, and there is no way to restore it afterwards.
 - Do not open a previous report, and do not run `sayswho.cli --judge` in another window.
-- The tool has opened no file containing a verdict, and neither has the prep pass.
+- The tool opens no file containing a verdict, and neither does the prep pass.
+
+**Blindness is a fact about the answers in front of you, not a property of this guide.** Run
+`sayswho/prior_audit.py` before every session and read what it says, because the answer changes. It came back
+clean before the day 9 ChatGPT session, which is why those 45 labels are blind in fact. It refuses over the 24
+Perplexity consumer answers and has since the day 7 honest run put a verdict on all of them, so a blind
+session over those is no longer available at any price: `--supplemental` is the only way in and supplemental
+labels are excluded from kappa by construction, which is the whole reason day 9 captured a second product
+instead of topping the old set up.
 
 ## Afterwards
 
-The set is at `goldset/consumer.gold.json`. Judging the same claims is the run a rate may come from:
+The tool writes the set wherever `--out` pointed. Judging the same claims is the run a rate may come from,
+and day 9's was:
 
 ```bash
-python3 tools/run_stratum.py --captures captures/ --split splits/CO-01.split.json --judge --goldset goldset/consumer.gold.json --out runs/day7
+python3 tools/run_stratum.py --captures captures/ --judge --goldset goldset/chatgpt-consumer.gold.json --out runs/day9
 ```
 
 Gate G4 ties the set to the judge, the judge prompt version, the claim prompt version and the split hashes, so

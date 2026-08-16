@@ -3,7 +3,10 @@
 **Capstone scope document, v1**
 Jayanth Aditya K · Northeastern University
 Status: approved 2026-08-07 by Prof. Brown, with the scope split into a core deliverable and stretch goals.
-Nothing built yet. No numbers in this document are measurements.
+At approval nothing was built and no number in this document was a measurement. That held until day 6 and
+does not hold now: the status table below and §5a's row report results, and every one of them names its
+source in `runs/` or `FINDINGS.md`. The design sections are unchanged in kind, so a number outside the status
+table is still a target rather than a result unless it says otherwise.
 
 Changes from v0, all of them cuts: one stratum instead of two in the core, a 30–40 claim gold set instead of
 100, two break attempts instead of six, and the competitor head-to-head moved out of the core entirely. §0a
@@ -111,12 +114,15 @@ two it is. A design difference I can demonstrate on my own tool is worth stating
 actually run is not something to imply. Likewise, one stratum means the professional-versus-consumer question
 in §0 stays open rather than getting answered, and the report says it's open.
 
-### Status table, as of 2026-08-14 (day 8)
+### Status table, as of 2026-08-15 (day 9)
 
 §0a promises every item is reported done or not-done rather than quietly dropped, so this table exists from
 day 5 rather than being assembled on day 10 when the answer is already known. **Blocked** is used only where
-the blocker is named. Nothing here reads a rate, because no rate may be printed yet: gate G4 refuses one
-until the gold set exists, which is item 3.
+the blocker is named. This table restates no support rate, and the reason changed on day 9: G4 opened, so
+rates may now be printed, and they are printed in `runs/day9/` and quoted in `STATUS.md` rather than copied
+here. A rate restated in a design document drifts from the run that produced it. Item 3's kappa is the one
+number quoted below, with its interval, because it is what item 3 delivered and the row would otherwise read
+**Done** with nothing beside it to judge that by.
 
 `STATUS.md` carries the same nine rows with the reasons, plus the extension surface and the items built ahead
 of their window. **It is the detailed one and the two are updated in the same commit**, so this table states
@@ -125,21 +131,26 @@ live in one of them.
 
 | # | Item | State | Evidence, or what it waits on |
 |---|---|---|---|
-| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 803 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
+| 1 | The full pipeline, no confidence score, hard denominator check | **Done** | `sayswho/`, 816 tests. G0 to G4 each fail on their target bug. `rates.standing_denominator` raises on a contaminated denominator; `gates.assert_no_confidence_number` runs over every payload before it is returned and before it is written to disk |
 | 2 | One stratum, now the consumer set | **Changed on day 6, and reported rather than substituted** | The professional set cannot be assembled: the sessions it was to be transcribed from are gone, and retyping from memory breaks two of `queries/README.md`'s own selection rules. The consumer set is written, frozen since day 1, and honestly synthetic, so the core runs on it. `queries/professional.toml` stays empty, because inventing one would make a published sentence false |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **6 of 45 labelled, and that is what withheld every rate in the day-6 run** | `sayswho/goldset.py` and `tools/label_goldset.py` are built and tested, including Cohen's kappa with an interval. Four faults in the workflow were found by walking it rather than by the suite, the last being that an answer audited earlier leaves verdicts which anchor a labeller and trip no existing guard: `sayswho/prior_audit.py` refuses a blind session over one. Labelling needs claims from the frozen stratum, and must happen before any judge output is read |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **Done, day 9: 45 blind labels, 36 comparable, and G4 opened on them** | `goldset/chatgpt-consumer.gold.json`, labelled over ten ChatGPT captures of the frozen consumer stratum after `sayswho/prior_audit.py` came back clean over all ten, so blind in fact rather than by assertion. 35 had a standing verdict to compare against and kappa came out 0.304, 95% CI 0.004 to 0.604, which does not exclude chance and is reported as a wide-interval estimate rather than as a calibration. The six labels this replaces gave a comparable n of 2. `STATUS.md` carries the history and the four workflow faults behind it |
 | 4 | Two break attempts: injection, denominator contamination | **Done** | `BREAK_ATTEMPTS.md` attempts 5 and 6, both with written results. Attempt 5 revised §6: an injection that dictates its own span defeats the guard, because dictating the span puts it on the page. Kept as a passing test of the failure |
 | 5 | Parity check, extension against headless pipeline | **Done** | `tests/test_parity.py`, running `render.js` under Node against the same payload the harness embeds. One renderer, one payload, no second opinion |
 | 6 | Competitor head-to-head, dead-link and paywall stratum | **Not done** | Stretch. Until it runs, §1b's differentiator is described as structural, not measured, and incumbent behaviour is attributed to their marketing copy |
 | 7 | ~~Consumer stratum~~ Professional stratum | **Not done, and not deferred** | These two swapped places on day 6. The consumer set (24 questions, `queries/consumer.toml`) moved into the core and carries the day-7 run. The professional set is what sits here now, and it is not waiting on time: the sessions it was to be transcribed from are gone, and the honest routes left were retyping from memory, which breaks two of `queries/README.md`'s selection rules, or logging questions prospectively, which needs calendar time the ten days do not contain |
 | 8 | Break attempts 1 to 4 | **All four have results: 3 held, 1 broke** | `tools/break_attempts.py`, one command for all four, each declaring the failure it looks for before it runs. Run against the live judge on 2026-08-11. 2 held and needed no judge, because holding means the judge is never called on a page recognised as withheld. 3 held by the predicted route and 4 held on polarity. 1 broke, and not into the failure it had declared, which is why attempt 1b exists. `FINDINGS.md` item 15 |
-| 9 | Per-domain reporting; gold set beyond 40 | **Per-domain done, expansion blocked on item 3** | `sayswho/domains.py`, counted in claim-source pairs and gated by G4 exactly as the aggregate is. Expansion cannot precede a first gold set |
+| 9 | Per-domain reporting; gold set beyond 40 | **Per-domain done and printed on day 9; expansion unblocked and not done** | `sayswho/domains.py`, counted in claim-source pairs and gated by G4 exactly as the aggregate is, and day 9 was the first run entitled to print a per-domain rate rather than withhold it. The blocker on expansion was the absence of a first gold set and that is gone. What expansion would buy is a narrower interval on item 3's kappa, and the number to widen is the 35 comparable pairs rather than the 45 labels, since nine of the labels are `UNAUDITABLE` and carry no verdict to agree with |
 
 **What this table costs, today.** Item 2 stopped being the critical path on day 6, and not by being solved:
 the stratum it names was replaced with one that already existed, and the thing it was going to measure was
-given up rather than delivered late. What is on the critical path now is item 3, which needs captured answers
-to label against and then an afternoon of hand labelling. Everything downstream of it, which is the honest
-run, every published rate, the kappa and the per-number trace table, waits on that rather than on the code.
+given up rather than delivered late. Item 3 was the critical path from day 6 to day 9 and it closed on day 9,
+which puts everything downstream of it on the board: the honest run, the per-answer and per-domain rates, the
+kappa and the per-number trace table. Nothing is on the critical path now, and that is not the same as
+nothing being owed. What the closure bought was the right to print a rate, not a good one: the kappa's lower
+bound is 0.004, the stratum rate is still withheld because `CO-02` tripped `INSUFFICIENT_EVIDENCE`, and every
+rate the run did print is over inline-rendered citations rather than over ChatGPT's citations, because at
+least 20 of 53 claim-attached citations sat behind "+N" controls and were never captured. Item 6 is what is
+left, and it is stretch.
 
 **A stretch item can be reported as attempted-and-blocked.** Prof. Brown flagged that the competitor
 comparison may hit access problems independent of time: paywalls, rate limits, no scriptable interface. If
