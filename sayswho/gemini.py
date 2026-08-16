@@ -32,7 +32,7 @@ import json
 import os
 import time
 
-from .model import Meter, ModelCall, ModelRefused, now_iso
+from .model import JudgeUnavailable, Meter, ModelCall, ModelRefused, now_iso
 
 #: Free-tier model. Configurable, because which models carry a free tier changes and this default will age.
 DEFAULT_GEMINI_MODEL = os.environ.get("SAYSWHO_GEMINI_MODEL", "gemini-3.5-flash-lite")
@@ -62,9 +62,12 @@ class GeminiJudge:
 
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
-            raise RuntimeError(
+            # Non-empty is all this can establish, and `your-key-here` is non-empty. Whether the provider
+            # will accept the string is a question only the provider can answer, which is `probe`.
+            raise JudgeUnavailable(
                 "set GEMINI_API_KEY. A free key comes from aistudio.google.com; it is not the same as an "
-                "Anthropic key and SaysWho does not read one from the other."
+                "Anthropic key and SaysWho does not read one from the other.",
+                kind="key",
             )
 
         self.client = genai.Client(api_key=api_key)
@@ -76,6 +79,39 @@ class GeminiJudge:
         #: Seconds spent waiting out rate limits. Reported, because a run that waited eleven minutes for its
         #: free tier is a different run from one that did not, and the writeup should be able to say so.
         self.rate_limit_waits = 0.0
+
+    # ------------------------------------------------------------------ the preflight
+
+    def probe(self) -> None:
+        """Read the configured model's metadata, which authenticates without generating anything.
+
+        A `models.get` rather than a one-token generation, because it answers a second question for the same
+        round trip. `DEFAULT_GEMINI_MODEL` is a name this file's own docstring says will age, and a name that
+        has aged out fails in exactly the same place a bad key does: on the first judged claim, after every
+        cited page has already been fetched.
+        """
+        from google.genai import errors
+
+        try:
+            self.client.models.get(model=self.model)
+        except errors.ClientError as exc:
+            code = getattr(exc, "code", None)
+            if code == 429:
+                # Rate limited before a single claim was judged, which on a free tier is ordinary. It is
+                # also proof the key authenticated, which is the whole question this probe was asking. The
+                # run waits out its own limits in `complete_json`.
+                return
+            if code == 404:
+                raise JudgeUnavailable(
+                    f"the key works and the provider has no model called {self.model!r}", kind="model"
+                ) from exc
+            raise JudgeUnavailable(f"the provider rejected the key: {exc}", kind="rejected") from exc
+        except errors.ServerError as exc:
+            raise JudgeUnavailable(f"the provider is not answering: {exc}", kind="unreachable") from exc
+        except Exception as exc:
+            raise JudgeUnavailable(
+                f"the provider could not be reached: {type(exc).__name__}: {exc}", kind="unreachable"
+            ) from exc
 
     # ------------------------------------------------------------------ the call
 

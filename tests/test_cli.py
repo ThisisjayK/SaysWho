@@ -32,6 +32,12 @@ class CountingJudge:
 
     def __init__(self):
         self.purposes: list[str] = []
+        self.probes = 0
+
+    def probe(self):
+        """The preflight, which every `JudgeClient` answers. Recorded, not counted as a purpose: it is not
+        a model call and it must never look like one to the assertion below about what was asked."""
+        self.probes += 1
 
     def complete_json(self, **kwargs):
         self.purposes.append(kwargs["purpose"])
@@ -95,6 +101,7 @@ def test_split_only_writes_a_split_and_never_asks_for_a_verdict(tmp_path, judge,
     assert cli.main([str(FIXTURE), "--split-only", "--save-split", str(out), "--skip-freeze-check"]) == 0
 
     assert judge.purposes == ["split"], "Phase 3 ran, so the split cannot be labelled blind"
+    assert judge.probes == 1, "the preflight ran, and it is not a model call, so it is counted separately"
     assert out.exists()
 
     stored = json.loads(out.read_text())
@@ -183,3 +190,103 @@ def test_json_and_json_out_agree(tmp_path, capsys):
     printed = capsys.readouterr().out
     start = printed.index("{\n")
     assert json.loads(printed[start:]) == json.loads(out.read_text())
+
+
+# ------------------------------------------- the judge, checked before the fetch pass rather than after it
+
+
+def _never_fetch(*args, **kwargs):
+    raise AssertionError("a source was fetched before the judge was known to be able to work")
+
+
+def test_a_judge_that_cannot_be_built_stops_the_run_before_a_single_fetch(monkeypatch, capsys):
+    """The judge is built at the bottom of `main`, after every cited page has been fetched. Until this check
+    existed, a run with no key spent the whole fetch pass first and said so afterwards."""
+    import sayswho.gemini as gemini
+
+    monkeypatch.setattr(cli, "fetch_sources", _never_fetch)
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        RuntimeError("set GEMINI_API_KEY")
+    ))
+
+    code = cli.main([str(FIXTURE), "--judge", "--skip-freeze-check"])
+
+    assert code == 2
+    out = capsys.readouterr().out
+    assert "THE JUDGE CANNOT BE BUILT" in out
+    assert "export GEMINI_API_KEY" in out
+    assert "needs no" in out, "the fetch-only half of the tool is still worth offering"
+
+
+def test_a_key_the_provider_rejects_is_caught_here_too(monkeypatch, capsys):
+    """The day 10 failure on the harness path. `your-key-here` builds a client, so building one proves
+    nothing and only the provider can settle it."""
+    import sayswho.gemini as gemini
+    from sayswho.model import JudgeUnavailable
+
+    class Rejected:
+        model = "rejected-1"
+
+        def probe(self):
+            raise JudgeUnavailable("the provider rejected the key: 400 API_KEY_INVALID", kind="rejected")
+
+        def complete_json(self, **kwargs):
+            raise AssertionError("the run continued past a judge that cannot work")
+
+    monkeypatch.setattr(cli, "fetch_sources", _never_fetch)
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: Rejected())
+
+    code = cli.main([str(FIXTURE), "--judge", "--skip-freeze-check"])
+
+    assert code == 2
+    assert "your-key-here" in capsys.readouterr().out
+
+
+def test_the_advice_names_the_command_that_was_actually_run(monkeypatch, capsys):
+    """The message used to tell everyone to run the server, because that is where this check was born. A
+    reader who typed `sayswho.cli` and is told to fix `sayswho.server` has been sent somewhere else."""
+    import sayswho.gemini as gemini
+
+    monkeypatch.setattr(cli, "fetch_sources", _never_fetch)
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        ImportError("No module named 'google'")
+    ))
+
+    cli.main([str(FIXTURE), "--judge", "--skip-freeze-check"])
+
+    out = capsys.readouterr().out
+    assert f".venv/bin/python -m sayswho.cli {FIXTURE} --judge" in out
+    assert "sayswho.server" not in out
+
+
+def test_split_only_is_checked_too_because_phase_1_is_a_model_call(monkeypatch, capsys, tmp_path):
+    """`--judge` is not the flag that decides this. --split-only runs Phase 1, which is a model call, and a
+    run that fetches everything and then cannot split has produced nothing to label."""
+    import sayswho.gemini as gemini
+
+    monkeypatch.setattr(cli, "fetch_sources", _never_fetch)
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: (_ for _ in ()).throw(
+        ImportError("No module named 'google'")
+    ))
+
+    out = tmp_path / "s.json"
+    code = cli.main([str(FIXTURE), "--split-only", "--save-split", str(out), "--skip-freeze-check"])
+
+    assert code == 2
+    assert f"sayswho.cli {FIXTURE} --split-only" in capsys.readouterr().out, (
+        "the command it offers has to be the one that was run, not --judge"
+    )
+    assert not out.exists(), "a run that stopped here wrote no split for anybody to label"
+
+
+def test_a_fetch_only_run_asks_the_provider_nothing(monkeypatch):
+    """Without --judge there is no judge to check, and checking one anyway would put a network call and a
+    key requirement in front of the half of this tool that needs neither."""
+    from sayswho import preflight
+
+    monkeypatch.setattr(
+        preflight, "check_judge",
+        lambda *a, **kw: (_ for _ in ()).throw(AssertionError("preflighted a run with no judge in it")),
+    )
+
+    assert cli.main([str(FIXTURE), "--skip-freeze-check"]) == 0

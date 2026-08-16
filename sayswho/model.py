@@ -108,6 +108,32 @@ class Meter:
         )
 
 
+class JudgeUnavailable(RuntimeError):
+    """The judge cannot do its job, established before any claim was sent to it.
+
+    Part of the shared halt vocabulary in this module rather than a provider's own exception type, for the
+    reason `gemini.py` gives about rate limits: a caller that had to name a provider to read an error would
+    undo the point of `JudgeClient`. `kind` is what the caller acts on, and it is deliberately about the
+    situation rather than about an HTTP code, because the two providers number their failures differently and
+    the person reading the message does not care which number came back.
+
+    `kind` is one of:
+
+    ``key``
+        No key in the environment at all.
+    ``rejected``
+        A key is there and the provider will not accept it.
+    ``model``
+        The key works and the configured model name does not.
+    ``unreachable``
+        The provider did not answer, so nothing about the key is known either way.
+    """
+
+    def __init__(self, message: str, *, kind: str):
+        super().__init__(message)
+        self.kind = kind
+
+
 class JudgeClient(Protocol):
     """What the pipeline needs from a model.
 
@@ -119,6 +145,19 @@ class JudgeClient(Protocol):
         self, *, system: str, cached_context: str, question: str, schema: dict, purpose: str,
         prompt_version: str, subject: str = "",
     ) -> dict: ...
+
+    def probe(self) -> None:
+        """Prove to a caller that this client can reach its provider, before a run depends on it.
+
+        Every provider answers a different question here, which is why it belongs on the client and not in
+        `server.check_judge`: adding a third provider means writing its probe next to its `complete_json`,
+        and no caller learns a provider's name either way.
+
+        Two rules hold for every implementation. It costs no tokens, so it never touches the meter, never
+        enters a run log and cannot move the budget or anything gate G4 reads. And it raises
+        `JudgeUnavailable` with a `kind`, never a provider's own exception.
+        """
+        ...
 
 
 def now_iso() -> str:
@@ -140,6 +179,28 @@ class AnthropicJudge:
         self.model = model
         self.meter = meter or Meter()
         self.max_tokens = max_tokens
+
+    def probe(self) -> None:
+        """Retrieve the model's metadata, which authenticates without generating anything."""
+        import anthropic
+
+        try:
+            self.client.models.retrieve(self.model)
+        except anthropic.RateLimitError:
+            # Rate limited before a single claim was judged. That is a quota problem for the run to deal
+            # with when it gets there, and it is also proof the key authenticated, which is the whole
+            # question this probe was asking.
+            return
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as exc:
+            raise JudgeUnavailable(f"the provider rejected the key: {exc}", kind="rejected") from exc
+        except anthropic.NotFoundError as exc:
+            raise JudgeUnavailable(
+                f"the key works and the provider has no model called {self.model!r}", kind="model"
+            ) from exc
+        except Exception as exc:
+            raise JudgeUnavailable(
+                f"the provider could not be reached: {type(exc).__name__}: {exc}", kind="unreachable"
+            ) from exc
 
     def complete_json(
         self, *, system: str, cached_context: str, question: str, schema: dict, purpose: str,

@@ -40,6 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from . import preflight
 from .cache import FetchCache
 from .drift import DriftChecker
 from .fetch import Fetcher
@@ -218,46 +219,10 @@ class AuditService:
         return report.payload
 
 
-#: What a judge failing to build actually means, in the two ways it fails. Both used to surface as a raw
-#: exception in the middle of an audit, after the server had already reported itself ready and the popup had
-#: already painted a green light.
-JUDGE_ADVICE = {
-    "import": (
-        "The judge needs the `google-genai` package and the Python running this server does not have it.\n"
-        "  Either run the server with this repo's virtualenv:\n"
-        "      .venv/bin/python -m sayswho.server --judge\n"
-        "  or install it into whichever Python you are using:\n"
-        "      python3 -m pip install google-genai"
-    ),
-    "key": (
-        "The judge needs an API key in this shell's environment:\n"
-        "      export GEMINI_API_KEY=...\n"
-        "  A free key comes from aistudio.google.com. DATA_CONTRACT.md §8: the key is read from the\n"
-        "  environment and never written to a file."
-    ),
-}
-
-
-def check_judge(provider: str | None = None) -> tuple[bool, str]:
-    """Build a judge and throw it away, to find out whether one can be built.
-
-    Called before the server starts listening. Without it the failure arrives two minutes into the first
-    audit, having already fetched every cited page, and the extension shows a green light the whole time.
-    A server that reports itself ready and is not is the same error this project is about, committed by
-    the tool rather than by the thing it audits.
-    """
-    from .gemini import build_judge
-    from .model import Meter
-
-    try:
-        build_judge(provider, meter=Meter())
-    except ImportError as exc:
-        return False, f"{exc}\n\n{JUDGE_ADVICE['import']}"
-    except RuntimeError as exc:
-        return False, f"{exc}\n\n{JUDGE_ADVICE['key']}"
-    except Exception as exc:  # pragma: no cover - provider-specific failures
-        return False, f"{type(exc).__name__}: {exc}"
-    return True, ""
+#: Moved to `preflight.py` when the CLI turned out to need the same check, and re-exported here because
+#: `tools/break_attempts.py` imports it from this module and because this is where it was first written.
+JUDGE_ADVICE = preflight.JUDGE_ADVICE
+check_judge = preflight.check_judge
 
 
 def make_handler(service: AuditService):
@@ -445,7 +410,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     print(f"SaysWho audit server on http://{HOST}:{args.port}")
-    print(f"  judge      {'on' if args.judge else 'off, fetch and liveness only'}")
+    print(f"  judge      {'on, key and model answered for by the provider' if args.judge else 'off, fetch and liveness only'}")
     print(f"  captures   {args.captures}/  (posted captures are written here, never overwritten)")
     print(f"  reports    {args.reports}/   (every audit, as HTML you can open and JSON the viewer reads)")
     print(f"  origins    {', '.join(sorted(ALLOWED_ORIGINS))}")

@@ -392,6 +392,83 @@ def test_a_missing_key_is_caught_the_same_way_and_says_something_different(monke
     assert "pip install" not in why
 
 
+def test_a_key_the_provider_rejects_stops_the_server_the_way_a_missing_one_does(monkeypatch):
+    """The day 10 failure. `your-key-here` is a non-empty string, so the client built, the server printed
+    itself ready, the popup went green, and the first judged claim came back API_KEY_INVALID with every
+    cited page already fetched. Building a judge is not the same as having one."""
+    import sayswho.gemini as gemini
+    from sayswho.model import JudgeUnavailable
+    from sayswho.server import check_judge
+
+    class Rejected:
+        def probe(self):
+            raise JudgeUnavailable("the provider rejected the key: 400 API_KEY_INVALID", kind="rejected")
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: Rejected())
+    ok, why = check_judge("gemini")
+
+    assert not ok, "a key the provider will not take must not start a server that says it is ready"
+    assert "API_KEY_INVALID" in why, "the provider's own words, not a paraphrase"
+    assert "your-key-here" in why, "it names the trap it almost always is"
+    assert "pip install" not in why, "the package is installed; that is not the problem"
+
+
+def test_the_probe_is_what_makes_that_check_real(monkeypatch):
+    """A guard on the guard. If `check_judge` ever stops calling `probe`, every test above still passes
+    while the failure it exists to catch comes back."""
+    import sayswho.gemini as gemini
+    from sayswho.server import check_judge
+
+    probed: list[bool] = []
+
+    class Fine:
+        def probe(self):
+            probed.append(True)
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: Fine())
+    ok, why = check_judge("gemini")
+
+    assert (ok, why) == (True, "")
+    assert probed == [True], "a judge that was never asked anything has not been checked"
+
+
+def test_an_aged_out_model_name_does_not_send_anyone_after_their_key(monkeypatch):
+    """Two failures the provider reports at the same moment in the same shape. Collapsing them would have
+    someone reissuing a working key over a model rename."""
+    import sayswho.gemini as gemini
+    from sayswho.model import JudgeUnavailable
+    from sayswho.server import check_judge
+
+    class Aged:
+        def probe(self):
+            raise JudgeUnavailable("the key works and the provider has no model called 'x'", kind="model")
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: Aged())
+    ok, why = check_judge("gemini")
+
+    assert not ok
+    assert "SAYSWHO_GEMINI_MODEL" in why
+    assert "aistudio.google.com" not in why, "the key is fine and nobody needs a new one"
+    assert "G4" in why, "changing the model is a relabelling decision, and the message has to say so"
+
+
+def test_an_outage_is_reported_as_an_outage(monkeypatch):
+    import sayswho.gemini as gemini
+    from sayswho.model import JudgeUnavailable
+    from sayswho.server import check_judge
+
+    class Down:
+        def probe(self):
+            raise JudgeUnavailable("the provider is not answering: 503", kind="unreachable")
+
+    monkeypatch.setattr(gemini, "build_judge", lambda provider=None, meter=None: Down())
+    ok, why = check_judge("gemini")
+
+    assert not ok
+    assert "still unknown" in why, "an outage says nothing about the key either way"
+    assert "without --judge" in why, "there is useful work left that needs no provider"
+
+
 def test_the_server_refuses_to_start_with_a_judge_it_cannot_build(monkeypatch, capsys, tmp_path):
     import sayswho.gemini as gemini
     from sayswho.server import main

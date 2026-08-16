@@ -160,6 +160,25 @@ def main(argv: list[str] | None = None) -> int:
             print("Pass --skip-freeze-check only for a capture outside the frozen set entirely.")
             return 2
 
+    # Same argument as the freeze check above, one layer down: the judge is built at the bottom of this
+    # function, after every cited page has been fetched, so a key the provider will not take used to cost a
+    # full fetch pass before anybody heard about it. The server has checked this before listening since day
+    # 4 and the path a person uses by hand had no check at all. `--split-only` needs a judge too, because
+    # Phase 1 is a model call, so it is not the flag that decides this.
+    if args.judge or args.split_only:
+        from .preflight import check_judge
+
+        mode = "--judge" if args.judge else "--split-only"
+        ok, why = check_judge(args.judge_provider, entry_point=f"sayswho.cli {args.capture} {mode}")
+        if not ok:
+            print("THE JUDGE CANNOT BE BUILT. Refusing to run.")
+            print()
+            print(why)
+            print()
+            print("Without it this still fetches every cited source and checks it is live, which needs no")
+            print("key and no provider, and is Phase 0 and Phase 2 in full.")
+            return 2
+
     capture = Capture.from_json(args.capture)
     bound = binding(capture)
 

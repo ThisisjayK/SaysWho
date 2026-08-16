@@ -38,9 +38,11 @@ class FakeResponse:
 
 
 class FakeModels:
-    def __init__(self, script):
+    def __init__(self, script, get_result=None):
         self.script = list(script)
         self.calls: list[dict] = []
+        self.get_result = get_result
+        self.get_calls: list[str] = []
 
     def generate_content(self, *, model, contents, config):
         self.calls.append({"model": model, "contents": contents, "config": config})
@@ -48,6 +50,12 @@ class FakeModels:
         if isinstance(item, Exception):
             raise item
         return item
+
+    def get(self, *, model):
+        self.get_calls.append(model)
+        if isinstance(self.get_result, Exception):
+            raise self.get_result
+        return self.get_result or pytypes.SimpleNamespace(name=f"models/{model}")
 
 
 def build(script, monkeypatch, **kwargs):
@@ -57,7 +65,7 @@ def build(script, monkeypatch, **kwargs):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     slept: list[float] = []
     judge = GeminiJudge.__new__(GeminiJudge)
-    judge.client = pytypes.SimpleNamespace(models=FakeModels(script))
+    judge.client = pytypes.SimpleNamespace(models=FakeModels(script, kwargs.get("get_result")))
     judge.model = "gemini-2.5-flash"
     judge.meter = kwargs.get("meter") or Meter()
     judge.max_output_tokens = kwargs.get("max_output_tokens", 8000)
@@ -198,6 +206,77 @@ def test_a_non_rate_limit_client_error_is_not_retried(monkeypatch):
     with pytest.raises(FakeClientError):
         call(judge)
     assert slept == []
+
+
+# ---------------------------------------------------------------- proving the key before the run needs it
+
+
+def test_a_probe_the_provider_answers_costs_nothing_and_says_nothing(monkeypatch):
+    """A judge that can work returns quietly, and the meter is untouched.
+
+    The probe reads metadata rather than generating, which is what lets it run on every `--judge` startup
+    without spending a token or writing a line that gate G4 would later have to account for.
+    """
+    judge, _ = build([], monkeypatch)
+
+    assert judge.probe() is None
+    assert judge.client.models.get_calls == ["gemini-2.5-flash"], "it asks about the configured model"
+    assert judge.meter.calls == [], "a probe is not a model call and never enters the run log"
+    assert judge.meter.total_tokens == 0
+
+
+def test_a_key_the_provider_rejects_is_caught_here_rather_than_mid_audit(monkeypatch):
+    """The day 10 failure: `your-key-here` builds a client, so only the provider can settle it."""
+    from sayswho.model import JudgeUnavailable
+
+    judge, _ = build([], monkeypatch, get_result=FakeClientError(400))
+
+    with pytest.raises(JudgeUnavailable) as exc:
+        judge.probe()
+    assert exc.value.kind == "rejected", "a bad key is not a missing key and does not get that advice"
+
+
+def test_a_model_name_that_has_aged_out_is_told_apart_from_a_bad_key(monkeypatch):
+    """Same round trip, second question. This module's docstring says the default model will age."""
+    from sayswho.model import JudgeUnavailable
+
+    judge, _ = build([], monkeypatch, get_result=FakeClientError(404))
+
+    with pytest.raises(JudgeUnavailable) as exc:
+        judge.probe()
+    assert exc.value.kind == "model"
+    assert "gemini-2.5-flash" in str(exc.value), "it names the model it could not find"
+
+
+def test_a_rate_limited_probe_passes_because_the_key_authenticated(monkeypatch):
+    """A 429 answers the only question being asked. The run waits out its own limits later."""
+    judge, _ = build([], monkeypatch, get_result=FakeClientError(429))
+
+    assert judge.probe() is None
+
+
+def test_a_provider_that_does_not_answer_is_unknown_rather_than_rejected(monkeypatch):
+    """An outage is not evidence about the key, and saying so would send someone to reissue a good one."""
+    from sayswho.model import JudgeUnavailable
+
+    judge, _ = build([], monkeypatch, get_result=TimeoutError("no route to host"))
+
+    with pytest.raises(JudgeUnavailable) as exc:
+        judge.probe()
+    assert exc.value.kind == "unreachable"
+
+
+def test_no_key_at_all_is_still_its_own_kind(monkeypatch):
+    from sayswho.gemini import GeminiJudge
+    from sayswho.model import JudgeUnavailable
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    with pytest.raises(JudgeUnavailable) as exc:
+        GeminiJudge()
+    assert exc.value.kind == "key"
+    assert isinstance(exc.value, RuntimeError), "callers that predate the kinds still catch it"
 
 
 # ---------------------------------------------------------------- picking a judge

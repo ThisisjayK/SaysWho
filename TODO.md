@@ -10,9 +10,12 @@ reports it either way.
 ## Start here next session
 
 Written 2026-08-15 mid day 9 with the calibration built and the run not yet executed, and extended on
-2026-08-16, day 10, which is the last day. Rows 1 to 7 are day 9's and their state is unchanged. Rows 8 to 10
-are day 10's and all three are corrections rather than new work: the staleness sweep, the withdrawal of the
-extractor claim, and the fix to `goldset.attribution` behind it.
+2026-08-16, day 10, which is the last day. Rows 1 to 7 are day 9's and their state is unchanged. Rows 8 to 13
+are day 10's and every one of them is a correction rather than new work: the staleness sweep, the withdrawal
+of the extractor claim, the fix to `goldset.attribution` behind it, the adapter parity gap, the two adapters
+that cannot be verified, and the judge preflight that was checking the wrong thing. This sentence said "rows
+8 to 10" while rows 11 and 12 sat underneath it, which is the rot the sweep in row 8 is about, committed in
+the file that describes the sweep.
 
 **The gold set is done and it is the first real one this project has had.** 45 blind labels over ten ChatGPT
 captures, 0 supplemental, 36 comparable against a floor of 30. The prior-audit scan was clean over all ten
@@ -164,6 +167,46 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    Claude has no capture at all, so the ChatGPT method has nothing to run over in either case. Recorded
    rather than attempted with a weaker check, because a weaker check reported as verification is exactly
    what `verifiedSelectors` exists to prevent
+13. **Fixed: `check_judge` confirmed a key existed, not that it worked, and its docstring claimed
+   otherwise.** Found by running an audit from the extension against a live Claude answer: it failed with
+   `400 API_KEY_INVALID` after every cited page had been fetched, with the server having printed itself
+   ready and the popup green throughout. The shell that started the server had `GEMINI_API_KEY=your-key-here`
+   in it, the example line from `extension/src/popup.js` pasted whole, which shadowed the real key for that
+   shell alone. `GeminiJudge.__init__` can only see that the variable is non-empty and `your-key-here` is
+   non-empty, so the client built and the check passed. **The failure the function's own docstring says it
+   exists to prevent is the failure it let through**, which puts it in the same class as row 3's report
+   string: a claim in the repo that nothing tested. `probe()` is now on the `JudgeClient` protocol and every
+   client implements its own, `models.get` on Gemini and `models.retrieve` on Anthropic. It is a metadata
+   read and not a generation, so it **costs no tokens, never touches the meter, enters no run log and moves
+   nothing gate G4 reads**: a server that starts has spent nothing on starting. Same round trip answers a
+   second question, whether the configured model name still exists, which matters because `gemini.py` says in
+   its own docstring that `DEFAULT_GEMINI_MODEL` will age and an aged-out name fails in precisely the same
+   place a bad key does. Four outcomes, each with its own advice, because sending someone to reissue a
+   working key over a model rename or an outage is the same error one layer down: no key, a key the provider
+   rejects, a model it does not have, and a provider that did not answer. A 429 passes, since a rate limit is
+   proof the key authenticated. The taxonomy is `JudgeUnavailable(kind=...)` in `model.py` beside
+   `BudgetExceeded` and `ModelRefused` rather than a provider's own exception type, so `check_judge` still
+   never learns which provider is running and a third provider means a new client and no edit here. Ten
+   tests, including `test_the_probe_is_what_makes_that_check_real`, which fails if `check_judge` ever stops
+   calling `probe` while every other test in the file keeps passing. Verified live both ways: the placeholder
+   key now stops the server at startup with the provider's own words, and the real key starts it.
+   **The same defect had a second entry point, and it is fixed too.** `cli.py` builds its judge after the
+   fetch loop, so a bad key cost a full fetch pass before anybody heard about it, and that is the path a
+   person uses by hand. It now runs the same check beside the freeze check, which is the same argument one
+   layer down: the interactive path was the one path with no gate. **`--split-only` is checked as well**,
+   because Phase 1 is a model call, so `--judge` was never the flag that decided this, and a run that
+   fetches everything and then cannot split has produced nothing for anybody to label. The check moved to
+   `sayswho/preflight.py` to get there: two entry points need it and neither should import the other, and a
+   command line run should not pull in `BaseHTTPRequestHandler` to find out whether it has a key.
+   `server.py` re-exports both names, so `from sayswho.server import check_judge` in
+   `tools/break_attempts.py` is untouched. The advice now names the command that was actually run, since
+   telling somebody who typed `sayswho.cli` to fix `sayswho.server` sends them to a different program. Five
+   more tests in `tests/test_cli.py`, each asserting **no source was fetched**, which is the property that
+   was missing rather than the error message. Verified live: the placeholder key stops a CLI run before the
+   first fetch, and the real key clears it. **One cost, stated:** the check sits beside the freeze check and
+   therefore ahead of reading the capture file, so a mistyped capture path now pays one metadata round trip
+   before it is told the file does not exist. Preconditions before work, in the order the server already
+   uses
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
