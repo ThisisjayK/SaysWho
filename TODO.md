@@ -29,10 +29,15 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    permit for an electrical one. That is a failure mode this project had not named, distinct from break
    attempt 1's silence-as-contradiction, and neither pair is in the gold set so the human labels adjudicate
    neither
-2. **`tools/reaudit_spans.py` cannot read a stratum run record.** It looks for voided spans in the per-answer
-   report shape and a run record nests judgements one level deeper, so it reported "no voided spans found"
-   over a run containing two. The day 9 check was done directly against the cache instead. The tool is wrong,
-   not the result, and a tool that silently finds nothing is worse than one that errors
+2. **Fixed: `tools/reaudit_spans.py` could not read a stratum run record.** It looked for voided spans in the
+   per-answer report shape only, and a run record nests `runs[].judgements[]` while using `claims` for a dict
+   of counts, so it reported "no voided spans found" over a run containing two. `voided_rows` now reads both
+   shapes, and a payload matching neither is **named as unread rather than reported as clean**, which was the
+   worse half: an empty result and a parse failure printed the same reassuring sentence. Run over
+   `runs/day9/run.json` it now reproduces the hand check exactly, 1 still fabricated and 1 voided for a reason
+   string comparison cannot change. Seven tests in `tests/test_reaudit_spans.py`, including one asserting a
+   genuinely clean report still reads as clean, so the fix does not make every empty result look like a
+   failure
 3. **Every rate is over inline-rendered citations.** Not over ChatGPT's citations.
    At least 20 of 53 claim-attached citations were behind "+N" controls and never in the captures, and a
    claim whose supporting source was one of them is judged against the source that did render and comes back

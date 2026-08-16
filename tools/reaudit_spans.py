@@ -38,6 +38,41 @@ from sayswho.judge import JUDGE_FABRICATED_SPAN
 RECHECKABLE = {JUDGE_FABRICATED_SPAN}
 
 
+def voided_rows(payload: dict) -> tuple[list[tuple[str, dict]], str]:
+    """Every voided judgement in a payload, with the shape it was found in.
+
+    Two shapes carry verdicts and this tool has to read both. A per-answer report, written by the CLI and the
+    local server, nests `claims[].sources[]` and keeps the claim id on the claim. A stratum run record,
+    written by `tools/run_stratum.py`, nests `runs[].judgements[]` and keeps `claim_id` on the judgement
+    itself, and its own `claims` key is a dict of counts rather than a list.
+
+    Reading only the first shape is how this tool reported "no voided spans found" over the day 9 run record,
+    which contained two. A checker that silently finds nothing is worse than one that errors, because the
+    empty result reads as a clean bill of health. So an unrecognised payload is named as unrecognised.
+    """
+    runs = payload.get("runs")
+    if isinstance(runs, list):
+        rows = [
+            (j.get("claim_id", "?"), j)
+            for run in runs
+            for j in (run.get("judgements") or [])
+            if j.get("voided")
+        ]
+        return rows, "stratum run record"
+
+    claims = payload.get("claims")
+    if isinstance(claims, list):
+        rows = [
+            (claim.get("id", "?"), row)
+            for claim in claims
+            for row in (claim.get("sources") or [])
+            if row.get("voided")
+        ]
+        return rows, "per-answer report"
+
+    return [], ""
+
+
 @dataclass
 class Outcome:
     report: str
@@ -52,6 +87,9 @@ class Outcome:
 @dataclass
 class Summary:
     outcomes: list[Outcome] = field(default_factory=list)
+    #: Files whose shape this tool did not recognise. Kept separate from "no voids found", because the two
+    #: print the same reassuring nothing and mean opposite things.
+    unreadable: list[str] = field(default_factory=list)
 
     def of(self, status: str) -> list[Outcome]:
         return [o for o in self.outcomes if o.status == status]
@@ -63,8 +101,23 @@ class Summary:
         other = self.of("not a string-comparison void")
 
         lines = ["VOIDED SPAN RE-AUDIT", ""]
+        if self.unreadable:
+            lines.append(
+                f"  {len(self.unreadable)} file(s) in a shape this tool does not read, so they were NOT "
+                "checked:"
+            )
+            for name in self.unreadable:
+                lines.append(f"      {name}")
+            lines.append(
+                "      Expected a per-answer report with claims[].sources[], or a stratum run record with "
+                "runs[].judgements[]."
+            )
+            lines.append("")
         if not self.outcomes:
-            lines.append("  No voided spans found in these reports. Nothing to re-audit.")
+            if self.unreadable:
+                lines.append("  No voided spans found in the files that could be read.")
+            else:
+                lines.append("  No voided spans found in these reports. Nothing to re-audit.")
             return "\n".join(lines)
 
         for outcome in self.outcomes:
@@ -133,51 +186,53 @@ def recheck(report_paths: list[Path], cache_dir: Path) -> Summary:
         except (OSError, json.JSONDecodeError):
             continue
 
-        for claim in payload.get("claims", []):
-            for row in claim.get("sources", []):
-                if not row.get("voided"):
-                    continue
-                reason = row.get("void_reason", "")
-                span = row.get("span") or ""
-                url = row.get("url", "")
+        rows, shape = voided_rows(payload)
+        if not shape:
+            summary.unreadable.append(path.name)
+            continue
 
-                if reason not in RECHECKABLE:
-                    summary.outcomes.append(Outcome(
-                        report=path.name, claim_id=claim.get("id", "?"), url=url, span=span,
-                        verdict=row.get("verdict", ""), status="not a string-comparison void",
-                        detail=reason,
-                    ))
-                    continue
+        for claim_id, row in rows:
+            reason = row.get("void_reason", "")
+            span = row.get("span") or ""
+            url = row.get("url", "")
 
-                entry = cache.latest(url)
-                if entry is None:
-                    summary.outcomes.append(Outcome(
-                        report=path.name, claim_id=claim.get("id", "?"), url=url, span=span,
-                        verdict=row.get("verdict", ""), status="page not in the cache",
-                        detail="re-checking against a page fetched today would answer a different question",
-                    ))
-                    continue
-
-                _meta, body = entry
-                document, kind = text_of(_meta, body)
-                if document is None:
-                    summary.outcomes.append(Outcome(
-                        report=path.name, claim_id=claim.get("id", "?"), url=url, span=span,
-                        verdict=row.get("verdict", ""), status="page not in the cache",
-                        detail=f"cached as {kind}, which this tool has no reader for",
-                    ))
-                    continue
-                present = normalise_for_span(span) in normalise_for_span(document)
+            if reason not in RECHECKABLE:
                 summary.outcomes.append(Outcome(
-                    report=path.name, claim_id=claim.get("id", "?"), url=url, span=span,
-                    verdict=row.get("verdict", ""),
-                    status="was really on the page" if present else "still fabricated",
-                    detail=(
-                        "the void was an artefact of the old whitespace-and-case comparison"
-                        if present
-                        else "absent from the fetched document under the current fold as well"
-                    ),
+                    report=path.name, claim_id=claim_id, url=url, span=span,
+                    verdict=row.get("verdict", ""), status="not a string-comparison void",
+                    detail=reason,
                 ))
+                continue
+
+            entry = cache.latest(url)
+            if entry is None:
+                summary.outcomes.append(Outcome(
+                    report=path.name, claim_id=claim_id, url=url, span=span,
+                    verdict=row.get("verdict", ""), status="page not in the cache",
+                    detail="re-checking against a page fetched today would answer a different question",
+                ))
+                continue
+
+            _meta, body = entry
+            document, kind = text_of(_meta, body)
+            if document is None:
+                summary.outcomes.append(Outcome(
+                    report=path.name, claim_id=claim_id, url=url, span=span,
+                    verdict=row.get("verdict", ""), status="page not in the cache",
+                    detail=f"cached as {kind}, which this tool has no reader for",
+                ))
+                continue
+            present = normalise_for_span(span) in normalise_for_span(document)
+            summary.outcomes.append(Outcome(
+                report=path.name, claim_id=claim_id, url=url, span=span,
+                verdict=row.get("verdict", ""),
+                status="was really on the page" if present else "still fabricated",
+                detail=(
+                    "the void was an artefact of the old whitespace-and-case comparison"
+                    if present
+                    else "absent from the fetched document under the current fold as well"
+                ),
+            ))
     return summary
 
 
