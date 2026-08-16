@@ -60,8 +60,18 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    so all ten captures carry `adapter_verified: false` and the gold set inherits it. Row L260
 6. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
    `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies
-7. **The video.** `VIDEO.md` is written and its gold set paragraph is now wrong: it says six labels and no
-   calibration. That paragraph has to be rewritten against whatever the run prints before recording
+7. **The video, part built.** `VIDEO.md` is the script for the graded cut and its gold set paragraph has
+   been rewritten against the day 9 run, so the six-labels-and-no-calibration version is gone. `video/` is a
+   Remotion project holding a 90 second short film, silent, rendering end to end. Every figure, claim,
+   verdict and quoted span in it is generated from `runs/day9/run.json` by `video/scripts/sync-run.mjs`, and
+   the question text is read from the frozen query file, so nothing on screen is typed by hand.
+   `IntervalBar` finishes drawing the band and the written interval before the number is legible, which
+   makes the frame `VIDEO.md` warns about unrenderable rather than merely forbidden. The second data beat
+   draws both per-class intervals and holds on them missing each other by 0.21 of a point.
+   **Two things block a finished film.** There is no sound: `video/SOUND.md` has the cue sheet and the
+   narration script timed to the cut, and a voice has to be chosen. And the browser take has not been shot:
+   `video/RECORDING.md` says what to record, and the scene, the match cut into it and both camera pushes
+   switch on from one flag in `video/src/footage.ts` once `video/public/footage/audit.mp4` exists
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
