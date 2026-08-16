@@ -70,8 +70,16 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    when they were written and a flag flipped afterwards does not reach back into them. What this does not
    verify is completeness: the "+N" citations were never in the DOM, and check one is what makes that the
    product's behaviour rather than the selector's fault. Row L260
-6. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
-   `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies
+6. **The PR description is finished. The PR is not, and the blocker changed.** Both answers landed on day 9
+   in `532d1ad`: the target is `ThisisjayK/SaysWho`, a self-contained contribution rather than one to another
+   project, and the chapters are named against that course repo's fifteen modules, eight claimed with the
+   artefact for each and seven declined with reasons. This row said "blocked on two answers" for a further
+   day after that stopped being true, and it was read off and repeated before anybody opened the file, which
+   is the same rot rows 8 to 10 are about. **What actually blocks it: `contrib/jayanth-says-who` does not
+   exist, no PR is open, and a branch cut from `main` today would diff against `main` by nothing.** Every
+   commit is already on `main`, so the obvious move produces an empty PR with nothing to review. Making it
+   reviewable needs a base the work is not already in, which is a decision about repository shape rather
+   than about writing
 7. **The video, part built.** `VIDEO.md` is the script for the graded cut and its gold set paragraph has
    been rewritten against the day 9 run, so the six-labels-and-no-calibration version is gone. `video/` is a
    Remotion project holding a 90 second short film, silent, rendering end to end. Every figure, claim,
@@ -1081,11 +1089,17 @@ The machinery is built and tested. What is left on this list is the labelling it
       readout, the plausibility audit is written and signed as a judgement in `FINDINGS.md` item 21, break
       attempts 5 and 6 have written results in `BREAK_ATTEMPTS.md`, and §7 carries ten limitations including
       the ones this run added
-- [ ] GitHub PR, 25 points. **Description drafted to the two open answers: `PR_DESCRIPTION.md`.** Title, the
+- [ ] GitHub PR, 25 points. **The description is done and has no blanks: `PR_DESCRIPTION.md`.** Title, the
       ten-minute review path, the limitations stated up front, the three design decisions worth arguing with,
-      and the table of six bugs found by running the tool rather than by the suite. Two blanks marked in the
-      file, and they are the same two as before: which repo this targets and which chapters it satisfies.
-      Original note follows.
+      the table of six bugs found by running the tool rather than by the suite, the target repo, and eight of
+      fifteen modules claimed with the artefact for each beside seven declined with reasons. Both answers
+      landed day 9 in `532d1ad`; this row went on saying "two blanks" until day 10 and is corrected here.
+      **What is left is the PR itself, and it needs a decision first.** No `contrib/jayanth-says-who` branch
+      exists on this machine or on origin, no PR has ever been opened, and all 122 commits are on `main`, so
+      a branch cut today diffs against `main` by nothing and the PR would be empty. A reviewable PR needs a
+      base that does not already contain the work, for example a `baseline` branch at the initial commit
+      with the contribution branch opened against it. That is a repository-shape decision and it is
+      Jayanth's. Original note follows.
 - [ ] ~~GitHub PR~~ `contrib/jayanth-says-who` branch with a maintainer-ready description.
       **Mine to do first, two answers:** which repo this targets, and which chapters SaysWho satisfies. The
       requirement asks for the chapters by name and nothing in this repo cites one, so that is a decision
