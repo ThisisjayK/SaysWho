@@ -122,7 +122,7 @@ on a sample the judge chose.
 
 Runs end to end on a real captured answer: capture, hash, fetch every cited URL under a written data
 contract, check drift against the Wayback archive, split into claims, judge each against its source, verify
-every span. 825 tests, each gate with a test that makes it fire on the bug it exists to catch.
+every span. 826 tests, each gate with a test that makes it fire on the bug it exists to catch.
 
 What has actually been observed, all at n=1 and reported as such: a Claude research report that named fifteen
 sources and linked one. A drift check that flagged churning reference lists as drift until it was asked the

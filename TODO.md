@@ -139,6 +139,24 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    fabricated and 1 voided for another reason, and `video/scripts/sync-run.mjs` regenerates `runData.ts`
    byte for byte with the 0.21 point gap intact
 
+11. **Fixed: the Python mirror of the adapter selectors disagreed with the extension, for two adapters.**
+   Found on day 10 by trying to verify Claude and Perplexity and comparing the lists, not by anything
+   failing, which is the point: `reextract.ADAPTERS` is a hand-copy of `answerSelectors` and a selector
+   missing from it means a capture that fired that selector cannot be re-extracted at all. Claude was
+   missing `[data-testid='chat-stale-nav-inert'] .standard-markdown` and Google `#rcnt div[data-async-type]`.
+   §9 calls that a parity failure and nothing was checking it. Worse for Google: the CSS subset **raised** on
+   `#rcnt`, so mirroring it would have crashed every Google re-extraction, and the module docstring's claim
+   to cover "exactly the selector forms the adapters use" was false. `#id` is supported now, as an attribute
+   equality test, which restores that sentence rather than requiring a caveat beside it.
+   `test_the_python_mirror_lists_the_same_answer_selectors_as_the_extension` compares the two lists and also
+   runs every mirrored selector through the parser, so a selector that cannot be parsed fails loudly instead
+   of being mirrored into a crash. Mutation-tested both ways
+12. **Not done, and now known to be unreachable: verifying the Perplexity and Claude adapters.** Both are in
+   the extension table with the reason. Perplexity's 29 captures all name stored pages that are gone and
+   Claude has no capture at all, so the ChatGPT method has nothing to run over in either case. Recorded
+   rather than attempted with a weaker check, because a weaker check reported as verification is exactly
+   what `verifiedSelectors` exists to prevent
+
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
 Written 2026-08-14 at the end of day 8, so day 9 does not begin by rereading the file.
@@ -407,7 +425,10 @@ for three of the four products have never been checked field by field against a 
       nothing about the other
 - [x] Parity check demonstrated on a real page. The extension's JS extraction and the Python extraction from
       the stored markup agree on container and citations
-- [ ] Claude `.font-claude-response` verified. The chat path has never been exercised. **Mine to do:** it needs a real answer on a real page
+- [ ] Claude `.font-claude-response` verified. The chat path has never been exercised. **Mine to do:** it needs
+      a real answer on a real page, and attempting it on 2026-08-16 established why that is unavoidable rather
+      than a preference. `captures/` holds no Claude capture at all, so there is nothing to probe and nothing
+      to re-extract. The ChatGPT method needs a capture and its stored page and neither exists here
 - [x] ChatGPT selectors verified, 2026-08-16, over the ten stored pages rather than one live answer.
       `[data-message-author-role="assistant"]`. 0 external anchors outside the chosen container across all
       ten pages, one assistant node per page bounded by the captured answer's own head and tail, and
@@ -422,7 +443,14 @@ for three of the four products have never been checked field by field against a 
       containers, the extractor, and the Python re-extractor all have to agree about what a citation is
 - [ ] Perplexity, the rest of verification: read a captured answer end to end against the screen on a
       logged-in page, and find out what the "+N" chip does when one sentence cites several sources. Until
-      both, captures from this adapter stay labelled unverified. **Mine to do**
+      both, captures from this adapter stay labelled unverified. **Mine to do, and it now needs a fresh
+      capture session rather than a reading.** Attempted 2026-08-16 with the method that verified ChatGPT:
+      29 Perplexity captures exist, all fired `.prose`, and all 29 name a `page_file` that is no longer on
+      disk. `pages/` holds the ten ChatGPT pages and nothing else, so the whole-page anchor probe and the
+      re-extraction check are both impossible over every Perplexity capture this project has. Re-capturing
+      re-asks the question and returns a different answer, so the day 6 captures cannot be verified after
+      the fact at all. Whether that matters is bounded: nothing current depends on them, since the gold set
+      and the day 9 run are ChatGPT only
 - [x] Auto-scroll before capture, and `rendered_chars` against `dom_chars` so unrendered text is reported
       rather than silently missing
 - [x] `extension_version` stamped into every capture, so a stale content script announces itself

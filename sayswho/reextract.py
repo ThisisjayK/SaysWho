@@ -30,11 +30,19 @@ VOID_ELEMENTS = frozenset(
 
 #: Mirrors extension/src/adapters.js. Kept as data so a divergence between the two is a diff rather than a
 #: behaviour difference nobody notices.
+#: Mirrors `answerSelectors` in `extension/src/adapters.js`, exactly and in order. Two entries were missing
+#: until day 10 and both were found by comparing the lists rather than by anything failing: a capture that
+#: fired a selector absent here cannot be re-extracted at all, which is the §9 parity failure this module
+#: exists to make impossible. `tests/test_extension_manifest.py` now compares the two lists.
 ADAPTERS: dict[str, list[str]] = {
-    "claude": [".bg-surface-3 .standard-markdown", ".font-claude-response"],
+    "claude": [
+        ".bg-surface-3 .standard-markdown",
+        ".font-claude-response",
+        "[data-testid='chat-stale-nav-inert'] .standard-markdown",
+    ],
     "chatgpt": ['[data-message-author-role="assistant"]', "div.markdown.prose"],
     "perplexity": [".prose", '[class*="answer"]'],
-    "google-ai-overviews": ['[data-attrid*="AIOverview"]'],
+    "google-ai-overviews": ['[data-attrid*="AIOverview"]', "#rcnt div[data-async-type]"],
     "generic": ["article", "main", "body"],
 }
 
@@ -107,9 +115,12 @@ def parse(html: str) -> Node:
 
 # ------------------------------------------------------------------ selectors
 
+#: `#id` is here because the Google adapter uses `#rcnt div[data-async-type]` and this subset raised on it,
+#: which made the module docstring's claim to cover "exactly the selector forms the adapters use" false. An
+#: id is an attribute equality test and is handled as one below, so nothing else in the matcher changes.
 _SIMPLE = re.compile(
     r"^(?P<tag>[a-zA-Z][\w-]*)?"
-    r"(?P<rest>(?:\.[\w-]+|\[[^\]]+\])*)$"
+    r"(?P<rest>(?:\#[\w-]+|\.[\w-]+|\[[^\]]+\])*)$"
 )
 _ATTR = re.compile(r"\[\s*([\w-]+)\s*(?:(\^=|\*=|=)\s*(\"[^\"]*\"|'[^']*'|[^\]]+?)\s*)?\]")
 
@@ -127,8 +138,10 @@ def _parse_simple(part: str) -> _Simple:
         raise ValueError(f"unsupported selector fragment: {part!r}")
 
     rest = match.group("rest") or ""
-    classes = tuple(re.findall(r"\.([\w-]+)", rest))
+    classes = tuple(re.findall(r"(?<![#\w-])\.([\w-]+)", rest))
     attrs = []
+    for ident in re.findall(r"\#([\w-]+)", rest):
+        attrs.append(("id", "=", ident))
     for name, op, raw in _ATTR.findall(rest):
         value = raw.strip("\"'") if raw else None
         attrs.append((name, op or None, value))

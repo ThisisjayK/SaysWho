@@ -160,7 +160,7 @@ SaysWho/
 │   ├── goldset.py          # Labels, agreement, kappa
 │   └── harness.py          # Run records, readout, trace table
 ├── tools/                  # Query freezing, binding, labelling, stratum runs, break attempts
-├── tests/                  # 825 tests, offline except the node parity check
+├── tests/                  # 826 tests, offline except the node parity check
 │   └── parity/
 ├── queries/                # The frozen query strata
 ├── captures/               # Captured answers

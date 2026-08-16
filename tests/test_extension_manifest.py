@@ -431,6 +431,44 @@ def adapters_js() -> str:
     return (EXTENSION / "src" / "adapters.js").read_text()
 
 
+def selector_array(block: str, key: str) -> list[str]:
+    """The string literals in `key: [...]`, scanned rather than regex-matched.
+
+    Two regex versions of this were wrong before it was written out longhand. `\\[(.*?)\\]` stops at the
+    first `]`, and every ChatGPT selector contains one, so both sides truncated to the same prefix and the
+    check passed by coincidence rather than by working. `['"](.*?)['"]` then splits
+    '[data-message-author-role="assistant"]' at its inner quote. A selector language with brackets and nested
+    quotes in it needs a scanner, and this is the smallest one that is actually right.
+    """
+    start = block.index("[", block.index(key) + len(key))
+    depth, i, out, cur, quote = 0, start, [], None, None
+    while i < len(block):
+        c = block[i]
+        if quote:
+            if c == quote:
+                out.append("".join(cur))
+                quote, cur = None, None
+            else:
+                cur.append(c)
+        elif c in "'\"":
+            quote, cur = c, []
+        elif c == "[":
+            depth += 1
+        elif c == "]":
+            depth -= 1
+            if depth == 0:
+                return out
+        i += 1
+    raise AssertionError(f"unterminated array for {key}")
+
+
+def adapter_blocks(js: str) -> tuple[list[str], list[int]]:
+    """Adapter ids and the offsets each block starts at, with a sentinel end offset."""
+    names = [m.group(1) for m in re.finditer(r'id:\s*"([a-z-]+)"', js)]
+    starts = [m.start() for m in re.finditer(r'id:\s*"[a-z-]+"', js)] + [len(js)]
+    return names, starts
+
+
 def test_both_sides_look_for_the_same_citation_attributes():
     """`SCOPE.md` §9: a citation the extension records and the Python cannot re-extract is a parity
     failure. These two lists are the rule, written twice in two languages, so they get compared."""
@@ -619,43 +657,8 @@ def test_every_verified_selector_is_one_the_adapter_actually_uses():
     `verifiedSelectors`, so a typo there is silent in both directions: the claim never applies, and nobody
     finds out. Cheap to check, and the check is the only thing standing between a comment saying verified
     and a flag that means it."""
-    import re
-
     js = adapters_js()
-
-    def array_after(block: str, key: str) -> list[str]:
-        """The string literals in `key: [...]`, scanned rather than matched.
-
-        Two regex versions of this were wrong before it was written out longhand. `\\[(.*?)\\]` stops at the
-        first `]`, and every ChatGPT selector contains one, so both sides truncated to the same prefix and
-        the check passed by coincidence. `['"](.*?)['"]` then splits
-        '[data-message-author-role="assistant"]' at its inner quote. A selector language with brackets and
-        nested quotes in it needs a scanner, and this is the smallest one that is actually right.
-        """
-        start = block.index(key) + len(key)
-        start = block.index("[", start)
-        depth, i, out, cur, quote = 0, start, [], None, None
-        while i < len(block):
-            c = block[i]
-            if quote:
-                if c == quote:
-                    out.append("".join(cur))
-                    quote, cur = None, None
-                else:
-                    cur.append(c)
-            elif c in "'\"":
-                quote, cur = c, []
-            elif c == "[":
-                depth += 1
-            elif c == "]":
-                depth -= 1
-                if depth == 0:
-                    return out
-            i += 1
-        raise AssertionError(f"unterminated array for {key}")
-
-    names = [m.group(1) for m in re.finditer(r'id:\s*"([a-z-]+)"', js)]
-    starts = [m.start() for m in re.finditer(r'id:\s*"[a-z-]+"', js)] + [len(js)]
+    names, starts = adapter_blocks(js)
     assert set(names) >= {"claude", "chatgpt", "perplexity"}, f"adapter blocks mis-parsed: {names}"
 
     checked = 0
@@ -663,8 +666,8 @@ def test_every_verified_selector_is_one_the_adapter_actually_uses():
         block = js[starts[i]: starts[i + 1]]
         if "verifiedSelectors" not in block or "answerSelectors" not in block:
             continue
-        verified = set(array_after(block, "verifiedSelectors"))
-        answers = set(array_after(block, "answerSelectors"))
+        verified = set(selector_array(block, "verifiedSelectors"))
+        answers = set(selector_array(block, "answerSelectors"))
         # The scanner has to survive the selector it was written for, or this is a vacuous check again.
         if name == "chatgpt":
             assert '[data-message-author-role="assistant"]' in answers, f"scanner truncated: {answers}"
@@ -683,3 +686,38 @@ def test_the_chatgpt_selector_verified_is_the_one_the_day_nine_captures_fired():
     js = adapters_js()
     block = js[js.index('id: "chatgpt"'): js.index('id: "perplexity"')]
     assert """verifiedSelectors: ['[data-message-author-role="assistant"]']""" in block
+
+
+def test_the_python_mirror_lists_the_same_answer_selectors_as_the_extension():
+    """`SCOPE.md` §9: a capture the extension made and the Python cannot re-extract is a parity failure, and
+    a selector missing from `reextract.ADAPTERS` is exactly that, silently. Nothing fails when it happens.
+    The capture succeeds, the re-extraction picks a different container or none, and the disagreement reads
+    as an extractor bug.
+
+    Found by comparing the lists on day 10 while verifying adapters, not by anything breaking: Claude was
+    missing `[data-testid='chat-stale-nav-inert'] .standard-markdown` and Google `#rcnt div[data-async-type]`,
+    and the second one the CSS subset could not even parse, which made the module docstring's claim to cover
+    the forms the adapters use false.
+    """
+    from sayswho.reextract import ADAPTERS, select, parse
+
+    js = adapters_js()
+    names, starts = adapter_blocks(js)
+    root = parse("<html><body></body></html>")
+    compared = 0
+    for i, name in enumerate(names):
+        block = js[starts[i]: starts[i + 1]]
+        if "answerSelectors" not in block:
+            continue
+        extension = selector_array(block, "answerSelectors")
+        assert name in ADAPTERS, f"{name} has answerSelectors in the extension and no mirror in reextract"
+        assert ADAPTERS[name] == extension, (
+            f"{name}: reextract.ADAPTERS is {ADAPTERS[name]} and the extension uses {extension}. "
+            "A selector in one and not the other is a re-extraction that cannot reproduce a capture"
+        )
+        # Mirroring a selector the CSS subset raises on would trade a silent gap for a loud crash.
+        for sel in extension:
+            select(root, sel)
+        compared += 1
+
+    assert compared >= 4, f"only {compared} adapter(s) compared"
