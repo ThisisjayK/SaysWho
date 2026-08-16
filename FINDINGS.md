@@ -1253,9 +1253,21 @@ attribution   not run. 0 of 13 judge-human disagreement(s) could be checked agai
 
 `label_goldset.py` also says so at the prompt now, since a labeller who pastes a passage has every reason to
 think it bought the check. Seven tests in `tests/test_goldset.py` pin the tri-state, including one asserting
-an unchecked run makes no attribution claim in its rendered output. The run record in `runs/day9/` is left as
-it was written, because it is the record of what that run emitted rather than of what the fixed code would
-have emitted, and the corrected figures are the ones above.
+an unchecked run makes no attribution claim in its rendered output.
+
+**`runs/day9/` carries the corrected block rather than the one it was written with.** The alternative was
+leaving the record saying "0 of 13 are the extractor's" with a correction in a document beside it, and a
+stored artifact that contradicts the writeup is how the next reader gets the withdrawn sentence back. Only
+the `attribution` block was recomputed, from the gold set and the judgements that same record already holds,
+so the inputs are the run's own. The six measured fields it originally emitted, including
+`attributable_to_extraction` and both kappa figures, were asserted identical before the file was written;
+`disagreements_checked` and `disagreements_with_a_passage` are the only additions, and `note` was rewritten.
+The block carries `recomputed_at` and `recomputed_note` saying exactly this, and `readout.txt` and
+`RUN_LOG.md` carry the same marker under the re-rendered lines, because a readout that quietly disagreed with
+its own run record would be the same failure one level down. Nothing was re-judged and no verdict, rate,
+kappa or per-class figure moved: a diff against the original file touches four lines, all inside
+`attribution`. `tools/reaudit_spans.py` and the film's `sync-run.mjs` both read the rewritten record and
+produce what they produced before, the latter byte for byte.
 
 **The span guard fired once in 76 span-bearing verdicts**, on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION`
 on `CO-21` where a source had drifted to containment 0.2215. Neither has been re-checked against the cached

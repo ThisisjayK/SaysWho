@@ -118,7 +118,14 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    need, contrary to the note that stood here: `DATA_CONTRACT.md` names none of these fields, and §4's
    classification table is generated from `boundary.py` over the run record's **top-level** keys, of which
    `attribution` was already one. So the schema decision the row anticipated did not exist.
-   `runs/day9/run.json` is left as written, because it records what that run emitted
+   **`runs/day9/` now carries the corrected block**, recomputed from the gold set and judgements the record
+   itself holds, with the six measured fields asserted identical before writing and `recomputed_at` and
+   `recomputed_note` marking what was done. `readout.txt` and `RUN_LOG.md` carry the same marker under the
+   re-rendered lines. Leaving the artifact saying "0 of 13 are the extractor's" would have kept the withdrawn
+   sentence available to anybody who opened the run instead of the writeup. Verified: a diff against the
+   original touches four lines and all are inside `attribution`, `reaudit_spans.py` still reports 1 still
+   fabricated and 1 voided for another reason, and `video/scripts/sync-run.mjs` regenerates `runData.ts`
+   byte for byte with the 0.21 point gap intact
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
