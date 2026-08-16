@@ -55,3 +55,27 @@ runs/
 # correspondence with the professor and the TA. Kept locally, not published.
 email-to-professor.md
 reply-to-professor.md
+
+# video artefacts. The film, its B-roll and the raw screen recordings behind them are large binaries that
+# nothing in the pipeline reads, and they are rebuilt from sources that are not in the repo anyway: the
+# takes live on the machine they were shot on. `video/.gitignore` already covers `out` and `audio`.
+video/public/footage/
+*.mov
+*.mp4
+
+# generated narration and effects. Every one of them is rebuilt from the script in video/SOUND.md by the
+# ElevenLabs voice named there, so the text is the source and these are the build output. video/.gitignore
+# claims to cover this and does not: it ends at `out`.
+video/public/audio/
+
+# the videos the repo does keep, and the only ones. site/media/ holds the web-compressed cuts the site
+# actually serves: the film at 3.9 MB rather than the 27 MB render, the B-roll at 1.5 MB, the install clip
+# at 229 KB. Without them the site is three pages of prose with holes in it. The masters they were made
+# from stay out: video/out/ is build output and the raw takes never entered the repo at all.
+!site/media/
+!site/media/*.mp4
+!site/media/*.jpg
+
+# the site's release archive, which tools/make_release_zip.py rebuilds from the tracked tree on demand.
+# Committing it would mean a copy of the repo inside the repo, one commit stale from the moment it lands.
+site/sayswho.zip

@@ -227,6 +227,33 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    before it is told the file does not exist. Preconditions before work, in the order the server already
    uses
 
+14. **Done: a website, and a download that is only the tool.** `site/` is three static pages with
+   cross-document view transitions and scroll reveals, no build step: what it does, install, and limits with
+   a roadmap. It carries the film, the B-roll and the install clip, all re-encoded for the web, and it names
+   no institution, no course and no person. Rethink Sans and JetBrains Mono are self hosted from
+   `site/fonts/`, which fixed a bug rather than adding a feature: `--sans` had named Rethink Sans since the
+   first line of that stylesheet and nothing ever loaded it, so every visitor got a system fallback and the
+   site set nothing like the film.
+   **`tools/make_release_zip.py` builds what the download button hands out, from an allowlist.** It was a
+   denylist first, and answering "what does somebody need to run this" by subtraction shipped `CLAUDE.md`,
+   this file, `PR_DESCRIPTION.md` and the video shot list to anybody who clicked download. The allowlist is
+   four entries and every one is read at runtime, including two that are easy to miss: `queries/`, because
+   the server hash-checks the frozen set before it will start, and `tools/freeze_queries.py`, because
+   `queryset.freeze_intact` shells out to it. **The first build was broken and extracting it is how that was
+   found**: `freeze_queries.py` imports `validate_queries`, which was not on the list, so the archive
+   contained a server that could not start under any circumstances. Reading the list would not have caught
+   it. 54 files, 211 KB.
+   Three gates run before a byte is written and the build aborts rather than shipping: no key-shaped string,
+   no personal data, nothing outside the tracked tree. The scrub is printed rather than silent. What it
+   removed on the first honest pass was the maintainer's name in three documents, the institution in three,
+   the course code in one, the contact address in two and home directory paths in two, and the last one to
+   go was a docstring in `sayswho/ethics.py` explaining the ethics gate by reference to an assignment, which
+   means nothing to somebody who downloaded a browser extension.
+   **What is gitignored now, and why it was not before.** The film, its B-roll, the raw takes and the
+   generated narration are build output rebuilt from sources that are not in the repo. `video/.gitignore`
+   claimed to cover the audio and does not: it ends at `out`, so 28 generated mp3s were never ignored at
+   all. `site/media/` is the exception, because without it the site is three pages of prose with holes in it
+
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
 Written 2026-08-14 at the end of day 8, so day 9 does not begin by rereading the file.

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaysWho: does the cited page actually say that?</title>
+<meta name="description" content="A browser extension that reads the pages an AI answer cites and marks every claim with what its source actually says. Where it cannot read a source, it scores nothing.">
+<link rel="preload" href="fonts/rethink-sans-AMOWz4SDuXOMCPfdoglY9JQEVFi34dpL4w.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="mark" href="index.html">SaysWho</a>
+    <nav>
+      <a href="index.html" aria-current="page">What it does</a>
+      <a href="install.html">Install</a>
+      <a href="limits.html">Limits &amp; roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow reveal">Citation auditing for AI answers</p>
+    <h1 class="reveal">Does the cited page actually say that?</h1>
+    <p class="lede reveal">Every AI answer now comes with links attached. They are what makes it feel checked. They are also the part nobody clicks. SaysWho clicks them, reads what is there, and marks the answer sentence by sentence.</p>
+    <div class="cta reveal">
+      <a class="btn" href="sayswho.zip" download>Download</a>
+      <a class="btn ghost" href="install.html">How to install</a>
+    </div>
+    <p class="fineprint reveal">211 KB. The extension, the auditor and the frozen query set. Nothing else.</p>
+  </div>
+</section>
+
+<section class="film">
+  <div class="wrap">
+    <figure class="reveal">
+      <video src="media/film.mp4" poster="media/film-poster.jpg" controls playsinline preload="none"></video>
+      <figcaption>Two minutes. What it checks, what it refuses to check, and what its verdicts are worth.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <p class="section-note reveal">The question it asks</p>
+    <h2 class="reveal">Not whether a claim is true. Whether its source says so.</h2>
+    <p class="big reveal">A sentence can be perfectly true and hung on a page that never mentions it.</p>
+    <p class="reveal">It can also be wrong and cited to a page that says exactly that, word for word. Only the first of those is a citation problem, and that is the only thing this checks. Fact checking is a different job and a much harder one.</p>
+
+    <div class="grid four">
+      <div class="card supported reveal">
+        <p class="tag">Supported</p>
+        <p>A passage was quoted from the cited page, and a script confirmed that passage is really in the document that got fetched.</p>
+      </div>
+      <div class="card partial reveal">
+        <p class="tag">Partly supported</p>
+        <p>The page backs part of it, or a weaker version. Whatever the source attaches that the sentence leaves off is listed with the quote.</p>
+      </div>
+      <div class="card not-supported reveal">
+        <p class="tag">Not supported</p>
+        <p>The page was read and does not state this. That is a fact about the citation. It says nothing about the world.</p>
+      </div>
+      <div class="card unverified reveal">
+        <p class="tag">Could not verify</p>
+        <p>No verdict stands. Either the source could not be read, or the verdict was thrown out. This is not evidence in either direction and it enters no rate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="section-note reveal">How it works</p>
+    <h2 class="reveal">Four steps, and a script checking the third one.</h2>
+    <div class="grid two">
+      <div class="card reveal">
+        <p class="tag">1 &middot; Capture</p>
+        <p>Reads the answer out of the page, hashes it, lists every cited URL. Citations it could not reach get counted, not quietly dropped.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">2 &middot; Split</p>
+        <p>Breaks the answer into individual claims, each carrying the citations attached to it. Interface furniture and non-factual lines are set aside and named.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">3 &middot; Fetch and judge</p>
+        <p>Fetches every cited page and asks, per claim, whether that page supports it. A verdict of supported has to come with a quoted span.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">4 &middot; Verify the quote</p>
+        <p>A script confirms the quoted span really appears in the fetched document. A fabricated quote voids the verdict, and how often that happens is published.</p>
+      </div>
+    </div>
+    <p class="note reveal">Step four exists because the judge is a language model and language models invent quotes. Catching that is cheap. Trusting it would not be.</p>
+
+    <figure class="reveal" style="margin-top:34px">
+      <video src="media/audit-demo.mp4" autoplay muted loop playsinline preload="metadata" controls></video>
+      <figcaption>A real audit, from an empty chat to four marked claims. Silent, and the long wait in the middle is compressed.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band ink">
+  <div class="wrap">
+    <p class="section-note reveal">The part that is different</p>
+    <h2 class="reveal">It refuses.</h2>
+    <p class="big reveal">Given nothing to check against, it gives you nothing back.</p>
+    <p class="reveal">A claim whose only source is a dead link comes back marked <b>could not verify</b>, and it is scored nowhere. When half or more of an answer's cited claims produce no standing verdict, that answer gets no support rate at all. A percentage over the readable leftovers would really be a percentage over whichever pages happened to load that afternoon.</p>
+    <p class="reveal">There is no confidence score anywhere in the tool. Unauditable claims are counted, named, and kept out of every published number.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="section-note reveal">Where it runs</p>
+    <h2 class="reveal">In your browser, against your own answers.</h2>
+    <p class="reveal">A Chrome extension captures the answer and draws the result over the page. A local Python server does the fetching and the judging, because a content script cannot fetch arbitrary cross-origin URLs, and because the gates and the quote check belong in one implementation, not two that can drift apart.</p>
+    <p class="reveal">Nothing is uploaded anywhere. The server binds to <code>127.0.0.1</code> and will not start if its judge cannot answer a health check.</p>
+    <div class="cta reveal" style="margin-top:26px">
+      <a class="btn" href="install.html">Install it</a>
+      <a class="btn ghost" href="limits.html">Read the limitations first</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>SaysWho is research software. You run it by hand, for as long as an audit takes, and it is not something to leave running.</p>
+  </div>
+</footer>
+
+<script src="reveal.js"></script>
+</body>
+</html>

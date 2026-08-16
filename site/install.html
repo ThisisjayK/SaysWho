@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaysWho: install and use</title>
+<meta name="description" content="Download SaysWho, load the unpacked extension in Chrome, and run your first audit. What each button does, and where the files it writes go.">
+<link rel="preload" href="fonts/rethink-sans-AMOWz4SDuXOMCPfdoglY9JQEVFi34dpL4w.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="mark" href="index.html">SaysWho</a>
+    <nav>
+      <a href="index.html">What it does</a>
+      <a href="install.html" aria-current="page">Install</a>
+      <a href="limits.html">Limits &amp; roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow reveal">Install and use</p>
+    <h1 class="reveal">Five steps to a marked answer.</h1>
+    <p class="lede reveal">Capture needs nothing but the extension. Verdicts need a local server and a free API key, and both are below.</p>
+    <div class="cta reveal">
+      <a class="btn" href="sayswho.zip" download>Download the archive</a>
+    </div>
+    <p class="fineprint reveal">Chrome or any Chromium browser. Python 3.11 or newer for the server.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <ol class="steps">
+      <li class="reveal">
+        <h3>Download and unzip</h3>
+        <p>You get a folder called <code>sayswho</code> with four things in it: the <code>extension/</code> itself, the Python auditor in <code>sayswho/</code>, the frozen query set the server hash-checks before it will start, and the two scripts that do that check. Put it wherever you keep projects.</p>
+      </li>
+
+      <li class="reveal">
+        <h3>Load the extension</h3>
+        <p>It ships unpacked, so it installs from Chrome's own extensions page. There is no store listing and no review queue.</p>
+        <figure>
+          <video src="media/install-extension.mp4" controls muted playsinline preload="metadata"></video>
+          <figcaption>Loading the unpacked extension, start to finish. 19 seconds, no audio.</figcaption>
+        </figure>
+        <ol class="sub">
+          <li>Open <code>chrome://extensions</code>.</li>
+          <li>Turn on <b>Developer mode</b>, top right.</li>
+          <li>Click <b>Load unpacked</b>, top left.</li>
+          <li>Select the <code>extension</code> folder inside the unzipped project. Not the project root, and not <code>extension/src</code>.</li>
+          <li>Pin it to the toolbar so the popup is one click away.</li>
+        </ol>
+        <p class="note">Reload any tab you had open before installing. A tab loaded earlier is running no content script, and the on-page buttons will not appear on it.</p>
+      </li>
+
+      <li class="reveal">
+        <h3>Capture an answer</h3>
+        <p>Open a supported product, ask something that produces citations, then click <b>Capture</b>. You get the answer text, its SHA-256 and every cited URL written to a file. No key, no server, and no network calls beyond the page you are already on.</p>
+        <p class="note">Supported today: chatgpt.com, claude.ai, perplexity.ai, and Google search results.</p>
+      </li>
+
+      <li class="reveal">
+        <h3>Start the local server</h3>
+        <p>Fetching cited pages and judging claims happens outside the browser. Verdicts need this running.</p>
+        <pre><code>cd sayswho
+python3 -m venv .venv
+.venv/bin/pip install google-genai
+export GEMINI_API_KEY=paste-your-real-key
+.venv/bin/python -m sayswho.server --judge</code></pre>
+        <p>A free key comes from <a href="https://aistudio.google.com">aistudio.google.com</a>. It is read from the environment and never written to a file. The server binds to <code>127.0.0.1</code> only, and it will not start if the key is missing or the provider rejects it, so a green light in the popup means it genuinely works.</p>
+        <p class="note">Substitute your real key on that fourth line. Pasting a placeholder verbatim exports the literal string and is the most common way this fails.</p>
+      </li>
+
+      <li class="reveal">
+        <h3>Audit</h3>
+        <p>Click <b>Audit</b>. The capture is posted to the local server, which fetches every cited page, judges each claim against it, confirms each quoted span really appears in the fetched document, and draws the marked answer in a panel over the page.</p>
+        <p class="note">It takes as long as it takes. Two runs were timed: 22 seconds, and about five minutes on a rate-limited free tier. Two observations are not a benchmark, so do not plan around either number.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="section-note reveal">Controls</p>
+    <h2 class="reveal">What each button does</h2>
+    <div class="grid two">
+      <div class="card reveal">
+        <p class="tag">Capture</p>
+        <p><b>Works offline, needs no key.</b> Reads the answer, hashes it, extracts every citation, counts the ones it could not reach, and writes the record to your downloads folder.</p>
+        <p>Useful when you want the record now and the verdicts later, or when you are collecting answers to audit as a batch.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Audit</p>
+        <p><b>Needs the local server.</b> Does everything Capture does, then sends the record to <code>127.0.0.1:8765</code> instead of downloading it, and renders the marked answer.</p>
+        <p>The server saves the capture and the report into the project folder, so nothing lands in your downloads twice.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Buttons on the page</p>
+        <p>A checkbox in the popup. Shows or hides the two floating controls at the bottom right of the page. Both actions stay available from the popup either way.</p>
+        <p class="note">If unticking it does nothing, that tab is running a content script from before your last extension reload. Reload the tab.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Audit server running</p>
+        <p>Not a button. A live status dot. Green means the local server answered a health check and Audit will work. Grey means you get Capture and nothing else.</p>
+      </div>
+    </div>
+
+    <h3 class="reveal">The warning worth reading</h3>
+    <p class="reveal">After a capture the popup may say <code>2 "+N" control(s) hide 2+ citations. Expand them and capture again.</code> Products collapse some citations behind an expander. The extension counts what it could not reach instead of reporting a clean number it has not earned. Across ten measured answers at least 20 of 53 claim-attached citations were hidden this way. An audit built on a capture carrying that warning covers part of the answer, and the report says so on its face.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <p class="section-note reveal">Files</p>
+    <h2 class="reveal">What it writes, where, and why</h2>
+    <p class="reveal">Two files per capture, both going to your browser's normal download location. Nothing is uploaded anywhere.</p>
+
+    <table class="reveal">
+      <thead><tr><th>File</th><th>Where</th><th>Why it exists</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>capture-&lt;product&gt;-&lt;time&gt;.json</code></td>
+          <td><code>Downloads/sayswho/</code></td>
+          <td>The record: answer text, its hash, every cited URL, and the count of what could not be reached. This is what the pipeline reads. <b>Audit does not write it</b>, because the server has already saved it into the project.</td>
+        </tr>
+        <tr>
+          <td><code>sayswho-page-&lt;product&gt;-&lt;time&gt;.html</code></td>
+          <td><code>Downloads/</code></td>
+          <td>The page exactly as it stood at capture time. <b>Both buttons write it.</b> It is what allows the extraction to be re-run and checked against a second implementation later.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="reveal">Keeping the page matters more than it looks. An adapter can only be checked against a stored page, and that chance has already been lost once here: 29 captures from one product point at page files that are no longer on disk, so that adapter can never be verified after the fact. The archived page is the evidence.</p>
+    <p class="note reveal">A stored page is a whole application shell. On some products that includes a sidebar listing your other conversations. It stays on your machine, and the project ignores these files by name so they cannot be committed by accident.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap narrow">
+    <p class="section-note reveal">The archive</p>
+    <h2 class="reveal">What is in the download</h2>
+    <p class="reveal">211 KB, 54 files, built from an allowlist of what the tool needs at runtime. Three gates run before anything gets written.</p>
+    <ul class="plain">
+      <li class="reveal"><b>No keys.</b> The build aborts if any file matches a key-shaped pattern.</li>
+      <li class="reveal"><b>No personal data.</b> Contact addresses become a placeholder, home directory paths become <code>~</code>, and every substitution is printed while the archive is built so the scrub is never silent.</li>
+      <li class="reveal"><b>No captured data.</b> Stored pages, fetch caches, captures, splits, gold sets, run records and reports are all excluded. They carry answer text and quoted page passages, and those stay on the machine that produced them.</li>
+      <li class="reveal"><b>Nothing that does not run.</b> No video, no tests, no working notes, no project write-ups. The allowlist is four entries long and every one of them is read at runtime, which is how a missing import was caught: the first build shipped a server that could not start.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>SaysWho is research software. You run it by hand, for as long as an audit takes, and it is not something to leave running.</p>
+  </div>
+</footer>
+
+<script src="reveal.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaysWho: limits and roadmap</title>
+<meta name="description" content="What SaysWho can do today, what it measurably cannot, and what would have to change. Every figure here is from a real run and carries its sample size.">
+<link rel="preload" href="fonts/rethink-sans-AMOWz4SDuXOMCPfdoglY9JQEVFi34dpL4w.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="mark" href="index.html">SaysWho</a>
+    <nav>
+      <a href="index.html">What it does</a>
+      <a href="install.html">Install</a>
+      <a href="limits.html" aria-current="page">Limits &amp; roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow reveal">Limits and roadmap</p>
+    <h1 class="reveal">What it gets wrong.</h1>
+    <p class="lede reveal">Every number here came out of a real run and carries the sample size it was measured on. Where something has not been measured, this page says so.</p>
+  </div>
+</section>
+
+<section class="band ink">
+  <div class="wrap">
+    <p class="section-note reveal">The largest one</p>
+    <h2 class="reveal">It cannot tell you whether a source is right.</h2>
+    <p class="big reveal">A well cited falsehood passes.</p>
+    <p class="reveal">SaysWho checks whether the cited page supports the sentence hung on it. Point an answer at a page that states something wrong, cite it accurately, and every verdict here comes back supported. This is a citation checker. Fact checking is a different job, and treating one as the other is how you end up trusting a tool that never made the claim you think it made.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="section-note reveal">Measured</p>
+    <h2 class="reveal">What the numbers actually say</h2>
+
+    <div class="stat-row">
+      <div class="stat reveal">
+        <span class="n">0.30</span>
+        <p>Cohen's kappa between the judge and a human, 95% CI 0.004 to 0.60, over 35 comparable pairs. The lower bound means chance cannot be ruled out at this sample size.</p>
+      </div>
+      <div class="stat reveal">
+        <span class="n">37.7%</span>
+        <p>Floor on claim-attached citations never captured, because the product hid them behind expanders. At least 20 of 53 across ten answers.</p>
+      </div>
+      <div class="stat reveal">
+        <span class="n">2 of 4</span>
+        <p>Adapters verified against stored pages. The other two have no stored pages to check against and are marked unverified rather than assumed correct.</p>
+      </div>
+    </div>
+
+    <h3 class="reveal">The verdicts are model inference</h3>
+    <p class="reveal">Claim splitting and every verdict come from a language model. That model was checked against 45 claims hand-labelled blind, before it had seen any of them. The figure above is what came back. It is on this page because it is unflattering. A tool that reports its own accuracy only when the number flatters it is publishing marketing.</p>
+
+    <h3 class="reveal">A supported verdict is narrower than it sounds</h3>
+    <p class="reveal">It means a passage was quoted from the cited page and a script confirmed that passage really appears in the fetched document. It does not mean the claim is true. It does not mean the page is a good source for it either.</p>
+
+    <h3 class="reveal">Pages change</h3>
+    <p class="reveal">A page fetched today is not necessarily the page the answer was written against. Where an archived copy from around the time of writing exists, the report says whether the quoted passage was there then. Where none exists, it says that too. Today's page is not evidence about yesterday's answer, and the report will not pretend otherwise.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <p class="section-note reveal">Current state</p>
+    <h2 class="reveal">What exists today</h2>
+    <div class="grid two">
+      <div class="card reveal">
+        <p class="tag">Working</p>
+        <p>Capture, claim splitting, fetching, judging, the quoted-span check, the refusal gates, per-answer and per-domain rates, and the panel that draws it all over the page.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Working</p>
+        <p>A frozen query set that is hash-checked before every run, so a question cannot be quietly tuned after seeing a result.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Working</p>
+        <p>Two interchangeable judge providers behind one interface. Swapping them cannot loosen a gate, because the gates do not know which one is running.</p>
+      </div>
+      <div class="card reveal">
+        <p class="tag">Partial</p>
+        <p>Adapters for four products, two of them verified. The extension is unpacked only; there is no store listing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="section-note reveal">Roadmap</p>
+    <h2 class="reveal">What would have to improve</h2>
+    <p class="reveal">Ordered by how much each would change the tool. The easy ones are not at the top.</p>
+
+    <ul class="plain open">
+      <li class="reveal"><b>A bigger gold set.</b> 35 comparable pairs give a confidence interval wide enough to include chance. Several hundred blind labels would settle whether the judge is useful. Either answer is worth more than the interval there is now.</li>
+      <li class="reveal"><b>Reach the hidden citations.</b> More than a third of claim-attached citations sit behind expanders the capture never opens. Clicking those open before capturing would close the widest gap between what the tool sees and what the answer actually cited.</li>
+      <li class="reveal"><b>Verify the remaining adapters.</b> Two of four are unverified because no stored pages exist for them any more. Fixing it needs fresh captures kept alongside their pages, then the same three-way check the verified one passed.</li>
+      <li class="reveal"><b>Mark claims in the page itself.</b> Results currently appear in a panel beside the answer. Colouring the product's own sentences in place is harder, because the page re-renders as you scroll, and it would do more for how this feels to use than anything else on this list.</li>
+      <li class="reveal"><b>Cut the latency.</b> One run took 22 seconds. Another took about five minutes. Fetching cited pages in parallel and caching hard across runs is the difference between a tool you use and a tool you remember you own.</li>
+      <li class="reveal"><b>A head-to-head against other tools.</b> Every comparative claim here is a claim about what competitors say about themselves, because no comparison has been run. Running one would replace a carefully worded sentence with a measurement.</li>
+      <li class="reveal"><b>Firefox and Safari.</b> The extension is Chromium-only today.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band ink">
+  <div class="wrap narrow">
+    <p class="section-note reveal">The rule underneath all of it</p>
+    <h2 class="reveal">No number where there is nothing to count.</h2>
+    <p class="reveal">There is no confidence score in this tool and there will not be one. An unreachable source makes a claim unauditable. Unauditable claims get counted, named, and kept out of the denominator of every rate it prints. Where half or more of an answer cannot be checked, it prints no rate for that answer at all.</p>
+    <p class="reveal">This is not caution for its own sake. A number standing in for a refusal is an invented number, and inventing one is the exact failure this was built to catch.</p>
+    <div class="cta reveal" style="margin-top:26px">
+      <a class="btn ghost" href="install.html">Install it anyway</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>SaysWho is research software. You run it by hand, for as long as an audit takes, and it is not something to leave running.</p>
+  </div>
+</footer>
+
+<script src="reveal.js"></script>
+</body>
+</html>
