@@ -1,8 +1,8 @@
 # SaysWho: building a tool that refuses to give you a number
 
 A case study for a technical reader. What the problem was, which decisions were load bearing, what they cost,
-and what is still unmeasured. Written on day 7 of a ten-day build, so the last section is
-still longer than the results section, which remains the accurate shape.
+and what is still unmeasured. Written on day 7 of a ten-day build, so the last section is still longer than
+the results section. That is the accurate shape.
 
 Repo: https://github.com/ThisisjayK/SaysWho
 
@@ -62,9 +62,8 @@ fetched is invented. The dead link becomes "low confidence", and the reader lose
 checked and it is not supported" from "we could not check". Those are the two most different outcomes in the
 system and a single number collapses them.
 
-So unauditable claims are excluded from every denominator, by a contract check that raises rather than warns,
-and when more than half an answer is unauditable the tool prints `INSUFFICIENT_EVIDENCE` and no number at
-all.
+Unauditable claims are excluded from every denominator, by a contract check that raises rather than warns.
+When more than half an answer is unauditable, the tool prints `INSUFFICIENT_EVIDENCE` and no number at all.
 
 **What it cost.** The thing every reviewer asks for first. There is no headline percentage to put on a slide,
 and "73% of citations check out" is a far better demo than a refusal.
@@ -73,9 +72,9 @@ and "73% of citations check out" is a far better demo than a refusal.
 
 Every state a reader sees is decided in Python, and the extension's renderer draws what it is handed.
 
-This exists because the alternative is two implementations of the same verdict logic, one in JavaScript for
-speed of iteration and one in Python for the audit, drifting apart under maintenance until the interface is
-telling users something the audited pipeline never said. The check is a test that runs the real renderer in
+The alternative would be two implementations of the same verdict logic, one in JavaScript for speed of
+iteration and one in Python for the audit, drifting apart under maintenance until the interface is telling
+users something the audited pipeline never said. The check is a test that runs the real renderer in
 node over a payload the real Python built and compares what appeared on screen, state by state, against what
 Python decided.
 

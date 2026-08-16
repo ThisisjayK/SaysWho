@@ -36,17 +36,19 @@ it, e.g. "gate G3 and tests/test_judge.py" rather than "the project demonstrates
 ```bash
 git clone https://github.com/ThisisjayK/SaysWho.git && cd SaysWho
 python3 -m venv .venv && .venv/bin/pip install google-genai
-.venv/bin/python -m pytest -q          # 787 tests, offline except one node process
+.venv/bin/python -m pytest -q          # 794 tests, offline except one node process
 .venv/bin/python tools/ethics_gate.py  # privacy and honesty, checked rather than promised
 ```
 
 Then read three files in this order:
 
 1. `FINDINGS.md` item 21, the first honest run. Twenty-four answers, 51 sources, 130 verdicts, and no support
-   rate, because the gold set covered four of the twenty-four splits and gate G4 will not calibrate a rate it
+   rate, because the gold set covered four of the twenty-four splits and gate G4 will not publish a rate it
    cannot calibrate. Then item 22, where that run is shown to have spent the blindness a gold set needs, and
-   item 23, where the second product's captures are shown to be missing a third of their citations. The three
-   read as one argument: the gate held, the schedule did not, and both are reported.
+   item 23, where the second product's captures are shown to be missing a third of their citations. Then item
+   24, the run where the gate finally opened: 35 blind labels compared, Cohen's kappa 0.304 with a 95% CI of
+   0.004 to 0.604, which is a lower bound that does not exclude chance. The gate held, the schedule did not,
+   and the calibration, when it finally arrived, said not to trust the verdicts much. All three are reported.
 2. `STATUS.md`, which lists every core and stretch item done or not-done with a reason, including the ones
    that would be more flattering to leave out.
 3. `BREAK_ATTEMPTS.md`, where two attempts are kept as passing tests of a failure rather than as fixes.
@@ -106,9 +108,10 @@ in the PR rather than buried.
 ## Notes for you before sending
 
 - Fill the one remaining blank. The chapters need naming individually with the artefact that demonstrates each.
-- **Check the gold set numbers against the repo before sending.** As of 2026-08-15 the set holds 45 blind
-  labels with 36 comparable, against a floor of 30, and the run that would turn that into a published rate had
-  not been executed. If it has run since, the "how to review" section needs the real figure and the sentence
-  about publishing nothing has to go. If it has not, say so rather than implying a rate exists.
+- **The gold set numbers, current as of 2026-08-16.** 45 blind labels, 36 comparable, 35 with a standing
+  verdict to compare against. G4 opened and per-answer and per-domain rates printed. Cohen's kappa is 0.304,
+  95% CI 0.004 to 0.604, so the lower bound does not exclude chance and the figure is a wide-interval estimate
+  rather than a calibration. The stratum rate is still withheld, because one answer of the ten tripped
+  `INSUFFICIENT_EVIDENCE`. `FINDINGS.md` item 24. Never quote the kappa without its interval.
 - `queries/professional.toml` is committed empty on purpose. If a reviewer reads that as unfinished work
   rather than a refusal, the second bullet under "what it does not do" is the sentence to point at.

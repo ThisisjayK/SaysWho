@@ -72,7 +72,7 @@ all uncommitted, because they carry answer text and quoted page content.
 
 ## Failure modes
 
-Six, each one you will actually meet, with the signal it gives, what it means, and what to do.
+Six, each one you will meet, with the signal it gives, what it means, and what to do.
 
 The rule that governs all six: **a result the tool could not measure never becomes a result against the
 product.** Five of these six look like "the citation failed" and only one of them is.
@@ -94,6 +94,7 @@ than papers over.
 Three of these are the same arithmetic and three different sentences. `SOURCE_DEAD_LINK` says the citation
 points at nothing, which is a finding about the answer. `SOURCE_BOT_BLOCKED` says the site refused an
 automated request, and a person clicking the link would probably see the page, which is not.
+`SOURCE_ROBOTS_EXCLUDED` says we chose not to fetch it, which is a finding about us.
 
 **Do.** Nothing automatic. These are `UNAUDITABLE`, they are excluded from every denominator by a check that
 raises rather than warns, and they are never counted as unsupported. Open the link yourself if the claim
@@ -117,7 +118,7 @@ produced. So the verdict is a fact about this tool's reader, not about the sourc
 stored bytes. Fixing the extractor does not need the query re-run.
 
 **Watch for.** This is the most dangerous mode on the card, because untreated it produces
-`NOT_FOUND_IN_SOURCE`, the one verdict that accuses the product and the one verdict carrying no span to
+`NOT_FOUND_IN_SOURCE`, the one verdict that accuses the product, and the one carrying no span to
 check. The guard is deliberately biased toward losing coverage rather than toward accusing. Neither its false
 positive nor its false negative rate is known yet.
 

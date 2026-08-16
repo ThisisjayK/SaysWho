@@ -9,8 +9,8 @@ type: workflow
 
 # Recipe: audit the citations in an AI answer
 
-Companion card for quick reference: [`audit-citations.card.md`](audit-citations.card.md), six failure modes
-and what each one means. The two are updated in the same commit.
+Companion card: [`audit-citations.card.md`](audit-citations.card.md), six failure modes and what each one
+means. The two are updated in the same commit.
 
 ---
 
@@ -20,8 +20,8 @@ A footnote signals verification while performing none of it. This recipe perform
 evidence stops.
 
 For one AI answer, it produces a per-claim record: every factual sentence, every source cited for it, and one
-of six outcomes per claim, each traceable to a fetched page. It never produces an overall score, and it
-refuses to produce a rate it cannot stand behind, naming which gate refused and why.
+of six outcomes per claim, each traceable to a fetched page. It never produces an overall score. It refuses
+to produce a rate it cannot stand behind, and says which gate refused and why.
 
 **Who runs what.** An agent can execute every command here unattended except two: labelling a gold set and
 deciding whether an unsupported claim matters. Both are human calls and §9 says where they stop it.
@@ -63,9 +63,9 @@ the gate exists to catch.
 | G3 | Span verified | The judge quoted the page and a script confirmed the quote is there | The verdict is voided as `JUDGE_FABRICATED_SPAN` and leaves numerator and denominator together |
 | G4 | Judge calibrated | A gold set exists for this judge, judge prompt, claim prompt and split | No aggregate rate is printed, the reason is printed where the number would be, and per-claim verdicts still emit |
 
-Two further refusals behave as gates and are worth naming: `INSUFFICIENT_EVIDENCE` when more than half an
-answer's claims are unauditable, and `CAPTURE_UNBOUND` when a capture is not bound to a frozen query. Both
-withhold rates and neither withholds per-claim verdicts.
+Two further refusals behave as gates: `INSUFFICIENT_EVIDENCE` when more than half an answer's claims are
+unauditable, and `CAPTURE_UNBOUND` when a capture is not bound to a frozen query. Both withhold rates and
+neither withholds per-claim verdicts.
 
 ## 4. Primary Stored Tools
 
@@ -102,10 +102,10 @@ runs on claude.ai, chatgpt.com, perplexity.ai and Google search result pages. Cl
 the popup tells you whether the server is running and whether this page is one SaysWho understands, which is
 faster than finding out by clicking Audit and waiting.
 
-The capture scrolls the answer into existence first, because a long answer is not fully in the DOM until it
-has been on screen, and a capture that is quietly short produces a rate over part of the answer while looking
-entirely normal. It then reads the answer text, pulls out the citation markers and their URLs, hashes the
-text, and writes the capture record and the page it came from.
+The capture scrolls the answer into existence first. A long answer is not fully in the DOM until it has been
+on screen, and a capture that is quietly short produces a rate over part of the answer while looking entirely
+normal. It then reads the answer text, pulls out the citation markers and their URLs, hashes the text, and
+writes the capture record and the page it came from.
 
 Read the two warnings it can print. `capture_is_known_incomplete` means the page held citations or text the
 capture could not reach. A large `chrome_links_excluded` means the page-furniture filter is eating real
@@ -214,7 +214,7 @@ How to confirm the run did what it says, rather than that it finished.
 4. **The trace table.** Every published figure traced to the record it came from. Generated, not typed.
 5. **The suite.** `python3 -m pytest` proves each gate fails on its target bug rather than merely existing.
 6. **The ethics gate.** `python3 tools/ethics_gate.py` checks privacy against git rather than against the
-   `.gitignore` text, since a rule that exists and does not match is worth nothing, and runs the honesty
+   `.gitignore` text, since a rule that exists and does not match is worth nothing. It runs the honesty
    tests rather than citing them. Its output is the artefact the attestation asks for.
 7. **Parity.** The extension and the harness are checked against each other by running the real renderer in
    node over a payload the real Python built, and comparing state by state.

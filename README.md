@@ -29,9 +29,9 @@ page, and marks each claim with one of six states:
 "Could not verify" is never counted as unsupported and never enters the denominator of a published rate.
 Uncited claims are reported separately, because this tool cannot tell whether they needed a citation.
 
-To return `SUPPORTED` the judge has to quote the span from the fetched page that justifies it, and a script
-then confirms by string match that the span is really in the document that was retrieved. A span that is not
-there voids the verdict. There is no confidence score anywhere in the system, and a test enforces that.
+To return `SUPPORTED` the judge has to quote the span from the fetched page that justifies it. A script then
+confirms by string match that the span really is in the document. A span that is not there voids the verdict.
+There is no confidence score anywhere in the system, and a test enforces that.
 
 ## How it works
 
@@ -80,7 +80,7 @@ git clone https://github.com/ThisisjayK/SaysWho.git
 ### 2. Load the extension
 
 Open `chrome://extensions`, turn on Developer mode, click Load unpacked, and pick the `extension/` folder
-inside the clone. Open an answer on claude.ai, chatgpt.com, perplexity.ai, or a Google search with an AI
+inside the clone. Then open an answer on claude.ai, chatgpt.com, perplexity.ai, or a Google search with an AI
 Overview. Two round buttons appear at the bottom right. Hover them to see what they do.
 
 That is the whole install for Capture. It saves the answer text, the citation URLs and the page bytes, with
@@ -198,12 +198,28 @@ It does not mark the product's own sentences in place. The reason is in `extensi
 
 ## Where the numbers stand
 
-The pipeline has run end to end over 24 Perplexity answers: 51 sources, 158 claims, 130 verdicts. It published
-no support rate, because the gold set covers 4 of the 24 splits and gate G4 will not calibrate a rate it
-cannot calibrate. The withheld rate is the intended behaviour rather than a bug to route around.
+The pipeline has run end to end twice. Over 24 Perplexity answers it published no support rate at all, because
+the gold set covered 4 of the 24 splits and gate G4 will not publish a rate it cannot calibrate. Over 10
+ChatGPT answers, with 45 hand-labelled pairs behind it, the gate opened and per-answer and per-domain rates
+printed for the first time.
 
-So nothing here is a measurement yet. `FINDINGS.md` records what has been observed and at what n, `STATUS.md`
-lists every item done and not done with a reason, and both of them are more current than this section.
+**The most useful number the second run produced is the one about the tool itself.** Checked against 35 blind
+human labels, the judge agrees at a Cohen's kappa of 0.304, 95% CI 0.004 to 0.604. The lower bound does not
+exclude chance, so that is a wide-interval estimate rather than a calibration, and it should be read as a
+reason to distrust individual verdicts. It agrees best on "the page does not say this", 77.3% precision and
+recall over n=22, and worst on "the page partly says this", 16.7% precision over n=6.
+
+The stratum rate is still withheld, now because one answer of the ten had more than half its cited claims
+unreadable, and an aggregate over the rest would be an aggregate over whichever answers happened to be
+measurable. The withheld rate is the intended behaviour rather than a bug to route around.
+
+One limit on all of it: ChatGPT hides part of its citation list behind "+N" controls the DOM never renders, so
+those ten answers yielded 33 citations with at least 20 more missing, a floor of 37.7%. Every rate above is
+over inline-rendered citations rather than over the product's citations, and the direction of that error is
+against the product. `FINDINGS.md` item 23.
+
+`FINDINGS.md` records what has been observed and at what n, `STATUS.md` lists every item done and not done
+with a reason, and both of them are more current than this section.
 
 Two known limits on the sample: the questions in the frozen consumer stratum were written rather than asked by
 a real user, and every rate produced from them says so in its own header. The professional stratum, which was
@@ -212,6 +228,6 @@ the questions from memory would have made a published sentence false.
 
 ## Context
 
-A graduate capstone at Northeastern University, for a course on computational skepticism, which is the
-practice of checking whether a system does the thing it says it does. Applying that to this tool is the
-assignment, which is why the limits above are in the README rather than in a footnote at the end.
+A graduate capstone at Northeastern University, for a course on computational skepticism: the practice of
+checking whether a system does the thing it says it does. Applying that to this tool is the assignment, which
+is why the limits above are in the README rather than in a footnote at the end.
