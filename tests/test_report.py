@@ -191,7 +191,7 @@ def test_a_claim_with_no_citation_is_not_checked():
 # ---------------------------------------------------------------- the payload
 
 
-def _report():
+def _report(**kwargs):
     cs = ClaimSet(
         claims=[claim(), claim(text="The programme also offers transport help.", urls=())],
         skipped=[Skipped(text="1. Boston market landscape", reason="heading")],
@@ -200,7 +200,7 @@ def _report():
         Judgement(claim_id="PR-01#abc12345", url="https://example.org/a", verdict=SUPPORTED,
                   span="Uptake reached 78% in 2022.", span_verified=True),
     ]
-    return build(capture(), [source()], cs, judgements, split_sha256="deadbeef")
+    return build(capture(), [source()], cs, judgements, split_sha256="deadbeef", **kwargs)
 
 
 def test_the_payload_carries_the_span_the_guard_verified():
@@ -222,7 +222,41 @@ def test_skipped_lines_travel_into_the_view():
 
 def test_the_payload_states_why_there_is_no_overall_score():
     payload = _report().payload
-    assert "G4" in payload["no_aggregate_rate"]
+    assert "No support rate is shown" in payload["no_aggregate_rate"]
+
+
+def test_the_reason_is_quoted_from_the_run_that_withheld_it():
+    """The view says which gate fired, in the run's words, rather than naming one it guessed at."""
+    reason = "UNPUBLISHABLE_SOURCE: an API capture is not a surface anyone reads."
+    payload = _report(withheld=[reason]).payload
+    assert reason in payload["no_aggregate_rate"]
+    assert "G4" not in payload["no_aggregate_rate"]
+
+
+def test_a_run_that_withheld_nothing_does_not_claim_a_gate_fired():
+    payload = _report(withheld=[]).payload
+    said = payload["no_aggregate_rate"]
+    assert "published its rates separately" in said
+    assert "G4" not in said and "INSUFFICIENT_EVIDENCE" not in said
+
+
+def test_without_a_run_record_the_view_asserts_nothing_about_the_gold_set():
+    """The bug this replaced: every report ever rendered claimed no gold set existed for the judge.
+
+    It said so before the day 9 gold set landed and carried on saying so after G4 opened. The extension's
+    server has no run record to quote, so the honest reading is that it does not know.
+    """
+    said = _report().payload["no_aggregate_rate"]
+    assert "gold set" not in said
+    assert "G4" not in said
+
+
+def test_without_a_run_record_it_still_reports_what_the_verdicts_alone_show():
+    """Whether most of an answer went unmeasured needs no gold set, so the server can say it."""
+    cs = ClaimSet(claims=[claim(), claim(text="A second cited sentence.", urls=("https://example.org/a",))],
+                  skipped=[])
+    payload = build(capture(), [source()], cs, [], split_sha256="deadbeef").payload
+    assert "INSUFFICIENT_EVIDENCE" in payload["no_aggregate_rate"]
 
 
 def test_no_confidence_number_anywhere_in_the_payload():

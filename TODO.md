@@ -38,16 +38,29 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    string comparison cannot change. Seven tests in `tests/test_reaudit_spans.py`, including one asserting a
    genuinely clean report still reads as clean, so the fix does not make every empty result look like a
    failure
-3. **Every rate is over inline-rendered citations.** Not over ChatGPT's citations.
+3. **Fixed: every report page asserted there was no gold set.** `report.py` hardcoded
+   `no_aggregate_rate` as "Gate G4: there is no gold set for this judge and prompt version", so every page
+   the harness and the extension have ever rendered said so. It was still saying it after the day 9 gold set
+   landed and G4 opened, and it named G4 on answers withheld for other reasons entirely: `CO-02` published no
+   rate because of `INSUFFICIENT_EVIDENCE`, not because of G4. The string is now derived. A caller that
+   computed rates passes `RunRates.withheld` and the run's own words are quoted; the CLI does. A caller with
+   no run record, which is the extension's server, gets what is knowable without one, because
+   `rates.insufficient_evidence` depends on the verdicts and not on the judge being calibrated, and gets
+   silence about the gold set otherwise. The reason string now lives in `rates.py` as
+   `INSUFFICIENT_EVIDENCE_DETAIL` so there is one copy of the sentence rather than two. Five tests in
+   `tests/test_report.py`, including one asserting the words "gold set" never appear when the view was not
+   told. **`test_the_payload_states_why_there_is_no_overall_score` asserted `"G4" in ...`, so the suite was
+   holding the bug in place**
+4. **Every rate is over inline-rendered citations.** Not over ChatGPT's citations.
    At least 20 of 53 claim-attached citations were behind "+N" controls and never in the captures, and a
    claim whose supporting source was one of them is judged against the source that did render and comes back
    `NOT_FOUND_IN_SOURCE`, the verdict with no span and no G3 check. That is 60 of the run's verdicts and its
    largest single class, so this caveat is load-bearing rather than decorative. `FINDINGS.md` item 23
-3. **The ChatGPT adapter is still unverified.** `verifiedSelectors` is empty in `extension/src/adapters.js`,
+5. **The ChatGPT adapter is still unverified.** `verifiedSelectors` is empty in `extension/src/adapters.js`,
    so all ten captures carry `adapter_verified: false` and the gold set inherits it. Row L260
-4. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
+6. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
    `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies
-5. **The video.** `VIDEO.md` is written and its gold set paragraph is now wrong: it says six labels and no
+7. **The video.** `VIDEO.md` is written and its gold set paragraph is now wrong: it says six labels and no
    calibration. That paragraph has to be rewritten against whatever the run prints before recording
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.

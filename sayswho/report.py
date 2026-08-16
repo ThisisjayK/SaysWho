@@ -27,7 +27,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .rates import UNIT_PAIR, pairs_from, standing_denominator
+from .rates import (
+    INSUFFICIENT_EVIDENCE,
+    INSUFFICIENT_EVIDENCE_DETAIL,
+    UNIT_PAIR,
+    insufficient_evidence,
+    pairs_from,
+    standing_denominator,
+)
 from .extract import fold_for_span, normalise_for_span
 from .judge import PARTIALLY_SUPPORTED, SUPPORTED
 
@@ -226,8 +233,50 @@ class Report:
         return path
 
 
-def build(capture, records, claim_set, judgements, drifts=None, split_sha256="") -> Report:
-    """Assemble everything the view needs, with every state already decided."""
+def _no_aggregate_rate(withheld: list[str] | None, pairs) -> str:
+    """Why this answer shows no support rate, in the words the run used.
+
+    Three cases, and the distinction between the last two is the point.
+
+    A caller that computed rates passes `withheld`, and whatever `rates.py` recorded is quoted verbatim.
+    That is the only source of truth for which gate fired: this module cannot know whether a gold set
+    exists, and the previous version of this string asserted that none did, on every report the harness and
+    the extension ever rendered. It was still saying so after the day 9 gold set landed and G4 opened, and
+    it named G4 on answers withheld for entirely different reasons.
+
+    A caller that passes an empty list computed rates and withheld nothing, so the run published a rate and
+    this per-answer view simply is not where it appears.
+
+    A caller that passes nothing, which is the extension's server, has no run record to quote. One thing is
+    still knowable without one, because it depends on the verdicts alone and not on the judge being
+    calibrated: whether more than half the answer went unmeasured. That test belongs to `rates.py` and is
+    called here rather than reimplemented. Beyond it this says nothing, because everything else it might
+    say would be a guess about state it was never given.
+    """
+    if withheld:
+        return "No support rate is shown. " + " ".join(withheld)
+    if withheld is not None:
+        return (
+            "No support rate is shown here. This view reports one answer, claim by claim; the run that "
+            "produced these verdicts published its rates separately."
+        )
+    if insufficient_evidence(pairs):
+        return f"No support rate is shown. {INSUFFICIENT_EVIDENCE}: {INSUFFICIENT_EVIDENCE_DETAIL}"
+    return (
+        "No support rate is shown. This view reports per-claim verdicts only. Whether an aggregate may be "
+        "published is decided by the run that produced them, against gates this view was not given."
+    )
+
+
+def build(
+    capture, records, claim_set, judgements, drifts=None, split_sha256="", withheld=None
+) -> Report:
+    """Assemble everything the view needs, with every state already decided.
+
+    `withheld` is the reason list from `rates.RunRates`, when the caller computed one. Passing it is what
+    lets the view state the real reason this answer has no rate instead of guessing at a gate. See
+    `_no_aggregate_rate`.
+    """
     by_url = {r.url: r for r in records}
     drift_by_url = {d.url: d for d in (drifts or [])}
     judged: dict[str, list] = {}
@@ -349,12 +398,9 @@ def build(capture, records, claim_set, judgements, drifts=None, split_sha256="")
                 }
                 for r in records
             ],
-            # Gate G4. The view states this rather than leaving a reader to wonder why there is no headline
-            # percentage, because an absent number invites the reader to compute one.
-            "no_aggregate_rate": (
-                "No support rate is shown. Gate G4: there is no gold set for this judge and prompt version, "
-                "so per-claim verdicts are all this run is entitled to report."
-            ),
+            # Why this answer has no headline percentage. The view states it rather than leaving a reader
+            # to wonder, because an absent number invites the reader to compute one.
+            "no_aggregate_rate": _no_aggregate_rate(withheld, pairs),
             "labels": STATE_LABELS,
             "help": STATE_HELP,
         }

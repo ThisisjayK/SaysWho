@@ -400,6 +400,9 @@ def main(argv: list[str] | None = None) -> int:
                 marked = build_report(
                     capture, records, claim_set, judgements,
                     drifts=drifts, split_sha256=split_digest(claim_set.claims),
+                    # The reader is told which gate withheld the rate, in the words the run
+                    # recorded. `run_rates` is None only when rates were never computed.
+                    withheld=run_rates.withheld if run_rates is not None else None,
                 )
                 if args.report:
                     marked.save(args.report)

@@ -44,6 +44,16 @@ UNIT_SOURCE = "source"
 #: measurement wearing the same label.
 INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
 
+#: Why that code withheld the rate, in the words a reader sees.
+#:
+#: A constant rather than a literal at the one place it fires, because `report.py` states the same reason
+#: to the reader when it has no run record to quote from. Two copies of this sentence would be two
+#: sentences the moment one of them was edited.
+INSUFFICIENT_EVIDENCE_DETAIL = (
+    "more than half this answer's cited claims produced no verdict that stands, so a support rate over "
+    "the remainder would be a rate over whatever happened to be readable rather than over the answer."
+)
+
 #: Products whose results may never enter a cross-product aggregate, and why.
 #:
 #: The default judge is Gemini, so a Google surface is being scored by its own vendor's model. Disclosure in
@@ -450,11 +460,7 @@ def for_run(
     run.rates.append(unauditable_rate(pairs, splits=splits, split_sha256=split_sha256))
 
     if insufficient_evidence(pairs):
-        run.withheld.append(
-            f"{INSUFFICIENT_EVIDENCE}: more than half this answer's cited claims produced no verdict that "
-            "stands, so a support rate over the remainder would be a rate over whatever happened to be "
-            "readable rather than over the answer."
-        )
+        run.withheld.append(f"{INSUFFICIENT_EVIDENCE}: {INSUFFICIENT_EVIDENCE_DETAIL}")
         return run
 
     if calibration is not None and not calibration.passed:
