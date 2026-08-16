@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-16, day 10 of ten, where day 5 was 2026-08-11. 823 tests, and `tests/test_documents.py`
+Last updated 2026-08-16, day 10 of ten, where day 5 was 2026-08-11. 825 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
@@ -145,7 +145,7 @@ answer" are different claims and only one of them is currently true.
 | Capture on claude.ai, chatgpt.com, perplexity.ai, Google | **done, with one rule attached** | With auto-scroll, hash, stored page and incompleteness warnings. **One question per conversation**, because `saysWhoFindAnswer` returns the highest-citation container on the page rather than the newest answer. On a single-answer page they are the same and on a thread they are not, so a capture taken mid-thread can be an earlier answer wearing the current question's id. `TODO.md` claimed this captured the last answer since day 2 and the code has never done that. One correction today worth naming: the rendered-versus-DOM character counts were measuring different things, so a table in an answer made `innerText` longer than `textContent` and a capture reported more characters rendered than the DOM contained. The display bug was the small half. An inflated rendered count eats the gap the check exists to find, so an answer half of which was never laid out could have reported as complete |
 | Claude `.bg-surface-3 .standard-markdown` verified | **done** | Read end to end against the screen, corroborated by a DOM probe |
 | Claude `.font-claude-response` verified | **not done** | The chat path has never been exercised |
-| ChatGPT selectors verified field by field | **not done** | The capture works; it has not been checked |
+| ChatGPT selectors verified field by field | **done 2026-08-16, over ten answers** | `[data-message-author-role="assistant"]`, checked three ways over the ten stored pages behind the gold set. The one that could have failed: every external anchor on each whole page is inside the chosen container, 0 outside across all ten, so the selector misses no rendered citation and picks up no chrome. Plus one assistant node per page with the captured answer's head and tail inside it and the user's turn outside, and re-extraction from the stored bytes returning the identical citation set 10 of 10. **It verifies the selector, not the completeness of the capture**, and the "+N" citations are still missing because they were never in the DOM: check one is what turns that from a suspicion into the product's behaviour rather than this selector's fault. **Not retroactive.** The ten day 9 captures were written `adapter_verified: false` and still say so, and the gold set built on them still inherits it |
 | Perplexity adapter trusted | **citations fixed and seen working, capture not verified** | The mechanism is established by probe: every citation is a span carrying `data-pplx-citation-url` and the page carries no anchors at all, so the anchors-only rule found none of them. A real capture then returned 8 citations where it used to return zero. Two things still outstanding: reading a captured answer end to end against the screen, which is what flips `verified`, and the `+N` chips, which on that capture hid at least 2 more citations and made the 8 a subset the capture now says it is |
 | Google AI Overviews adapter verified | **not done** | And its results never enter a cross-product aggregate: the default judge is a Google model |
 | Popup: server state, how to start it, both actions, last capture | **done, and cut back on day 9** | No longer just a shim. Loaded as a real extension on a real Perplexity answer: green light, last capture with its warnings. Two things changed on day 9. The start command was wrong, `python3 -m sayswho.server --judge` against a project whose one dependency lives in a virtualenv, so it failed on a missing module for anyone who followed it; it is now the venv commands, and two of them, since a server already up needs a key and a restart rather than a rebuild. And the window was cut to four things, because it had grown a standing commentary on the current page's adapter that a surface closing on blur cannot afford. That caveat now rides on the capture it is true of. The size bug that fixing the original exposed is worth recording, because it was invisible in the shim: Chrome sizes a popup from the root element, and the width was set on `body`, so a 340px panel rendered in a 780px window |
@@ -227,10 +227,19 @@ a plan loan offset for a deemed distribution and a building permit for an electr
 topicality as incompatibility. That is a failure mode this project had not named. Neither pair is in the gold
 set, so the reading is the author's judgement at n=2 and is signed as one.
 
-**What has not happened.** The ChatGPT adapter is still unverified, so all ten captures carry
-`adapter_verified: false` and the gold set inherits it. `tools/reaudit_spans.py` cannot read a stratum run
-record and reported no voided spans over a run containing two, which is a bug in the tool rather than in the
-result. Neither is a state this file is guessing at; both are checkable on disk.
+**What had not happened, and what has since.** Both items here were open when this section was written and
+both closed afterwards, so both are recorded with the state they ended in rather than the state they were
+found in.
+
+`tools/reaudit_spans.py` could not read a stratum run record and reported no voided spans over a run
+containing two. Fixed on day 9: `voided_rows` reads both payload shapes, and one matching neither is named as
+unread rather than reported as clean, which was the worse half.
+
+The ChatGPT adapter was unverified. Verified on day 10 over the ten stored pages, and the row in the
+extension table above carries what was checked. **This changes nothing about the run.** The ten captures were
+written `adapter_verified: false`, they still say so, and the gold set and every rate built on them still
+inherit it. A flag flipped after the fact does not reach back into a capture, and the honest reading of day 9
+is still that its numbers came off captures nobody had checked the selector for.
 
 ## What changed on day 8, and what it means
 

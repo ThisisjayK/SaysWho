@@ -1017,7 +1017,11 @@ honest one available, and the writeup reports how many answers were captured and
 
 Two things that carries with it, both stated here rather than discovered later. The ChatGPT adapter has never
 been verified, so every capture it produces carries `adapter_verified: false`, and a gold set built on it
-inherits that until the adapter is checked field by field against a real page. And the unauditable share of
+inherits that until the adapter is checked field by field against a real page. *(Verified on day 10 over
+these same ten stored pages, and the flag on these ten captures is unchanged and stays `false`. The gold set
+still inherits it, so nothing in this item's reasoning is retracted: these numbers came off captures whose
+selector had not been checked at the time they were made. `STATUS.md` carries what the check covered.)* And
+the unauditable share of
 the new pairs is not knowable in advance: 15 of 145 is a fact about the pages Perplexity cited, and the target
 cannot be chosen until `prep_goldset.py` has fetched ChatGPT's sources and said what the split is.
 

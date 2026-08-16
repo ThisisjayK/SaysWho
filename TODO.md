@@ -59,8 +59,17 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    claim whose supporting source was one of them is judged against the source that did render and comes back
    `NOT_FOUND_IN_SOURCE`, the verdict with no span and no G3 check. That is 60 of the run's verdicts and its
    largest single class, so this caveat is load-bearing rather than decorative. `FINDINGS.md` item 23
-5. **The ChatGPT adapter is still unverified.** `verifiedSelectors` is empty in `extension/src/adapters.js`,
-   so all ten captures carry `adapter_verified: false` and the gold set inherits it. Row L260
+5. **Done, day 10: the ChatGPT adapter is verified.** `[data-message-author-role="assistant"]` is in
+   `verifiedSelectors`, checked three ways over the ten stored pages behind the gold set rather than over one
+   live answer. The check that carries it: every external anchor on each whole page sits inside the chosen
+   container, 0 outside across all ten, so the selector misses nothing rendered and picks up no chrome. The
+   other two are one assistant node per page with the captured answer's head and tail inside it and the
+   user's turn outside, and re-extraction from the stored bytes returning the identical citation set 10 of
+   10, which is the weakest of the three since both sides run the same selector list. **The ten captures
+   still carry `adapter_verified: false` and the gold set still inherits it**, because that is what was true
+   when they were written and a flag flipped afterwards does not reach back into them. What this does not
+   verify is completeness: the "+N" citations were never in the DOM, and check one is what makes that the
+   product's behaviour rather than the selector's fault. Row L260
 6. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
    `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies
 7. **The video, part built.** `VIDEO.md` is the script for the graded cut and its gold set paragraph has
@@ -399,7 +408,12 @@ for three of the four products have never been checked field by field against a 
 - [x] Parity check demonstrated on a real page. The extension's JS extraction and the Python extraction from
       the stored markup agree on container and citations
 - [ ] Claude `.font-claude-response` verified. The chat path has never been exercised. **Mine to do:** it needs a real answer on a real page
-- [ ] ChatGPT selectors verified. The capture works but has not been checked field by field. **Mine to do**
+- [x] ChatGPT selectors verified, 2026-08-16, over the ten stored pages rather than one live answer.
+      `[data-message-author-role="assistant"]`. 0 external anchors outside the chosen container across all
+      ten pages, one assistant node per page bounded by the captured answer's own head and tail, and
+      re-extraction agreeing on the citation set 10 of 10. Verifies the selector, not the completeness of
+      the capture, and not retroactive to the ten captures. `tests/test_extension_manifest.py` pins the
+      selector and refuses a `verifiedSelectors` entry that `answerSelectors` does not contain
 - [x] Perplexity: probed, and it was worse than the note said. Not "roughly a third" of its citations are
       missing from the DOM as links: **none** of them are links. Every inline citation is
       `<span class="citation inline" data-pplx-citation-url="https://...">` and a live answer page contained

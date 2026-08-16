@@ -61,7 +61,7 @@ chapter it satisfies.
 ```bash
 git clone https://github.com/ThisisjayK/SaysWho.git && cd SaysWho
 python3 -m venv .venv && .venv/bin/pip install google-genai
-.venv/bin/python -m pytest -q          # 823 tests, offline except one node process
+.venv/bin/python -m pytest -q          # 825 tests, offline except one node process
 .venv/bin/python tools/ethics_gate.py  # privacy and honesty, checked rather than promised
 ```
 

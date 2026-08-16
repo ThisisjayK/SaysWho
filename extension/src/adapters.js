@@ -52,7 +52,27 @@ const SAYSWHO_ADAPTERS = [
   },
   {
     id: "chatgpt",
-    verifiedSelectors: [],
+    // Verified 2026-08-16 against the ten stored pages behind the day 9 gold set, which is ten answers
+    // rather than the one the Claude row was verified on. Three checks, each over all ten:
+    //
+    //   1. Every external anchor on the whole page is inside the chosen container. 0 outside, across all
+    //      ten, so the selector is neither missing a rendered citation nor picking up chrome furniture.
+    //      This is the check that could have failed and the reason the other two are worth anything.
+    //   2. Exactly one [data-message-author-role="assistant"] node per page, its text starting where the
+    //      captured answer starts and ending where it ends, with the user's own turn outside it.
+    //   3. Re-extraction from the stored bytes yields the identical citation set, 10 of 10, via
+    //      `python3 -m sayswho.reextract <page> --capture <capture>`. Weakest of the three on its own,
+    //      since both sides run this same selector list, which is why check 1 carries the argument.
+    //
+    // **This verifies the selector, not the completeness of the capture.** ChatGPT collapses part of its
+    // citation list behind "+N" controls and those sources are never in the DOM, so the pages hold 33
+    // citations and at least 20 more were never rendered. Check 1 confirms that is the product's behaviour
+    // rather than this selector's fault: there was nothing on the page left to find. `citations_hidden`
+    // travels with every capture and warns separately, and FINDINGS.md item 23 carries the limitation.
+    //
+    // Not retroactive. The ten day 9 captures were written with adapter_verified false and still say so,
+    // because that is what was true when they were made, and the gold set built on them inherits it.
+    verifiedSelectors: ['[data-message-author-role="assistant"]'],
     hosts: ["chatgpt.com", "chat.openai.com"],
     answerSelectors: [
       '[data-message-author-role="assistant"]',
