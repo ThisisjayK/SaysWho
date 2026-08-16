@@ -3,10 +3,24 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-15, day 9 of ten, where day 5 was 2026-08-11. 823 tests, and `tests/test_documents.py`
+Last updated 2026-08-16, day 10 of ten, where day 5 was 2026-08-11. 823 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
+
+**Day 10 moved no row in the tables below, and that is the accurate summary of it.** It was a correction day:
+a staleness sweep over every tracked document, one withdrawn finding, and the code fix behind the
+withdrawal. Nothing new was measured and nothing new was built, so every state below is day 9's state. What
+changed is that three documents stopped claiming things that were not true, and the gate that should have
+caught two of them can now see the directories they lived in. `TODO.md` items 8 to 10 carry it, `FINDINGS.md`
+item 24 carries the withdrawal.
+
+**The one finding day 10 produced is a withdrawal, and it is the kind this project is built to make.** Day 9
+reported that `goldset.attribution` had cleared `extract.py` of the 13 judge-human disagreements. The check
+had run on none of them: `extraction_missed` is a tri-state and the code tested it as a boolean, so a page
+that was never checked and a page whose extraction was vindicated counted the same. 8 of the 13 carried a
+pasted passage and 13 of the 14 passages in the set were labelled against uncached pages, which is why. The
+kappa, the per-class figures and every verdict are computed without attribution and none of them moved.
 
 **G4 opened, and the calibration behind it says the verdicts are worth about as much as chance.** Day 9
 captured ten ChatGPT answers against the frozen consumer stratum, split them, hand-labelled 45 pairs blind,

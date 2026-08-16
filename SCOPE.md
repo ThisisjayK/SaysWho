@@ -114,7 +114,7 @@ two it is. A design difference I can demonstrate on my own tool is worth stating
 actually run is not something to imply. Likewise, one stratum means the professional-versus-consumer question
 in §0 stays open rather than getting answered, and the report says it's open.
 
-### Status table, as of 2026-08-15 (day 9)
+### Status table, as of 2026-08-16 (day 10)
 
 §0a promises every item is reported done or not-done rather than quietly dropped, so this table exists from
 day 5 rather than being assembled on day 10 when the answer is already known. **Blocked** is used only where
@@ -123,6 +123,12 @@ rates may now be printed, and they are printed in `runs/day9/` and quoted in `ST
 here. A rate restated in a design document drifts from the run that produced it. Item 3's kappa is the one
 number quoted below, with its interval, because it is what item 3 delivered and the row would otherwise read
 **Done** with nothing beside it to judge that by.
+
+**The date above moved on day 10 and no row under it did.** Day 10 was a correction day: a staleness sweep,
+one withdrawn finding and the code fix behind it, none of which changes what any of the nine items delivered.
+The heading is re-dated rather than left at day 9 because this table was itself a day 8 table on day 9, read
+as current, and being able to tell "checked today and unchanged" from "not looked at since" is the whole
+value of the date. `STATUS.md` says what day 10 did.
 
 `STATUS.md` carries the same nine rows with the reasons, plus the extension surface and the items built ahead
 of their window. **It is the detailed one and the two are updated in the same commit**, so this table states

@@ -9,7 +9,10 @@ reports it either way.
 
 ## Start here next session
 
-Written 2026-08-15, mid day 9, with the calibration built and the run not yet executed.
+Written 2026-08-15 mid day 9 with the calibration built and the run not yet executed, and extended on
+2026-08-16, day 10, which is the last day. Rows 1 to 7 are day 9's and their state is unchanged. Rows 8 to 10
+are day 10's and all three are corrections rather than new work: the staleness sweep, the withdrawal of the
+extractor claim, and the fix to `goldset.attribution` behind it.
 
 **The gold set is done and it is the first real one this project has had.** 45 blind labels over ten ChatGPT
 captures, 0 supplemental, 36 comparable against a floor of 30. The prior-audit scan was clean over all ten
