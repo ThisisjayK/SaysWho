@@ -8,60 +8,41 @@
 <div class="wrap">
 
   <header>
+    <span class="mark" aria-hidden="true"></span>
     <span class="name">SaysWho</span>
     <span class="version" id="version"></span>
   </header>
 
-  <section class="onboard" id="onboard" hidden>
-    <p><b>Capture</b> needs nothing running. It saves the answer and its citations to audit later.</p>
-    <p>
-      <b>Audit</b> needs the local server: the gates and the quoted-passage check are Python, and there is
-      deliberately only one implementation of them.
-    </p>
-    <button type="button" class="link" id="onboard-done">got it</button>
-  </section>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span class="state" id="server-state">Checking</span>
+  </div>
 
-  <section class="block" id="server">
-    <div class="row">
-      <span class="dot" id="dot"></span>
-      <span class="state" id="server-state">checking...</span>
+  <div class="cmd" id="cmd-wrap" hidden>
+    <div class="cmd-head">
+      <span class="cmd-label">Run this</span>
+      <button type="button" class="link" id="copy">Copy</button>
     </div>
-    <p class="dim" id="server-detail"></p>
-    <div class="cmd" id="cmd-wrap" hidden>
-      <code id="cmd">python3 -m sayswho.server --judge</code>
-      <button type="button" class="link" id="copy">copy</button>
-    </div>
-  </section>
-
-  <section class="block" id="site">
-    <div class="row">
-      <span class="label">this page</span>
-      <span class="value" id="site-product">checking...</span>
-    </div>
-    <p class="dim" id="site-detail"></p>
-  </section>
+    <pre class="cmd-body"><code id="cmd"></code></pre>
+  </div>
 
   <div class="actions">
-    <button type="button" id="capture">Capture answer</button>
-    <button type="button" id="audit">Audit this answer</button>
+    <button type="button" id="capture" class="primary">Capture</button>
+    <button type="button" id="audit">Audit</button>
   </div>
-  <p class="dim tight" id="action-note"></p>
 
-  <section class="block" id="last" hidden>
-    <div class="row">
-      <span class="label">last capture</span>
-      <span class="value" id="last-when"></span>
-    </div>
-    <p class="mono" id="last-detail"></p>
+  <p class="note" id="action-note"></p>
+
+  <section class="history" id="last" hidden>
+    <span class="history-label">Last capture</span>
+    <p class="history-line"><span id="last-when"></span><span id="last-detail"></span></p>
     <p class="warn" id="last-warning" hidden></p>
   </section>
 
   <label class="toggle">
     <input type="checkbox" id="show-dock" checked>
-    <span>Show the buttons on the page</span>
+    <span>Buttons on the page</span>
   </label>
-
-  <p class="foot">Results open in a panel on the page, not here. This window closes when you click away.</p>
 
 </div>
 <script src="adapters.js"></script>

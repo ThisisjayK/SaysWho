@@ -353,9 +353,21 @@ for three of the four products have never been checked field by field against a 
       to the page rather than on it
 - [x] The popup, so clicking the extension shows what is useful instead of firing a capture blind. Server
       state in three colours rather than two, since running-without-a-judge is up and cannot produce a
-      verdict. The current page's adapter and whether it has ever been checked. The last capture's summary,
-      which until now lived in a toast that disappeared. Both actions. And a toggle to hide the in-page
-      buttons, live, without a reload
+      verdict. The last capture's summary, which until now lived in a toast that disappeared. Both actions.
+      And a toggle to hide the in-page buttons, live, without a reload
+- [x] **Cut it back on day 9, because it had grown into a briefing.** Four things now: is the server on, how
+      to start it when it is not, the two buttons, the last capture. Removed: the standing commentary on the
+      current page's adapter, the sentence explaining what a working server does, the first-run explainer
+      panel, and the three-line capture record whose sha256 nobody reads off a popup. The first-run badge
+      still clears, silently, on the first open. What the page commentary said is not lost: a capture made
+      through an unchecked selector still says so in the last-capture line, attached to the thing it is true
+      of rather than standing above it as a caveat
+- [x] **The start command in the popup did not work.** It said `python3 -m sayswho.server --judge`, and the
+      judge client is this project's one dependency, so on a fresh clone that fails on a missing module
+      rather than starting. `README.md` has always said venv, install, key, run. The popup said something
+      shorter that read like the same instruction, which is the worse kind of wrong because it looks
+      runnable. Now two commands rather than one, since a server that is already up needs a key and a
+      restart rather than a rebuilt virtualenv, and Copy sends whichever is on screen
 - [x] Draw the line the popup is built on: control surface, not result surface. A popup closes on blur, so
       an audit could never have lived in it
 - [ ] Exercise the browser leg. The server, the popup states and the dock layout are all tested or rendered,

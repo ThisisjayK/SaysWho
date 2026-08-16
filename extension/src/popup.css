@@ -1,160 +1,256 @@
 /* The popup: a control surface, not a result surface.
  *
- * Same palette as render.css so the two do not look like different products. Nothing here is injected into
- * anyone's page, so bare element selectors are fine, which is not true of render.css.
+ * Four things and nothing else. Whether the server is on, how to start it when it is not, the two actions,
+ * and what the last capture was. Everything this window used to explain now lives in `README.md` or in the
+ * panel on the page, both of which are places a reader can dwell. A popup closes on blur, so anything it
+ * says that cannot be acted on in the next five seconds is noise competing with the parts that can.
+ *
+ * Same palette family as render.css so the two do not look like different products. Nothing here is
+ * injected into anyone's page, so bare element selectors are fine, which is not true of render.css. The
+ * dark scheme follows the system rather than the page, because a popup is Chrome's surface.
  */
 
 :root {
   --sw-ink: #14140f;
+  --sw-ink-soft: #4a463b;
   --sw-paper: #faf9f5;
-  --sw-line: #d8d4c8;
-  --sw-dim: #6b6759;
+  --sw-raised: #ffffff;
+  --sw-sunk: #f1eee5;
+  --sw-line: #e4e0d3;
+  --sw-line-firm: #d2cdbc;
+  --sw-dim: #79756a;
   --sw-ok: #1f6f43;
   --sw-partial: #8a5a00;
-  --sw-off: #8f8b7e;
+  --sw-off: #9a968a;
   --sw-warn: #a1341c;
+  --sw-warn-wash: #f9ece8;
+  --sw-focus: #2f6f9e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sw-ink: #f1eee5;
+    --sw-ink-soft: #bfbaac;
+    --sw-paper: #1a1a17;
+    --sw-raised: #232320;
+    --sw-sunk: #141412;
+    --sw-line: #32312c;
+    --sw-line-firm: #43423b;
+    --sw-dim: #948f83;
+    --sw-ok: #6cc48f;
+    --sw-partial: #d9a54a;
+    --sw-off: #7c786c;
+    --sw-warn: #e08a72;
+    --sw-warn-wash: #2c1d18;
+    --sw-focus: #7bb6dd;
+  }
 }
 
 * { box-sizing: border-box; }
 
-/* A class setting `display` beats the browser's own rule for the hidden attribute, so the command line
- * stayed on screen when the server was already running. Every section here toggles with `hidden`, so this
- * is the one place to fix it. */
+/* A class setting `display` beats the browser's own rule for the hidden attribute, so the command block
+ * stayed on screen when the server was already running. Everything here toggles with `hidden`, so this is
+ * the one place to fix it. */
 [hidden] { display: none !important; }
 
-/* The width goes on `html`, not only on `body`.
- *
- * Chrome sizes a popup from the root element, and `html` with no width fills to the 800px maximum. Setting
- * it on `body` alone gave a 780px window with 340px of content sitting in the corner of it, which is why
- * this looked enormous and mostly empty.
- */
+/* An empty paragraph still takes its margin, and the note below the buttons is filled only sometimes.
+ * Without this, hiding a sentence left its gap behind and the layout drifted as things went right. */
+p:empty { display: none; }
+
+/* The width goes on `html`, not only on `body`. Chrome sizes a popup from the root element, and `html`
+ * with no width fills to the 800px maximum. Setting it on `body` alone gave a 780px window with the
+ * content in one corner of it. */
 html,
 body {
   margin: 0;
-  width: 360px;
+  width: 340px;
 }
 
 body {
   background: var(--sw-paper);
   color: var(--sw-ink);
-  font: 400 13px/1.45 system-ui, -apple-system, sans-serif;
+  font: 400 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.wrap { padding: 10px 14px 12px; }
+.wrap { padding: 13px 14px 14px; }
 
 header {
   display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--sw-line);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
 }
-.name { font-weight: 650; font-size: 14px; letter-spacing: 0.01em; }
+
+/* Two rings: the claim, and the source it is checked against. */
+.mark {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--sw-ink);
+  position: relative;
+  flex: none;
+}
+.mark::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--sw-ink);
+  opacity: 0.25;
+}
+
+.name { font-weight: 640; font-size: 14px; letter-spacing: -0.006em; flex: 1; }
 .version { color: var(--sw-dim); font-size: 11px; }
 
-.block {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--sw-line);
-}
-
-.row {
+.status {
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: space-between;
 }
-.row .dot + .state { flex: 1; }
-
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--sw-off);
   flex: none;
 }
 .dot.ok { background: var(--sw-ok); }
 .dot.partial { background: var(--sw-partial); }
+.state { font-weight: 600; font-size: 12.5px; letter-spacing: -0.004em; }
 
-.state { font-weight: 600; }
-.label { color: var(--sw-dim); }
-.value { font-weight: 600; text-align: right; }
-
-p { margin: 5px 0 0; }
-.dim { color: var(--sw-dim); font-size: 12px; }
-.tight { margin-top: 6px; }
-.mono { font: 400 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
-.warn { color: var(--sw-warn); font-size: 12px; font-weight: 600; }
+/* ---------------------------------------------------------------- how to start it */
 
 .cmd {
+  margin-top: 11px;
+  background: var(--sw-raised);
+  border: 1px solid var(--sw-line-firm);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.cmd-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 7px;
-  padding: 6px 8px;
-  background: #fff;
-  border: 1px solid var(--sw-line);
-  border-radius: 5px;
+  justify-content: space-between;
+  padding: 4px 5px 4px 9px;
+  background: var(--sw-sunk);
+  border-bottom: 1px solid var(--sw-line);
 }
-.cmd code {
-  flex: 1;
-  font: 400 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-  overflow-x: auto;
-  white-space: nowrap;
+.cmd-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sw-dim);
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  padding-top: 10px;
+/* `pre` so the line breaks between commands survive, and `pre-wrap` so a long one folds instead of
+ * scrolling out of view. Both halves matter: a command you cannot see the end of is one you paste wrong,
+ * and this window is too narrow for `.venv/bin/python -m sayswho.server --judge` on one line at any
+ * sensible font size. The wrap is visual only; Copy sends the real text with the real newlines.
+ *
+ * The hanging indent is what makes a folded line readable as a continuation rather than as a fourth
+ * command. */
+.cmd-body { margin: 0; padding: 8px 10px; }
+.cmd-body code {
+  display: block;
+  font: 400 11px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--sw-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-left: 11px;
+  text-indent: -11px;
 }
+
+/* ---------------------------------------------------------------- actions */
+
+.actions { display: flex; gap: 7px; margin-top: 12px; }
 .actions button {
   flex: 1;
   padding: 8px 6px;
-  font: 600 12px/1.2 system-ui, sans-serif;
+  font: 600 12.5px/1.2 system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.004em;
   color: var(--sw-ink);
-  background: #f0ede5;
-  border: 1px solid var(--sw-ink);
+  background: var(--sw-raised);
+  border: 1px solid var(--sw-line-firm);
   border-radius: 6px;
   cursor: pointer;
+  transition: background 90ms ease, border-color 90ms ease;
 }
-.actions button:hover:not(:disabled) { background: #fff; }
-.actions button:disabled { opacity: 0.45; cursor: default; }
+.actions button:hover:not(:disabled) { background: var(--sw-sunk); border-color: var(--sw-dim); }
+
+/* Capture is the one that works with nothing installed, so it leads. */
+.actions button.primary { color: var(--sw-paper); background: var(--sw-ink); border-color: var(--sw-ink); }
+.actions button.primary:hover:not(:disabled) {
+  background: var(--sw-ink-soft);
+  border-color: var(--sw-ink-soft);
+}
+.actions button:disabled { opacity: 0.38; cursor: default; }
+
+.note {
+  margin: 8px 0 0;
+  color: var(--sw-dim);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
 
 .link {
-  padding: 2px 6px;
-  font: 500 11px/1.2 system-ui, sans-serif;
+  padding: 2px 7px;
+  font: 550 10.5px/1.2 system-ui, -apple-system, sans-serif;
   color: var(--sw-dim);
   background: none;
-  border: 1px solid var(--sw-line);
+  border: 1px solid var(--sw-line-firm);
   border-radius: 4px;
   cursor: pointer;
+  transition: color 90ms ease, border-color 90ms ease;
 }
-.link:hover { color: var(--sw-ink); }
+.link:hover { color: var(--sw-ink); border-color: var(--sw-dim); }
 
-.onboard {
-  margin: 8px 0 0;
-  padding: 9px 10px;
-  background: #f2efe6;
-  border: 1px solid var(--sw-line);
-  border-radius: 6px;
-  font-size: 12px;
+:focus-visible { outline: 2px solid var(--sw-focus); outline-offset: 1px; }
+
+/* ---------------------------------------------------------------- history */
+
+.history {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sw-line);
 }
-.onboard p { margin: 0 0 5px; }
+.history-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sw-dim);
+}
+.history-line {
+  display: flex;
+  gap: 8px;
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--sw-ink-soft);
+}
+.history-line span:first-child { color: var(--sw-dim); flex: none; }
+
+.warn {
+  margin: 8px 0 0;
+  padding: 7px 9px;
+  color: var(--sw-warn);
+  background: var(--sw-warn-wash);
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
 
 .toggle {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
-  padding-top: 9px;
+  margin-top: 13px;
+  padding-top: 12px;
   border-top: 1px solid var(--sw-line);
-  font-size: 12px;
+  font-size: 11.5px;
+  color: var(--sw-dim);
   cursor: pointer;
 }
-
-.foot {
-  margin-top: 8px;
-  color: var(--sw-dim);
-  font-size: 11px;
-  line-height: 1.45;
-}
+.toggle input { accent-color: var(--sw-ink); cursor: pointer; }

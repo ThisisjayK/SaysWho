@@ -4,10 +4,16 @@ Manifest V3. It captures an answer, and it renders a finished audit. It does not
 
 ## What it does today
 
-**The popup.** Clicking the toolbar icon opens a control surface: whether the audit server is running,
-whether this page is one SaysWho understands, what the last capture found, and buttons for both actions. It
-is deliberately not a result surface. A popup closes the moment focus leaves it and an audit is something
-you read, so results go to the panel on the page.
+**The popup.** Clicking the toolbar icon opens a control surface with four things on it: whether the audit
+server is running, the commands to start it when it is not, buttons for both actions, and what the last
+capture found. It is deliberately not a result surface. A popup closes the moment focus leaves it and an
+audit is something you read, so results go to the panel on the page.
+
+It used to say more, including a running commentary on the current page's adapter, and it was cut back on
+day 9 for the same reason the panel exists: a window that closes on blur can only hold what you can act on
+in the seconds it is open. What was removed is not lost. A capture made through a selector nobody has
+checked still says so, in the last-capture line, where it is attached to the thing it is true of rather
+than sitting above it as a standing caveat.
 
 The server indicator has three states, not two. Grey is not running, and capture still works. Amber is
 running without `--judge`, which will fetch every cited page and cannot say whether any of them supports
