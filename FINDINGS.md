@@ -1209,12 +1209,38 @@ since break attempt 1 had shown it reachable. It is now reachable in ordinary ou
 real contradictions or the silence-read-as-contradiction drift that attempt 1 caught 4 of 4 has not been
 checked by hand, and until it has, the two are reported as verdicts rather than as findings.
 
-**The extractor is not the explanation.** `goldset.attribution` compared all 13 judge-human disagreements
-that carried a pasted passage against our own extraction of the same page and attributed 0 of 13 to the
-extractor. Kappa excluding extraction-caused pairs is therefore identical at 0.304. That is the first time
-this check has run on a real disagreement set, and it says the gap is between the judge and the human rather
-than between the judge and `extract.py`. A floor on both counts, since evidence the labeller also missed is
-invisible to it.
+**Whether the extractor explains any of this is not known, and the sentence that said otherwise is
+withdrawn.** It read: *"`goldset.attribution` compared all 13 judge-human disagreements that carried a pasted
+passage against our own extraction of the same page and attributed 0 of 13 to the extractor... That is the
+first time this check has run on a real disagreement set, and it says the gap is between the judge and the
+human rather than between the judge and `extract.py`."* Every clause of that is wrong, and checked on
+2026-08-16.
+
+The check did not run on a real disagreement set. It did not run on a disagreement at all.
+`extraction_missed` is non-null on exactly 1 of the 45 labels, and that one pair is `CO-17#67f3d4d9`, where
+human and judge both said `PARTIALLY_SUPPORTED`. **The comparison executed on 0 of the 13 disagreements.**
+
+Nor did 13 disagreements carry a passage. 14 labels carry one, all of them `SUPPORTED` or
+`PARTIALLY_SUPPORTED`, 13 of those are among the 35 compared, and **8 of the 13 disagreements have one**. The
+13 in the withdrawn sentence was `labels_with_a_passage`, which counts agreements too, read as though it
+counted disagreements. Two different 13s in the same record, and the coincidence is what made it read.
+
+Why the 8 produced nothing: `label_goldset.py` only sets `extraction_missed` when `extracted_pair` finds the
+page in the fetch cache, and leaves it `None` otherwise. 13 of the 14 pasted passages were labelled against
+uncached pages, so the comparison silently did not happen. `None` and "checked, no extractor fault" are
+different facts and `attribution` counts them the same way, because `if l.extraction_missed` is false for
+both.
+
+So `attributable_to_extraction = 0` means the check never ran, not that it ran and found nothing, and
+`kappa_excluding_extraction` is identical to the headline kappa because no pair was ever removed rather than
+because removing them changed nothing. **The extractor's contribution to these 13 disagreements is
+unmeasured.** Neither direction is ruled out. This does not touch the kappa, the per-class figures or the
+verdicts, all of which are computed without it.
+
+`attribution` should distinguish "not checked" from "checked and clean" and report the checkable denominator
+beside the count. Until it does, its output cannot be read as evidence about `extract.py` in either
+direction. On `TODO.md` rather than fixed here, because it changes what the run record emits and §8's
+classification table covers those fields.
 
 **The span guard fired once in 76 span-bearing verdicts**, on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION`
 on `CO-21` where a source had drifted to containment 0.2215. Neither has been re-checked against the cached

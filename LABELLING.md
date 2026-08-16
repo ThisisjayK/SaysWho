@@ -81,10 +81,15 @@ extractor's fault rather than the judge's, and it gets reported that way. Withou
 cannot be attributed at all and any disagreement lands on the judge whether it belongs there or not.
 
 Blank is allowed and costs that check, and the day 9 session is the evidence for how much it costs. 14 of its
-45 labels carried a passage, 13 of those were comparable against a standing verdict, and the run attributed
-0 of 13 disagreements to the extractor. So the reported conclusion, that the gap is between judge and human
-rather than between judge and `extract.py`, rests on 13 pairs out of 35 compared. The other 22 could not have
-shown an extractor fault however badly `extract.py` had performed on them. Paste the passage.
+45 labels carried a passage. Only 8 of its 13 judge-human disagreements did, and the comparison ran on none
+of them: `extraction_missed` came back non-null once in 45, on a pair where judge and human agreed. So that
+session measured nothing at all about whether `extract.py` explains any of its disagreements, and the run
+record's 0 attributed to the extractor is 0 checked rather than 0 found.
+
+**And the passage alone is not what makes the check run.** The page has to be in the fetch cache when you
+label, or `extraction_missed` stays `None` and your passage buys nothing. That is what happened to 13 of the
+14. Run `tools/prep_goldset.py` **without** `--no-fetch` before a session, which warms the cache for exactly
+this reason, and paste the passage anyway.
 
 ## Consistency, which is the thing kappa is actually measuring
 

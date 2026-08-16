@@ -90,11 +90,28 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    (n=6) and recall 25.0 per cent (n=4), which points the same way as attempt 1b at a comparably useless n.
    **`LABELLING.md` was the dangerous one**: it told a labeller that nothing on disk held a verdict for the
    24 consumer answers, which the day 7 run made false, so the guide asserted a blindness the repo no longer
-   had. It now says to run `prior_audit.py` and read what it says. Its sample numbers were day 7's, and the
-   replacement is day 9's own: 14 of 45 labels carried a passage, so `attribution` could only ever have
-   examined 13 of the 35 compared pairs, which is a real caveat on "0 of 13 attributed to the extractor".
+   had. It now says to run `prior_audit.py` and read what it says. Its sample numbers were day 7's and the
+   replacement is day 9's own, which is where the next row came from.
    Dead code: `RateLimited` in `sayswho/gemini.py`, defined day 4, never raised, never caught, never
    imported, and its docstring described a distinction the retry loop does not make
+9. **Withdrawn: "the extractor is not the explanation."** Pulling day 9's attribution numbers into
+   `LABELLING.md` is what exposed it, and the first version of that edit repeated the error before arithmetic
+   caught it. `FINDINGS.md` item 24 said `goldset.attribution` "compared all 13 judge-human disagreements
+   that carried a pasted passage" and attributed 0 of 13 to the extractor. **The comparison ran on 0 of the
+   13.** `extraction_missed` is non-null on 1 of 45 labels and that pair is `CO-17#67f3d4d9`, where judge and
+   human both said `PARTIALLY_SUPPORTED`, so no disagreement was ever examined. And 8 of the 13
+   disagreements carry a passage, not 13: the 13 was `labels_with_a_passage`, which counts agreements, and
+   the run record happens to hold two different 13s. Cause is that `label_goldset.py` sets
+   `extraction_missed` only when `extracted_pair` finds the page in the fetch cache, and 13 of the 14
+   passages were labelled against uncached pages. Withdrawn in `FINDINGS.md`, `STATUS.md` and `LABELLING.md`.
+   The kappa, the per-class figures and every verdict are computed without this and are untouched
+10. **Not done: `goldset.attribution` reports "not checked" as "checked and clean".** `if l.extraction_missed`
+   is false for `None` and for `False` alike, so a run where the cache was cold and a run where the extractor
+   was exonerated print the same 0. It should carry the checkable denominator, so the reader sees 0 of 8
+   examinable rather than a bare 0, and `label_goldset.py` should say at the prompt when a passage cannot be
+   checked because the page is not cached. Not done here because it changes what the run record emits and
+   §8's field-classification table in `DATA_CONTRACT.md` covers those fields, which is a schema decision
+   rather than a prose fix
 
 Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
 
