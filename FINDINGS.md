@@ -1124,3 +1124,100 @@ already exists for exactly this comparison, and `tools/compare_capture.py` was b
 this finding measures by hand: `TODO.md` calls DOM versus API citation loss the largest unquantified risk in
 the project and a number that has never existed. It exists now, for one product, as a floor, and it is larger
 than the guess anybody would have made.
+
+## 24. G4 opened, and the calibration behind it says do not trust the verdicts much
+
+Day 9, 2026-08-16 at 00:22 UTC. Ten ChatGPT captures, ten stored splits, the day 9 gold set attached. 139
+model calls, 817,995 tokens, nothing halted, no capture errored, no cost on the free tier. Artefacts in
+`runs/day9/`.
+
+**This is the first run in the project's history entitled to print a support rate.** Every earlier run
+refused because no calibration existed for the configuration. This one had 35 blind labels that could be
+compared with a standing verdict, above `gates.MIN_BLIND_COMPARABLE`, so G4 opened and the per-answer and
+per-domain rates printed.
+
+**And the stratum rate was still withheld, for a different reason than last time.** `CO-02` tripped
+`INSUFFICIENT_EVIDENCE`: three of its six cited claims produced no standing verdict, the boundary is
+inclusive, and exactly half is still insufficient. One answer withholding is enough, because an aggregate
+over the runs that happened to be measurable is an aggregate over measurability. So the headline number this
+project has been working towards for nine days does not exist, and the reason it does not exist is a gate
+that was written on day 4 and had never fired on this path.
+
+Worth separating from the coincidence next to it. `CO-14` also has three of six claim-source pairs
+unauditable and did print a rate. That is not an inconsistency: the gate counts in claims rather than pairs,
+because the question is how much of the answer could be checked and a reader thinks in sentences. `CO-14`'s
+dead source is cited alongside a live one on the same claims, so three of its four cited claims still carry a
+standing verdict. The two answers look identical at pair level and differ at the level the gate actually
+counts.
+
+### The calibration, which is the point of the whole exercise
+
+| | value |
+|---|---|
+| blind labels compared | 35 |
+| Cohen's kappa | **0.304, 95% CI 0.004 to 0.604** |
+| `SUPPORTED` | precision 57.1% (n=7), recall 44.4% (n=9) |
+| `PARTIALLY_SUPPORTED` | precision 16.7% (n=6), recall 25.0% (n=4) |
+| `NOT_FOUND_IN_SOURCE` | precision 77.3% (n=22), recall 77.3% (n=22) |
+| human `UNAUDITABLE`, excluded | 9 |
+| labelled pairs with no standing verdict, excluded | 1 |
+
+**The lower bound of that interval is 0.004.** At this n the run cannot rule out that the agreement between
+this judge and this human is chance. That is the honest headline and it is not a flattering one: the project
+spent nine days building the thing that would tell it whether to believe its own verdicts, and the answer is
+that on 35 pairs it barely can. The number is reported as a wide-interval estimate rather than a calibration,
+which is what `TODO.md` promised it would be called before anybody knew what it would say.
+
+### The plausibility audit, signed as a judgement rather than an output
+
+**What looks right.** `NOT_FOUND_IN_SOURCE` at 77.3% precision and 77.3% recall over n=22 is the judge's
+best class and the human's most-used one, and the symmetry is not suspicious: it falls out of both raters
+assigning that label to nearly the same count. This is the verdict that carries the most weight in the
+per-answer rates, so the class the rates lean on hardest is the class with the best agreement behind it.
+
+**What looks wrong, and was predicted in writing before it was measured.**
+`PARTIALLY_SUPPORTED` precision 16.7 per cent. When this judge says a page partly supports a claim, the human
+who read the page agreed once in six. `TODO.md` has carried a row since day 6 saying the writeup should call
+`PARTIALLY_SUPPORTED` the claim state with the weakest evidence behind it, on the strength of break attempt
+1b, where the judge returned it 4 of 4 for a claim the page never stated. That row was an argument from two
+documents and eight calls. It is now a measurement, and it points the same way.
+
+**What looks too good.** `CO-24` at 8 of 8, and `malegislature.gov` at 9 of 9. A 100 per cent with an n of 8
+is the number that gets quoted without its interval, and the interval here runs from 67.6 per cent to 100.
+`CO-24` also carries the run's only `JUDGE_FABRICATED_SPAN`, so the same answer that scored perfectly
+contains a verdict the span guard threw away. That is not a contradiction, since the void left numerator and
+denominator together exactly as designed, but an answer described as perfectly supported while a guard fired
+inside it should be described with the guard mentioned.
+
+**The gap nobody should read past.** Counted in pairs, `CO-08` is 45.7 per cent and `CO-22` is 42.3 per cent.
+Counted in claims, the same two answers are 85.7 and 90.0 per cent. Both numbers are published side by side
+because §5 requires it, and the gap is the whole reason: a claim counts as supported if any one of its
+sources supports it, and these answers cite four or five sources per sentence. Quoting the claim figure would
+describe ChatGPT as citing well; quoting the pair figure would describe it as citing badly. Neither sentence
+is available from this data on its own.
+
+**What is missing rather than measured, and it is the same hole as item 23.** At least 20 claim-attached
+citations were never in these captures. A claim whose supporting source sat behind a "+N" control was judged
+against the source that did render and came back `NOT_FOUND_IN_SOURCE`, which is 60 of the run's verdicts and
+the largest single class. How many of those 60 are the tool's blindness rather than the product's citation is
+unknown and unknowable from this run. So every rate here is over inline-rendered citations, and the direction
+of the error is known: it is against the product.
+
+**One class stopped being empty.** `CONTRADICTED` fired twice, on `CO-08` and `CO-20`, against zero across
+130 verdicts on day 7. Item 21's plausibility audit named that empty class as the thing that looked wrong,
+since break attempt 1 had shown it reachable. It is now reachable in ordinary output. Whether these two are
+real contradictions or the silence-read-as-contradiction drift that attempt 1 caught 4 of 4 has not been
+checked by hand, and until it has, the two are reported as verdicts rather than as findings.
+
+**The extractor is not the explanation.** `goldset.attribution` compared all 13 judge-human disagreements
+that carried a pasted passage against our own extraction of the same page and attributed 0 of 13 to the
+extractor. Kappa excluding extraction-caused pairs is therefore identical at 0.304. That is the first time
+this check has run on a real disagreement set, and it says the gap is between the judge and the human rather
+than between the judge and `extract.py`. A floor on both counts, since evidence the labeller also missed is
+invisible to it.
+
+**The span guard fired once in 76 span-bearing verdicts**, on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION`
+on `CO-21` where a source had drifted to containment 0.2215. Neither has been re-checked against the cached
+bytes, and §8 requires that check before the fabricated-span figure may be described as a finding about the
+judge rather than about this tool. On day 7 that check moved the number. **So the figure is stated here as
+1 of 76 and explicitly not yet interpreted.**

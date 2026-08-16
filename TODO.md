@@ -15,26 +15,27 @@ Written 2026-08-15, mid day 9, with the calibration built and the run not yet ex
 captures, 0 supplemental, 36 comparable against a floor of 30. The prior-audit scan was clean over all ten
 answers before the session opened, so these are blind in fact. `goldset/chatgpt-consumer.gold.json`.
 
+**The run happened, 2026-08-16 at 00:22 UTC, and G4 opened.** 35 blind labels compared, kappa 0.304 with a
+95% CI of 0.004 to 0.604. Per-answer and per-domain rates printed for the first time in the project's
+history. The stratum rate was still withheld, because `CO-02` tripped `INSUFFICIENT_EVIDENCE` and one answer
+withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
+
 **What is left, in order.**
 
-1. **Run the stratum.** It has not happened. `runs/day9/` does not exist, so there is no readout, no support
-   rate, and no refusal. This is the one remaining step between the project and a number it is entitled to
-   print. It needs `GEMINI_API_KEY`, so it runs in Jayanth's shell:
-
-   ```
-   CAPS=""; for f in captures/capture-chatgpt-2026-08-15T*.json; do CAPS="$CAPS --captures $f"; done
-   SPL=""; for s in splits/chatgpt/*.split.json; do SPL="$SPL --split $s"; done
-   .venv/bin/python tools/run_stratum.py $CAPS $SPL --judge --goldset goldset/chatgpt-consumer.gold.json --out runs/day9
-   ```
-
-   The captures are passed explicitly rather than as `--captures captures/`, which would sweep in the 24
-   Perplexity answers and make it a different run.
-
-2. **Whatever the readout says, the rate is over inline-rendered citations.** Not over ChatGPT's citations.
+1. **Re-check the one voided span against the cached bytes.** 1 of 76 span-bearing verdicts came back
+   `JUDGE_FABRICATED_SPAN` on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION` on `CO-21`. §8 requires that
+   check before either may be described as a finding about the judge rather than about this tool, and on day
+   7 the check moved the number: three of four voids turned out to be ours. `tools/reaudit_spans.py` does it
+   over cached bytes rather than the live web. Until it runs, the figure stands as 1 of 76 and uninterpreted
+2. **Read the two `CONTRADICTED` verdicts by hand.** `CO-08#edb71951` and `CO-20#b87451b0`. The class was
+   empty across 130 day 7 verdicts and item 21 named that as the thing that looked wrong. It is not empty
+   now, and whether these are real contradictions or the silence-read-as-contradiction drift break attempt 1
+   caught 4 of 4 decides whether the class can be quoted
+3. **Every rate is over inline-rendered citations.** Not over ChatGPT's citations.
    At least 20 of 53 claim-attached citations were behind "+N" controls and never in the captures, and a
    claim whose supporting source was one of them is judged against the source that did render and comes back
-   `NOT_FOUND_IN_SOURCE`, the verdict with no span and no G3 check. 22 of the 36 comparable human labels are
-   `NOT_FOUND_IN_SOURCE`, so this caveat is load-bearing rather than decorative. `FINDINGS.md` item 23
+   `NOT_FOUND_IN_SOURCE`, the verdict with no span and no G3 check. That is 60 of the run's verdicts and its
+   largest single class, so this caveat is load-bearing rather than decorative. `FINDINGS.md` item 23
 3. **The ChatGPT adapter is still unverified.** `verifiedSelectors` is empty in `extension/src/adapters.js`,
    so all ten captures carry `adapter_verified: false` and the gold set inherits it. Row L260
 4. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo

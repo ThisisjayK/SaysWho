@@ -20,7 +20,7 @@ at all, because no gold set covered those splits. A tool that prints a number in
 | 1 | 0:00 to 0:30 | Screen: a Perplexity answer with footnotes, scrolling | "This answer has nine footnotes. I have never once opened all nine. Nobody has. The footnote does the persuading and nothing does the checking." |
 | 2 | 0:30 to 1:00 | `queries/consumer.toml` on screen, then `freeze_queries.py check` passing | "Twenty-four questions, frozen before any run, hash-checked before every one. If I tuned a question after seeing a result, this command fails." |
 | 3 | 1:00 to 2:30 | **The uncut segment.** Live browser, extension loaded | See below. This is the shot that carries the video. |
-| 4 | 2:30 to 3:15 | Terminal: the day-7 readout, scrolled to `STRATUM RATE withheld` | "Here is the run over all 24. And here is the support rate: there isn't one." |
+| 4 | 2:30 to 3:15 | Terminal: `runs/day9/readout.txt`, scrolled to `STRATUM RATE withheld` and then to `JUDGE AGAINST HUMAN` | "Here is the run. Here is the support rate: there isn't one, and here is the gate saying why. And here is what happens when I check the judge against myself: kappa 0.30, interval 0.004 to 0.60." |
 | 5 | 3:15 to 4:15 | `FINDINGS.md` item 21 on screen | The four voided spans, and the one that was ours. |
 | 6 | 4:15 to 5:00 | `STATUS.md` blocker row and the not-done rows | "The professional stratum never ran. Here is the row that says so." |
 
@@ -55,12 +55,22 @@ rubric is asking you not to do.
 
 ## What to say about the gold set, since it will come up
 
-Say it plainly and move on: "Six claims hand-labelled, not the thirty to forty planned. So the tool has no
-calibration for this judge, and gate G4 withholds every aggregate rate rather than printing an uncalibrated
-one. You just watched it do that."
+**Rewritten 2026-08-16, because the run happened and the old paragraph is now false.** It said six labels and
+no calibration. Say this instead:
 
-That is a stronger thirty seconds than any number would have been. The gate firing on the presenter's own run,
-on camera, is the demonstration.
+> "Forty-five claims hand-labelled by me, blind, before the judge saw any of them. Thirty-five could be
+> compared with a verdict. Cohen's kappa is 0.30, and the confidence interval runs from 0.004 to 0.60. That
+> lower bound is the honest part: at this sample size I cannot rule out that the agreement between me and the
+> judge is chance. So the tool now reports its own verdicts as worth about that much."
+
+**Do not skip the interval.** The whole argument of the project is that a number without its uncertainty is a
+number that misleads, and quoting 0.30 alone on camera would be doing the thing the tool exists to prevent.
+
+The stratum rate is still withheld, and that is now a better demonstration than it was, because it is
+withheld for a reason the presenter did not arrange: one answer of the ten had more than half its cited
+claims unreadable, `INSUFFICIENT_EVIDENCE` fired, and an aggregate over the rest would be an aggregate over
+whichever answers happened to be measurable. The gate firing on the presenter's own run, on camera, is the
+demonstration.
 
 ## What not to do
 

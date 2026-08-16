@@ -8,12 +8,22 @@ now checks that this number is true rather than leaving it to rot. This file car
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
 
-**The gold set exists, and the run it was built for has not been executed yet.** Day 9 captured ten ChatGPT
-answers against the frozen consumer stratum, split them, and hand-labelled 45 pairs blind: 45 blind labels, 0
-supplemental, 36 of them comparable with a verdict against `gates.MIN_BLIND_COMPARABLE` of 30. That is the
-first time this project has held a calibration rather than a gold set file. What it has not held yet is a
-run: `runs/day9/` does not exist, so no support rate has been printed, refused, or gated, and every sentence
-below about what the numbers show is about the numbers that exist rather than the ones that will.
+**G4 opened, and the calibration behind it says the verdicts are worth about as much as chance.** Day 9
+captured ten ChatGPT answers against the frozen consumer stratum, split them, hand-labelled 45 pairs blind,
+and ran the stratum against those labels. 35 blind labels could be compared with a standing verdict, above
+`gates.MIN_BLIND_COMPARABLE`, so for the first time in this project's history a support rate was printed
+rather than withheld for want of a calibration.
+
+**Cohen's kappa is 0.304, 95% CI 0.004 to 0.604, n=35.** The lower bound is 0.004, so this run cannot rule
+out that the agreement between judge and human is chance. It is reported as a wide-interval estimate rather
+than as a calibration, which is what `TODO.md` promised it would be called before anybody knew what it would
+say. `FINDINGS.md` item 24.
+
+**The stratum rate was still withheld, and for a new reason.** `CO-02` tripped `INSUFFICIENT_EVIDENCE`, three
+of six cited claims carrying no standing verdict against an inclusive boundary, and one answer withholding is
+enough because an aggregate over the measurable runs is an aggregate over measurability. Per-answer and
+per-domain rates did print. So the project ends day 9 entitled to publish rates, publishing several, and
+still refusing the headline one.
 
 **Day 7's line has been crossed and the core is behind it.** Every day 7 item is done: the honest run, the
 metric readout, the fabricated-span figure checked before being described, the plausibility audit, the trace
@@ -90,7 +100,7 @@ answer" are different claims and only one of them is currently true.
 |---|---|
 | ~~Honest run over the frozen stratum~~ | **Run, 2026-08-13.** 24 captures, 51 sources, 158 claims, 130 verdicts of which 125 stand, 7 minutes, 130 model calls, nothing halted. It printed no support rate, which is the deliverable rather than a shortfall: G4 withheld on 18 answers and `INSUFFICIENT_EVIDENCE` on 2 more, each naming its reason and both split hashes. `FINDINGS.md` item 21 |
 | ~~Metric readout with n and CIs over real data~~ | **Produced.** `runs/day7/` holds the run record, the readout, `RUN_LOG.md` and the per-number trace table. Every rate it is entitled to print carries its n; every rate it is not names the gate that stopped it |
-| Judge-human agreement | **Labels exist for 36 comparable pairs, and the kappa has not been computed, because the run has not happened.** Day 9 built the calibration the earlier n=2 was missing: 45 blind labels over ten ChatGPT answers, 36 of them on sources the judge will be asked about. Until `runs/day9/` exists there are no verdicts to compare them against, so this row stays here rather than moving up. What it replaces: six human labels of which four were on sources the judge was never asked about, so two were comparable and kappa came out 0.0 over them, which at that n is an arithmetic result rather than a measurement and was reported as one |
+| ~~Judge-human agreement~~ | **Computed 2026-08-16 over 35 blind comparable pairs: kappa 0.304, 95% CI 0.004 to 0.604.** The lower bound does not exclude chance, and it is reported as a wide-interval estimate rather than as a calibration. Per class: `NOT_FOUND_IN_SOURCE` precision and recall both 77.3% (n=22), `SUPPORTED` precision 57.1% (n=7) and recall 44.4% (n=9), `PARTIALLY_SUPPORTED` precision 16.7% (n=6) and recall 25.0% (n=4). That last figure measures a row `TODO.md` has carried since day 6 on the strength of two documents and eight calls, and it points the same way. `goldset.attribution` attributed 0 of 13 disagreements to the extractor, so the gap is between judge and human rather than between judge and `extract.py`. What this replaces: six human labels of which four were on sources the judge was never asked about, so two were comparable and kappa came out 0.0 over them, which at that n is an arithmetic result rather than a measurement and was reported as one |
 | ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811 characters as of 2026-08-12. The count is dated because it has moved twice: 57,067, then 56,352, then this, as each fix stopped the reader inventing characters. Two earlier figures were left standing here and in `tools/reaudit_spans.py` after they stopped being true, which is the rot a prose gate cannot catch, since a number is not a path. Three extraction bugs came out of this one document, none of them from a test. See "The first live PDF, and what it cost" below |
 | The thin-page flag on live data | Tested, and still never fired on a real capture: 51 more sources in the day-6 run and not one |
 | The fabricated-span count as a finding about the judge | **Recomputed 2026-08-13, after checking the extraction behind every void, which §8 requires before it may be called a finding about the judge: 3 of 96 span-bearing verdicts are the judge stitching non-contiguous passages, and 1 of 96 is this tool inlining a `[44]` footnote marker the judge dropped.** All four voids were HTML sources and only 2 of 51 sources were PDFs, so the PDF-versus-HTML split is a fact about the sample. What follows is the earlier figure this replaces. **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
@@ -184,9 +194,20 @@ to say. Unlike the day 6 Perplexity loss it cannot be repaired from the stored p
 were never rendered rather than merely missed by a selector. `FINDINGS.md` item 23, written before the run so
 that the caveat could not be reverse-engineered to fit a number.
 
-**What has not happened.** The run. `runs/day9/` does not exist, so no support rate has been printed and none
-has been refused. The ChatGPT adapter is still unverified, so all ten captures carry `adapter_verified: false`
-and the gold set inherits it. Neither is a state this file is guessing at; both are checkable on disk.
+**The run, and what it printed.** 139 model calls, 817,995 tokens, nothing halted, no capture errored, no
+cost. Per-answer support rates ran from 0 of 6 on `CO-17` to 8 of 8 on `CO-24`, and the pair-versus-claim gap
+is wide enough to matter: `CO-22` is 42.3 per cent counted in pairs and 90.0 per cent counted in claims,
+because a claim counts as supported when any one of its four or five sources does. Both are published side by
+side, which is what §5 requires and why neither can be quoted alone. `CONTRADICTED` fired twice after being
+empty across all 130 day 7 verdicts, which retires the plausibility worry item 21 raised and replaces it with
+a narrower one: whether those two are real contradictions or the silence-read-as-contradiction drift break
+attempt 1 caught 4 of 4, which has not been checked by hand.
+
+**What has not happened.** The span guard fired once in 76 span-bearing verdicts and that void has not been
+re-checked against the cached bytes, which §8 requires before the figure may be called a finding about the
+judge rather than about this tool. On day 7 that check moved the number. The ChatGPT adapter is still
+unverified, so all ten captures carry `adapter_verified: false` and the gold set inherits it. Neither is a
+state this file is guessing at; both are checkable on disk.
 
 ## What changed on day 8, and what it means
 
