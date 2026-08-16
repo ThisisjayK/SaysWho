@@ -735,7 +735,7 @@ reader to disregard the difference entirely.
 | Two-customer pair | 30 | `recipes/audit-citations.md` (nine sections) + `.card.md` (6 failure modes) |
 | Verified-data attestation | 35 | §4 boundary table, per-number trace table, privacy + honesty gate output |
 | The honest run | 35 | Pasted terminal output, plausibility audit, the two core break attempts, metric readout with n and CI, §7 |
-| GitHub PR | 25 | `contrib/jayanth-says-who` branch, maintainer-ready description |
+| GitHub PR | 25 | Not this project's row. Satisfied by the relocation engine work, confirmed 2026-08-16. This table claimed a `contrib/jayanth-says-who` branch for three days |
 | Portfolio piece | 35 | Case study for a technical hiring manager + an extension a reader can install in 30 seconds |
 | Explainer video | 20 | 3–6 min, one uncut segment: a real answer marked live, including an unauditable claim it refuses to score |
 | Honesty overlay | 10 | Calibrated verbs; prior art named; §5a's failure condition declared before the data exists; §0a's status table |

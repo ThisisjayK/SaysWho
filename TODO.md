@@ -73,16 +73,18 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    when they were written and a flag flipped afterwards does not reach back into them. What this does not
    verify is completeness: the "+N" citations were never in the DOM, and check one is what makes that the
    product's behaviour rather than the selector's fault. Row L260
-6. **The PR description is finished. The PR is not, and the blocker changed.** Both answers landed on day 9
-   in `532d1ad`: the target is `ThisisjayK/SaysWho`, a self-contained contribution rather than one to another
-   project, and the chapters are named against that course repo's fifteen modules, eight claimed with the
-   artefact for each and seven declined with reasons. This row said "blocked on two answers" for a further
-   day after that stopped being true, and it was read off and repeated before anybody opened the file, which
-   is the same rot rows 8 to 10 are about. **What actually blocks it: `contrib/jayanth-says-who` does not
-   exist, no PR is open, and a branch cut from `main` today would diff against `main` by nothing.** Every
-   commit is already on `main`, so the obvious move produces an empty PR with nothing to review. Making it
-   reviewable needs a base the work is not already in, which is a decision about repository shape rather
-   than about writing
+6. **Withdrawn: this repo never owed a PR.** The rubric's GitHub PR row is satisfied by the relocation
+   engine work, not by SaysWho, confirmed 2026-08-16. Two documents here said otherwise and said it with
+   detail: `PR_DESCRIPTION.md` opened by naming `ThisisjayK/SaysWho` as the target repository, and this row
+   spent days describing the missing `contrib/jayanth-says-who` branch as the blocker, then describing the
+   empty diff a branch cut from `main` would produce as the deeper blocker. All of that was analysis of a
+   problem this project does not have. `PR_DESCRIPTION.md` is deleted rather than corrected, because its
+   other half is a chapter-to-module mapping that belongs to whichever submission the PR row belongs to.
+   **The failure here is the one this file keeps catching in other people's documents.** Nothing checked the
+   premise. The freeze check, the ethics gate and `test_documents.py` all verify that a claim matches the
+   code, and none of them can ask whether the deliverable was ever this repo's to owe. A wrong premise
+   stated confidently reads exactly like a right one, and it survived two rewrites of the row beneath it
+
 7. **The video, part built.** `VIDEO.md` is the script for the graded cut and its gold set paragraph has
    been rewritten against the day 9 run, so the six-labels-and-no-calibration version is gone. `video/` is a
    Remotion project holding a 90 second short film, silent, rendering end to end. Every figure, claim,
@@ -1178,22 +1180,10 @@ The machinery is built and tested. What is left on this list is the labelling it
       readout, the plausibility audit is written and signed as a judgement in `FINDINGS.md` item 21, break
       attempts 5 and 6 have written results in `BREAK_ATTEMPTS.md`, and §7 carries ten limitations including
       the ones this run added
-- [ ] GitHub PR, 25 points. **The description is done and has no blanks: `PR_DESCRIPTION.md`.** Title, the
-      ten-minute review path, the limitations stated up front, the three design decisions worth arguing with,
-      the table of six bugs found by running the tool rather than by the suite, the target repo, and eight of
-      fifteen modules claimed with the artefact for each beside seven declined with reasons. Both answers
-      landed day 9 in `532d1ad`; this row went on saying "two blanks" until day 10 and is corrected here.
-      **What is left is the PR itself, and it needs a decision first.** No `contrib/jayanth-says-who` branch
-      exists on this machine or on origin, no PR has ever been opened, and all 122 commits are on `main`, so
-      a branch cut today diffs against `main` by nothing and the PR would be empty. A reviewable PR needs a
-      base that does not already contain the work, for example a `baseline` branch at the initial commit
-      with the contribution branch opened against it. That is a repository-shape decision and it is
-      Jayanth's. Original note follows.
-- [ ] ~~GitHub PR~~ `contrib/jayanth-says-who` branch with a maintainer-ready description.
-      **Mine to do first, two answers:** which repo this targets, and which chapters SaysWho satisfies. The
-      requirement asks for the chapters by name and nothing in this repo cites one, so that is a decision
-      rather than a lookup. Nothing else about the description can be written until both are known, since a
-      maintainer-ready description is addressed to a specific maintainer and claims specific coverage
+- [x] GitHub PR, 25 points. **Not this repo's row.** Satisfied by the relocation engine work. Everything
+      previously written here, the finished description, the missing branch, the empty-diff problem and the
+      repository-shape decision it implied, was about a deliverable SaysWho does not owe. Withdrawn
+      2026-08-16 and `PR_DESCRIPTION.md` deleted with it.
 - [x] Portfolio piece, 35 points: the case study. `CASE_STUDY.md`, for a technical reader, with the four
       load-bearing decisions and what each cost. The "what I would do differently" section is longer than
       the results section, which is the accurate shape on day 5

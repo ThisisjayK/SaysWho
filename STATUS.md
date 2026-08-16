@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-16, day 10 of ten, where day 5 was 2026-08-11. 841 tests, and `tests/test_documents.py`
+Last updated 2026-08-16, day 10 of ten, where day 5 was 2026-08-11. 838 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
@@ -283,7 +283,7 @@ the extractor; the installed watcher plist still names `/Users/jayanthadityak/Fi
 `extract.py` still imports only `re`, `unicodedata` and `html.parser`; `verifiedSelectors` is empty for
 ChatGPT, Perplexity and Google, and Claude holds only the Research artifact selector, not the chat one; the
 thin-page flag appears nowhere in `runs/day7/run.json`; and no head-to-head artefact, hand-marked answer,
-grounded API call or `contrib/jayanth-says-who` branch exists anywhere.
+grounded API call exists anywhere. That list also named a `contrib/jayanth-says-who` branch, correctly: it does not exist and, as of 2026-08-16, was never owed. The PR row belongs to the relocation engine work.
 
 **Two rows misreported themselves and were reworded.** One was a sentence carrying a checkbox it could never
 satisfy, which counted as outstanding work every time the file was totalled. The other was labelled "the case
