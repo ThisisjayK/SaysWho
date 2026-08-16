@@ -1046,3 +1046,81 @@ which was produced and not voided, so the gate checks an upper bound on the n be
 itself. A set of thirty blind comparable labels whose verdicts were all voided would pass G4 and yield a
 kappa of nothing. That is a narrower hole than the one closed and it is left open knowingly, because closing
 it means giving the gate the judgements, and G4 runs before they are all in.
+
+## 23. The DOM capture cannot see a third of ChatGPT's own citations, and the stored page cannot rescue it
+
+Day 9, 2026-08-15, found by the tool reporting it rather than by anybody looking. The first ChatGPT capture
+run printed `INCOMPLETE: this capture does not hold the whole answer. 2 '+N' controls hide at least 2 more
+citations` before a single claim had been split.
+
+**The measurement.** Ten ChatGPT answers, captured 2026-08-15 at 22:52 UTC against the frozen consumer
+stratum, in the order pre-registered in `queries/capture-order.md`.
+
+| Query | citations captured | hidden, floor |
+|---|---|---|
+| CO-02 | 2 | 2 |
+| CO-03 | 2 | 2 |
+| CO-08 | 5 | 2 |
+| CO-10 | 3 | 2 |
+| CO-14 | 2 | 0 |
+| CO-17 | 3 | 1 |
+| CO-20 | 5 | 2 |
+| CO-21 | 4 | 1 |
+| CO-22 | 5 | 5 |
+| CO-24 | 2 | 3 |
+| **total** | **33** | **20** |
+
+So at least 20 of at least 53 claim-attached citations were never in the capture, a floor of 37.7 per cent.
+One answer of the ten, CO-14, is complete. CO-22 is missing half, and CO-22 is the answer `VIDEO.md` picked
+as the demo.
+
+**The number is a floor and `extension/src/capture.js` always said so.** `saysWhoCountHiddenCitations` reads
+the digit out of each "+N" control and sums it, and its own comment records that this counts what the
+expanders admit to rather than what is behind them. The counter worked exactly as designed. What had never
+happened before is a capture run where it fired, because Perplexity groups its citations differently and the
+24 day 6 captures reported no hidden ones at all.
+
+**Then the part that made it expensive.** On day 6 the extractor was found dropping 13 of 51 Perplexity
+citations, and the fix cost nothing: the citations were all in the stored page, so
+`python3 -m sayswho.reextract PAGE --capture CAPTURE --repair` recovered them from bytes already on disk and
+no query was re-asked. That is what day 2 stored pages for, and item 20 is the write-up of it working.
+
+It does not work here. The stored page for CO-22 is 655,970 characters and contains exactly the same five
+citation URLs the capture already had. ChatGPT renders the grouped sources only on interaction, so there is
+nothing in the stored bytes to re-extract. A stored page defends against a selector being wrong. It does not
+defend against the page never having rendered the thing.
+
+**What the "+N" control actually is**, probed against a live shared conversation for CO-22. Each inline
+citation chip is an `<a>` whose `href` is one source, and the "+N" is a plain `<span>` inside that anchor
+carrying no role and no handler of its own. The answer container held nine anchors resolving to five distinct
+URLs, so a citation group renders its first source as the link and reports the rest only as a count.
+Expanding the footer Sources control added four more anchors and not one new URL.
+
+**What is not known, and it matters more than the 37.7 per cent.** Whether the hidden sources are URLs the
+capture already holds is unresolved and cannot be resolved from these captures. A sentence citing two pages
+where one is already in our set costs no URL and still costs a claim-source pair, because this project's unit
+is the pair and that sentence contributed one instead of two. So the honest statement is about the pairing
+rather than the source list: **20 or more claim-source pairs are missing from a pool of 145, and which
+sources they point at is unknown.** The serialized state of the shared page carries 31 distinct URLs, but
+that is the set of pages consulted rather than cited, and several of them (`beware-of-energy-scammers`,
+`do-you-need-long-term-care-insurance`, a press release about heating assistance funding) are attached to no
+sentence in the answer. Reporting 31 as a citation count would be a worse error than the one being reported.
+
+**The consequence for the rate, which is the reason this is written before the readout rather than after.**
+A claim whose supporting source sat behind a "+N" is judged against the one source that rendered, and comes
+back `NOT_FOUND_IN_SOURCE`. That is the verdict with no span, therefore no G3 check, and it is the one that
+accuses the product. Item 11 is the same failure arriving through the extractor, and the response then was
+four mitigations and a bias set deliberately towards losing coverage rather than towards accusing a product.
+The response now is narrower because the deadline is real: the run happens over the pairs that exist, and
+every rate from it is labelled as being over inline-rendered citations rather than over ChatGPT's citations.
+Those are different claims and the second one is not available from this data.
+
+**Not fixed, and the reason is time rather than difficulty.** Three routes exist and none was taken today.
+Driving the expanders before capture is the obvious one, and the probe above suggests it puts the sources in
+a transient container rather than in the answer, so it needs testing rather than assuming. Capturing through
+the share view would carry the full state, at the cost of auditing a different artefact from the one a person
+reads, which `SCOPE.md` §1 says is the thing this tool audits. The API path in `sayswho/apicapture.py`
+already exists for exactly this comparison, and `tools/compare_capture.py` was built to report the number
+this finding measures by hand: `TODO.md` calls DOM versus API citation loss the largest unquantified risk in
+the project and a number that has never existed. It exists now, for one product, as a floor, and it is larger
+than the guess anybody would have made.

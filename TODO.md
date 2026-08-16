@@ -9,6 +9,41 @@ reports it either way.
 
 ## Start here next session
 
+Written 2026-08-15, mid day 9, with the calibration built and the run not yet executed.
+
+**The gold set is done and it is the first real one this project has had.** 45 blind labels over ten ChatGPT
+captures, 0 supplemental, 36 comparable against a floor of 30. The prior-audit scan was clean over all ten
+answers before the session opened, so these are blind in fact. `goldset/chatgpt-consumer.gold.json`.
+
+**What is left, in order.**
+
+1. **Run the stratum.** It has not happened. `runs/day9/` does not exist, so there is no readout, no support
+   rate, and no refusal. This is the one remaining step between the project and a number it is entitled to
+   print. It needs `GEMINI_API_KEY`, so it runs in Jayanth's shell:
+
+   ```
+   CAPS=""; for f in captures/capture-chatgpt-2026-08-15T*.json; do CAPS="$CAPS --captures $f"; done
+   SPL=""; for s in splits/chatgpt/*.split.json; do SPL="$SPL --split $s"; done
+   .venv/bin/python tools/run_stratum.py $CAPS $SPL --judge --goldset goldset/chatgpt-consumer.gold.json --out runs/day9
+   ```
+
+   The captures are passed explicitly rather than as `--captures captures/`, which would sweep in the 24
+   Perplexity answers and make it a different run.
+
+2. **Whatever the readout says, the rate is over inline-rendered citations.** Not over ChatGPT's citations.
+   At least 20 of 53 claim-attached citations were behind "+N" controls and never in the captures, and a
+   claim whose supporting source was one of them is judged against the source that did render and comes back
+   `NOT_FOUND_IN_SOURCE`, the verdict with no span and no G3 check. 22 of the 36 comparable human labels are
+   `NOT_FOUND_IN_SOURCE`, so this caveat is load-bearing rather than decorative. `FINDINGS.md` item 23
+3. **The ChatGPT adapter is still unverified.** `verifiedSelectors` is empty in `extension/src/adapters.js`,
+   so all ten captures carry `adapter_verified: false` and the gold set inherits it. Row L260
+4. **The PR description.** Still blocked on the same two answers only Jayanth has: which repo
+   `contrib/jayanth-says-who` targets, and which chapters SaysWho satisfies
+5. **The video.** `VIDEO.md` is written and its gold set paragraph is now wrong: it says six labels and no
+   calibration. That paragraph has to be rewritten against whatever the run prints before recording
+
+Superseded plan from the end of day 8 follows, kept because the corrections in it are the point.
+
 Written 2026-08-14 at the end of day 8, so day 9 does not begin by rereading the file.
 
 **Everything the code can do on its own is done, and one human afternoon is what the project is waiting on.**
@@ -147,15 +182,34 @@ list stopped mattering is itself the finding. `FINDINGS.md` item 18.
       judge is already known to drift in from break attempt 1; never round `P` up to `S`; `U` rather than `N`
       when the page could not be read, since the alternative turns our fetch failure into somebody's citation
       failure; and `?` is a real answer rather than a tired one
-- [ ] **Decide the target, because it is not the number it looks like.** The pool is 145 pairs, of which only
+- [x] **Decided 2026-08-15, for the ChatGPT pool rather than the Perplexity one: target 45.** The reasoning
+      below was written about Perplexity and it is why the decision waited for data. ChatGPT's pool is also
+      145 pairs but only 2 sources are unauditable rather than 15, so `prep_goldset.py --target 45` reported 6
+      unauditable and 39 comparable, against 30 needed. The 6 extra over the floor were deliberate slack for
+      voided verdicts. Original reasoning follows. The pool is 145 pairs, of which only
       15 are unauditable, and the sampler takes all 15 first. `goldset.agreement` excludes those from kappa,
       since the judge was never asked about them, so `--target 35` yields 20 comparable pairs and a kappa at
       n=20 rather than the 30 to 40 §0a asks for. `--target 45` gives 30 comparable, `--target 55` gives 40.
       The choice is an hour of labelling against the width of the interval, and whichever is chosen the
       writeup reports the comparable n rather than the label count
-- [ ] A second product, if there is appetite. One product means the gold set stratifies on G2 codes alone,
+- [x] A second product. **Done 2026-08-15: ten ChatGPT answers over the frozen consumer stratum**, captured
+      in the order pre-registered in `queries/capture-order.md` before any of them existed. 71 claims, 145
+      claim-source pairs, 33 sources, 31 `SOURCE_OK` and 2 `SOURCE_DEAD_LINK`. Bound one query at a time with
+      an explicit `--query` rather than with `--in-order`, which pairs by capture time against ids in **id
+      order** and would have bound the pre-registered draw to CO-01 through CO-10: the wrong questions, with
+      every hash still verifying. All ten answers were read against their questions before writing. The
+      original note follows. One product means the gold set stratifies on G2 codes alone,
       since product is the other axis and there is only one value of it. ChatGPT cites these questions;
       Claude mostly does not, which is an observation on a handful of tries rather than a finding
+- [ ] **ChatGPT hides at least 37.7 per cent of its citations from DOM capture, and it is not fixed.** The ten
+      captures hold 33 citations with at least 20 more behind "+N" controls, one answer of the ten complete
+      and CO-22 missing half. Unlike the day 6 Perplexity loss this cannot be repaired from the stored pages,
+      because those sources are never rendered rather than missed by a selector: the stored CO-22 page is
+      655,970 characters and holds the same five URLs the capture already had. Three routes exist and none was
+      taken under the day 9 clock: drive the expanders before capture, which needs testing rather than
+      assuming because the probe suggests the sources land in a transient container; capture the share view,
+      which audits a different artefact from the one a person reads and §1 forbids; or run the API comparison
+      that `sayswho/apicapture.py` and `tools/compare_capture.py` were built for. `FINDINGS.md` item 23
 - [x] **The extractor was dropping a quarter of the citations, and the stored pages paid for themselves.**
       `saysWhoExtractCitations` ended its selector loop with `if (citations.length) break;`, so the first
       selector that matched anything won. Perplexity declares two and renders both, so 13 of 51 inline
@@ -551,8 +605,17 @@ The machinery is built and tested. What is left on this list is the labelling it
       run record was supplied, from six pages with no unauditable pair to seven including the paywalled and
       the no-text-layer ones. The prep tool says NOT STRATIFIED when it happens, and reports the unauditable
       count as not-known rather than as zero
-- [ ] Label 30 to 40 claims by hand, before looking at any judge output. **Mine to do, and no longer
-      possible over the Perplexity answers.** 6 blind labels exist, written 2026-08-13 between 21:09 and
+- [x] Label 30 to 40 claims by hand, before looking at any judge output. **Done 2026-08-15 over ChatGPT, 45
+      labels, all blind, 36 comparable.** The prior-audit scan reported 723 files under `reports/` and `runs/`
+      carrying no verdict over any of the ten answers, so blindness is a checked fact rather than an
+      assertion. Target 45 was chosen after `prep_goldset.py` reported 6 unauditable pairs of 45, not before:
+      the pool was 145 claim-source pairs over 33 sources, 31 `SOURCE_OK` and 2 `SOURCE_DEAD_LINK`, which is a
+      much cleaner split than Perplexity's 15-of-145 unauditable and is why 45 yields 39 comparable rather
+      than 30. The labeller returned 9 `UNAUDITABLE` rather than the predicted 6, so 36 comparable is the real
+      number. Distribution: 22 `NOT_FOUND_IN_SOURCE`, 10 `SUPPORTED`, 4 `PARTIALLY_SUPPORTED`, 9
+      `UNAUDITABLE`, 0 `CONTRADICTED`. The original note follows, because the reason this could not be done on
+      Perplexity is the finding rather than the scheduling. **No longer possible over the Perplexity
+      answers.** 6 blind labels exist, written 2026-08-13 between 21:09 and
       21:20 UTC, which is two and a half hours before the day 7 run started at 23:51 and is why they are
       blind and why `agreement`'s timestamp refusal passes on them. Two of the six are comparable, so the
       kappa behind everything is n=2. The run then put verdicts over all 24 answers, so `label_goldset.py`

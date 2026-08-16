@@ -54,6 +54,12 @@ EXPECTED_ABSENT = {
     # Written by the labelling session, into a directory the ethics gate keeps out of git because a
     # gold set holds passages pasted out of fetched pages. LABELLING.md names it as the output.
     "goldset/consumer.gold.json": "written by tools/label_goldset.py, gitignored",
+    "goldset/chatgpt-consumer.gold.json": "written by tools/label_goldset.py, gitignored",
+    # Named by STATUS.md and TODO.md as the output of a run that has not been executed. Both documents
+    # say so in the sentence that names it, which is the state this gate exists to keep honest: the
+    # alternative is a document that quietly stops mentioning the step it is waiting on.
+    "runs/day9": "the output directory of a run that has not happened yet, named as absent",
+    "runs/day9/": "the output directory of a run that has not happened yet, named as absent",
 }
 
 #: A repo-relative path inside backticks: at least one slash, and a file extension or a trailing slash.

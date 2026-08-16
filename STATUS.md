@@ -3,25 +3,39 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-14, day 8 of ten, where day 5 was 2026-08-11. 787 tests, and `tests/test_documents.py`
+Last updated 2026-08-15, day 9 of ten, where day 5 was 2026-08-11. 787 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
-2026-08-14 while its own anchor made that date day 8, which is corrected here and is the smaller half of what
-day 8 found.
+2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
+what day 8 found.
 
-**Day 7's line has been crossed and the core is behind it, with one row still open.** Every day 7 item is
-done: the honest run, the metric readout, the fabricated-span figure checked before being described, the
-plausibility audit, the trace table. What is not done is day 5's own deliverable, the gold set, which stands
-at 6 human labels of a planned 30 to 40 and is the reason the run published no support rate.
+**The gold set exists, and the run it was built for has not been executed yet.** Day 9 captured ten ChatGPT
+answers against the frozen consumer stratum, split them, and hand-labelled 45 pairs blind: 45 blind labels, 0
+supplemental, 36 of them comparable with a verdict against `gates.MIN_BLIND_COMPARABLE` of 30. That is the
+first time this project has held a calibration rather than a gold set file. What it has not held yet is a
+run: `runs/day9/` does not exist, so no support rate has been printed, refused, or gated, and every sentence
+below about what the numbers show is about the numbers that exist rather than the ones that will.
 
-**And the gold set got harder on day 8 rather than closer.** The honest run put verdicts over all 24 consumer
-answers, so a blind labelling session over them is refused: `label_goldset.py` exits 3 and `--supplemental`
-is the only way in, and supplemental labels are excluded from kappa by construction. The 6 labels that exist
-predate the run by two and a half hours and are blind; two of them are comparable, which is the n=2 kappa.
-Topping the set up would produce forty labels and move that number not at all. So the set is being rebuilt
-blind on ChatGPT over ten frozen queries drawn with seed 20260812 before any capture existed, which also
-gives the second product that §3's stratification always needed. `FINDINGS.md` item 22 has it, including the
-half worth more than the scheduling: G4 checks that a gold set exists for this configuration, not that a
-calibration does, so a wholly supplemental set would have opened it.
+**Day 7's line has been crossed and the core is behind it.** Every day 7 item is done: the honest run, the
+metric readout, the fabricated-span figure checked before being described, the plausibility audit, the trace
+table. Day 5's own deliverable, the gold set, was the last core row open and closed on day 9.
+
+**The gold set got harder on day 8 and was rebuilt on day 9.** The honest run had put verdicts over all 24
+consumer answers, so a blind labelling session over them was refused: `label_goldset.py` exits 3 and
+`--supplemental` is the only way in, and supplemental labels are excluded from kappa by construction. The 6
+labels that existed predate that run by two and a half hours and are blind; two were comparable, which is the
+n=2 kappa. Topping the set up would have produced forty labels and moved that number not at all. So it was
+rebuilt blind on ChatGPT over ten frozen queries drawn with seed 20260812 before any capture existed, which
+also gives the second product that §3's stratification always needed. `FINDINGS.md` item 22 has it, including
+the half worth more than the scheduling: G4 checked that a gold set exists for this configuration, not that a
+calibration does, so a wholly supplemental set would have opened it. That is fixed and the new set clears the
+fixed gate rather than the old one.
+
+**And the new captures carry a limitation the old ones did not, measured rather than suspected.** ChatGPT
+collapses part of its citation list behind "+N" controls, so the ten captures hold 33 citations and at least
+20 more were never in them, a floor of 37.7 per cent. The stored pages cannot recover them, unlike the day 6
+Perplexity loss, because the sources are never rendered rather than merely missed by a selector. Any rate
+this stratum produces is over inline-rendered citations rather than over ChatGPT's citations, and those are
+different claims. `FINDINGS.md` item 23.
 
 **The stratum changed on day 6, and it changed by being given up rather than delivered.** The
 professional-research set was to be transcribed from my own AI history and that history is gone. Retyping
@@ -61,7 +75,7 @@ it is not reassuring: those were the items that depend on nothing but code.
 | 1 | No confidence score anywhere | **done** | Two checks per surface: the key gate over every payload, and a vocabulary scan of every rendered file. The word "score" survives in four sentences, all refusing to produce one, allowlisted in the test |
 | 1 | Unauditable claims excluded from every denominator by a hard contract check | **done** | Two levels, sources and claim-source pairs, plus voided verdicts. All three raise rather than warn |
 | 2 | One stratum, now the consumer set | **changed on day 6** | The professional set cannot be assembled and is reported not-done above rather than deferred. The consumer set is frozen since day 1 and synthetic, and it carries the core. Reported as a downgrade in what the numbers describe, not as a substitution |
-| 3 | Gold set of 30 to 40 hand-labelled claims | **not done, tooling now actually usable** | Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. A third and a fourth fault came out of the same walk: launched without a terminal the tool raised `EOFError` at the first prompt, and an answer audited earlier left verdicts that would anchor a labeller while tripping neither the timestamp refusal nor G4. `sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and refuses a blind session, with `--supplemental` as the way through rather than an override. Run against this repository it refuses, which is the correct answer. `tools/prep_goldset.py` now runs before a session: it draws the same sample the session will, warms the cache for any page missing from it, and reports what the afternoon will be. Building it found a fifth fault, which is that the stratification across G2 codes degrades silently to product-only when no run record is passed. The labelling itself is human work, and as of day 6 it needs captured answers rather than a stratum |
+| 3 | Gold set of 30 to 40 hand-labelled claims | **done, day 9: 45 blind labels, 36 comparable** | Labelled 2026-08-15 over ten ChatGPT captures of the frozen consumer stratum, blind in fact rather than by assertion: the prior-audit scan came back clean over all ten answers, and the set records 45 blind labels and 0 supplemental. 36 are comparable with a verdict, against `gates.MIN_BLIND_COMPARABLE` of 30, so nine can be lost to voided verdicts before the floor is reached. Distribution is 22 `NOT_FOUND_IN_SOURCE`, 10 `SUPPORTED`, 4 `PARTIALLY_SUPPORTED`, 9 `UNAUDITABLE`, 0 `CONTRADICTED`. The pool was 145 claim-source pairs from 71 claims over 33 sources, 31 of them `SOURCE_OK` and 2 `SOURCE_DEAD_LINK`, and the target of 45 was chosen after `prep_goldset.py` reported the unauditable share rather than guessed before it. What this does not yet include is the run it calibrates. The history that got here follows. Format, four refusals, arithmetic and labelling tool were built and tested, and walking the workflow end to end on 2026-08-11 found two faults that would each have wasted the session: there was no way to produce a stored split without a judged run printing every verdict on the way past, and a gold set spanning more than one answer bound to no split at all, so G4 would have refused every capture it covered. `--split-only` and a list of split hashes checked by membership. `FINDINGS.md` item 16. A third and a fourth fault came out of the same walk: launched without a terminal the tool raised `EOFError` at the first prompt, and an answer audited earlier left verdicts that would anchor a labeller while tripping neither the timestamp refusal nor G4. `sayswho/prior_audit.py` scans `reports/` and `runs/` for a verdict over the same `answer_sha256` and refuses a blind session, with `--supplemental` as the way through rather than an override. Run against this repository it refuses, which is the correct answer. `tools/prep_goldset.py` now runs before a session: it draws the same sample the session will, warms the cache for any page missing from it, and reports what the afternoon will be. Building it found a fifth fault, which is that the stratification across G2 codes degrades silently to product-only when no run record is passed. The labelling itself is human work, and as of day 6 it needs captured answers rather than a stratum |
 | 3 | n and confidence intervals reported honestly | **done** | `Rate` carries its n, a Wilson interval and its split count, and `Rate.render` is the only formatter, so no surface can print a bare percentage |
 | 4 | Break attempt 5, prompt injection through a fetched page | **done** | Narrowed a published claim rather than confirming it. `BREAK_ATTEMPTS.md` |
 | 4 | Break attempt 6, denominator contamination | **done** | Fires at both levels, and writing it found a third contamination path |
@@ -76,7 +90,7 @@ answer" are different claims and only one of them is currently true.
 |---|---|
 | ~~Honest run over the frozen stratum~~ | **Run, 2026-08-13.** 24 captures, 51 sources, 158 claims, 130 verdicts of which 125 stand, 7 minutes, 130 model calls, nothing halted. It printed no support rate, which is the deliverable rather than a shortfall: G4 withheld on 18 answers and `INSUFFICIENT_EVIDENCE` on 2 more, each naming its reason and both split hashes. `FINDINGS.md` item 21 |
 | ~~Metric readout with n and CIs over real data~~ | **Produced.** `runs/day7/` holds the run record, the readout, `RUN_LOG.md` and the per-number trace table. Every rate it is entitled to print carries its n; every rate it is not names the gate that stopped it |
-| Judge-human agreement | **Computed, and n=2.** Six human labels exist and four are on sources the judge was never asked about, so two were comparable and kappa came out 0.0 over them. At that n it is an arithmetic result rather than a measurement, and it is reported as one |
+| Judge-human agreement | **Labels exist for 36 comparable pairs, and the kappa has not been computed, because the run has not happened.** Day 9 built the calibration the earlier n=2 was missing: 45 blind labels over ten ChatGPT answers, 36 of them on sources the judge will be asked about. Until `runs/day9/` exists there are no verdicts to compare them against, so this row stays here rather than moving up. What it replaces: six human labels of which four were on sources the judge was never asked about, so two were comparable and kappa came out 0.0 over them, which at that n is an arithmetic result rather than a measurement and was reported as one |
 | ~~The PDF reader on live data~~ | **Run.** It read the `boston.gov` PDF cited by a real Perplexity answer, `SOURCE_OK`, 54,811 characters as of 2026-08-12. The count is dated because it has moved twice: 57,067, then 56,352, then this, as each fix stopped the reader inventing characters. Two earlier figures were left standing here and in `tools/reaudit_spans.py` after they stopped being true, which is the rot a prose gate cannot catch, since a number is not a path. Three extraction bugs came out of this one document, none of them from a test. See "The first live PDF, and what it cost" below |
 | The thin-page flag on live data | Tested, and still never fired on a real capture: 51 more sources in the day-6 run and not one |
 | The fabricated-span count as a finding about the judge | **Recomputed 2026-08-13, after checking the extraction behind every void, which §8 requires before it may be called a finding about the judge: 3 of 96 span-bearing verdicts are the judge stitching non-contiguous passages, and 1 of 96 is this tool inlining a `[44]` footnote marker the judge dropped.** All four voids were HTML sources and only 2 of 51 sources were PDFs, so the PDF-versus-HTML split is a fact about the sample. What follows is the earlier figure this replaces. **Withdrawn, not pending.** The earlier 1-of-16 figure was mostly this tool: three of four voids were caused by SaysWho and one was a genuine catch. The symbol-font bullet behind two of them is fixed as of 2026-08-12 (`FINDINGS.md` item 17) and that does not restore the count: those spans were quoted from an extraction this tool no longer produces, so only judging the fixed document settles them. Recomputed after that run, and reported separately for PDF and HTML |
@@ -145,6 +159,34 @@ the corrected extraction they now get 305 of 549 characters through, where the b
 about 170, and then fail on `non-Boston`, because the judge quoted `nonBoston` from an extraction that had
 dropped an en dash. A span quoted from text this tool no longer produces cannot be settled by re-checking. So
 the fabricated-span count over PDF sources stays separate from one over HTML, and stays withdrawn.
+
+## What changed on day 9, and what it means
+
+**The calibration exists.** Ten ChatGPT answers were captured against the frozen consumer stratum in the order
+pre-registered in `queries/capture-order.md`, bound to their query ids, split with `--split-only` so no
+verdict was produced, prepped with fetching on, and hand-labelled. The result is 45 blind labels, 0
+supplemental, 36 comparable, over a pool of 145 claim-source pairs. `gates.MIN_BLIND_COMPARABLE` is 30, so
+this set clears the floor that the day 8 tightening put in place, and it clears it on blind labels rather than
+on a count padded with supplemental ones.
+
+**Binding was done one query at a time, and that was not a stylistic choice.** `bind_capture.py --in-order`
+pairs captures by capture time against a stratum's ids **in id order**, and the captures follow the
+pre-registered draw, which is not id order. Run with `--in-order` the ten answers would have bound to CO-01
+through CO-10: a rate over the wrong questions, with every hash still verifying and nothing to notice it. The
+`--confirm` table exists for exactly this and it was read. Each capture was bound with an explicit `--query`
+instead, and all ten answers were checked against their questions first.
+
+**What the captures cost, measured.** ChatGPT hides part of its citation list behind "+N" controls. The ten
+captures hold 33 citations and at least 20 more were never in them, a floor of 37.7 per cent, with one answer
+of the ten complete and CO-22 missing half. The extension detected and reported this before any claim was
+split, which is the counter in `extension/src/capture.js` doing its job on the first run where it had anything
+to say. Unlike the day 6 Perplexity loss it cannot be repaired from the stored pages, because those sources
+were never rendered rather than merely missed by a selector. `FINDINGS.md` item 23, written before the run so
+that the caveat could not be reverse-engineered to fit a number.
+
+**What has not happened.** The run. `runs/day9/` does not exist, so no support rate has been printed and none
+has been refused. The ChatGPT adapter is still unverified, so all ten captures carry `adapter_verified: false`
+and the gold set inherits it. Neither is a state this file is guessing at; both are checkable on disk.
 
 ## What changed on day 8, and what it means
 
