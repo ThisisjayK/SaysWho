@@ -203,11 +203,20 @@ empty across all 130 day 7 verdicts, which retires the plausibility worry item 2
 a narrower one: whether those two are real contradictions or the silence-read-as-contradiction drift break
 attempt 1 caught 4 of 4, which has not been checked by hand.
 
-**What has not happened.** The span guard fired once in 76 span-bearing verdicts and that void has not been
-re-checked against the cached bytes, which §8 requires before the figure may be called a finding about the
-judge rather than about this tool. On day 7 that check moved the number. The ChatGPT adapter is still
-unverified, so all ten captures carry `adapter_verified: false` and the gold set inherits it. Neither is a
-state this file is guessing at; both are checkable on disk.
+**Both voids and both contradictions were then checked by hand, over cached bytes.** `FINDINGS.md` item 25.
+The span guard's one firing in 76 span-bearing verdicts is genuine: the judge quoted two real passages and
+joined them with a literal `[...]`, so **1 of 76 was the judge and 0 of 76 were this tool**, which is a
+different sentence from day 7's three-of-four and the difference is the extraction bugs fixed since. The
+drift void is genuine too, on the source that came back at containment 0.2215. Both `CONTRADICTED` verdicts,
+by contrast, look wrong, and both by the same route: the judge matched a passage about an adjacent category,
+a plan loan offset for a deemed distribution and a building permit for an electrical one, and read near-miss
+topicality as incompatibility. That is a failure mode this project had not named. Neither pair is in the gold
+set, so the reading is the author's judgement at n=2 and is signed as one.
+
+**What has not happened.** The ChatGPT adapter is still unverified, so all ten captures carry
+`adapter_verified: false` and the gold set inherits it. `tools/reaudit_spans.py` cannot read a stratum run
+record and reported no voided spans over a run containing two, which is a bug in the tool rather than in the
+result. Neither is a state this file is guessing at; both are checkable on disk.
 
 ## What changed on day 8, and what it means
 

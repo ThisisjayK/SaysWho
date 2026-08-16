@@ -22,15 +22,17 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
 
 **What is left, in order.**
 
-1. **Re-check the one voided span against the cached bytes.** 1 of 76 span-bearing verdicts came back
-   `JUDGE_FABRICATED_SPAN` on `CO-24`, plus one `SPAN_ADDED_AFTER_GENERATION` on `CO-21`. §8 requires that
-   check before either may be described as a finding about the judge rather than about this tool, and on day
-   7 the check moved the number: three of four voids turned out to be ours. `tools/reaudit_spans.py` does it
-   over cached bytes rather than the live web. Until it runs, the figure stands as 1 of 76 and uninterpreted
-2. **Read the two `CONTRADICTED` verdicts by hand.** `CO-08#edb71951` and `CO-20#b87451b0`. The class was
-   empty across 130 day 7 verdicts and item 21 named that as the thing that looked wrong. It is not empty
-   now, and whether these are real contradictions or the silence-read-as-contradiction drift break attempt 1
-   caught 4 of 4 decides whether the class can be quoted
+1. **Done, both checks.** `FINDINGS.md` item 25. The two voids are genuine and both belong to the judge, so
+   the figure is **1 of 76 span-bearing verdicts was the judge and 0 of 76 were this tool**, which is a
+   different sentence from day 7's three-of-four. And both `CONTRADICTED` verdicts look wrong, both by
+   conflating an adjacent category with the claim's: a plan loan offset for a deemed distribution, a building
+   permit for an electrical one. That is a failure mode this project had not named, distinct from break
+   attempt 1's silence-as-contradiction, and neither pair is in the gold set so the human labels adjudicate
+   neither
+2. **`tools/reaudit_spans.py` cannot read a stratum run record.** It looks for voided spans in the per-answer
+   report shape and a run record nests judgements one level deeper, so it reported "no voided spans found"
+   over a run containing two. The day 9 check was done directly against the cache instead. The tool is wrong,
+   not the result, and a tool that silently finds nothing is worse than one that errors
 3. **Every rate is over inline-rendered citations.** Not over ChatGPT's citations.
    At least 20 of 53 claim-attached citations were behind "+N" controls and never in the captures, and a
    claim whose supporting source was one of them is judged against the source that did render and comes back

@@ -1221,3 +1221,77 @@ on `CO-21` where a source had drifted to containment 0.2215. Neither has been re
 bytes, and §8 requires that check before the fabricated-span figure may be described as a finding about the
 judge rather than about this tool. On day 7 that check moved the number. **So the figure is stated here as
 1 of 76 and explicitly not yet interpreted.**
+
+## 25. The two voids and the two contradictions, checked by hand
+
+Day 9, 2026-08-16, immediately after item 24 and required by it: §8 forbids describing a fabricated-span
+figure as a finding about the judge until the extraction behind every void has been checked, and item 21's
+audit left the `CONTRADICTED` class as an open question. Both checks were run over cached bytes rather than
+the live web, because re-checking against a page fetched later answers a different question.
+
+### The voids: 1 of 76, and this time both belong to the judge
+
+`tools/reaudit_spans.py` found nothing, because it reads the per-answer report shape and a stratum run record
+nests its judgements one level deeper. The check was done directly against the same cache instead. That is a
+gap in the tool rather than in the result, and it is on `TODO.md` rather than fixed here.
+
+**`CO-24#2391984c`, `JUDGE_FABRICATED_SPAN`, and it is a real one.** The span is two passages from
+`mass.gov`'s copy of c.186 §15B joined by a literal `[...]`. Checked separately against the cached document,
+part one (211 characters, beginning "The lessor shall forfeit his right to retain any portion") is present
+verbatim, part two (280 characters, the subsection (e) thirty-day clause) is present verbatim, and the span
+as submitted is not. So the judge quoted the page accurately twice and then presented the join as one
+quotation. This is the same shape as two of day 7's three genuine voids, which also announced themselves with
+an ellipsis.
+
+Worth stating because it is the cost rather than the catch: **the underlying verdict was right.** The page
+does say a lessor forfeits the deposit by failing to return it within thirty days, which is what the claim
+said. The guard threw away a correct verdict for quoting in a way a substring check cannot confirm, and that
+is the trade the guard exists to make. `CO-24` still reports 8 of 8 because the void removed numerator and
+denominator together.
+
+**`CO-21#1fe4892a`, `SPAN_ADDED_AFTER_GENERATION`, also real.** The span is on the page today, verbatim. The
+source is the one that came back at containment 0.2215, the largest drift in the run, and the drift layer
+found the span absent from the archived version near the generation timestamp. So the judge supported a claim
+with text that did not exist when ChatGPT wrote the answer. The claim, about retaliatory rent increases, may
+well be true and may well be supported elsewhere; what it is not is supported by the document as it stood.
+
+**So the figure from item 24 can now be interpreted: 1 of 76 span-bearing verdicts was the judge, and 0 of 76
+were this tool.** That is a different sentence from day 7's, where three of four voids were ours, and the
+difference is the two extraction bugs fixed since. It is one void out of seventy-six and it is reported with
+that n rather than as a rate about judges.
+
+### The contradictions: both are category conflations, and neither is in the gold set
+
+`CONTRADICTED` was empty across all 130 day 7 verdicts and item 21 named that as the thing that looked wrong.
+It fired twice here. Read by hand, **both look wrong, and both wrong the same way.**
+
+**`CO-08#edb71951`.** The claim says a deemed distribution from failing to make loan payments is different
+from a qualified plan loan offset and generally is not eligible for rollover. The judge's span, verbatim from
+the IRS bulletin, is about what happens when a plan loan **offset** occurs, and gives it sixty days to
+complete a rollover. A deemed distribution and a plan loan offset are two different objects, and the IRS site
+the answer cites gives them separate pages. The judge matched a passage about the adjacent object and read it
+as contradicting a claim about this one. On the reading above the claim is correct and the verdict accuses it
+falsely.
+
+**`CO-20#b87451b0`.** The claim is about who may pull an **electrical** permit in Boston. The judge's span,
+verbatim from boston.gov, says a homeowner may be allowed to get a **building** permit themselves for certain
+types of work. Two different permit classes, and the span's own sentence limits itself to some work rather
+than all. Same shape as the first.
+
+**This is a failure mode the project had not named.** Break attempt 1 found the judge reading a page's silence
+as contradiction, 4 of 4, and `LABELLING.md` warns the human against drifting the same way. Neither of these
+is that. The page is not silent: it says something specific and adjacent, about a neighbouring category, and
+the judge treats near-miss topicality as incompatibility. That is the contradiction-side twin of attempt 1b,
+where topical overlap was read as partial support.
+
+**Neither pair is in the gold set, so the human labels adjudicate neither.** `CO-20#b87451b0` was never
+sampled. `CO-08#edb71951` was sampled against a different IRS page, where the human labelled it `SUPPORTED`,
+which is consistent with the reading above but is not the same pair and is not evidence about this verdict.
+So this section is two hand readings by the author of the tool, n=2, and it is signed as a judgement rather
+than presented as a measurement.
+
+**What follows for the numbers.** `CONTRADICTED` is 2 of the run's verdicts, so nothing published moves much
+whichever way these go. What it costs is the sentence item 21 wanted: the class being reachable in ordinary
+output is no longer evidence that it is working, because the first two instances both look like errors. The
+honest statement is that the class fires, that both firings were checked, and that both appear to be
+conflations rather than contradictions.
