@@ -1,7 +1,8 @@
-# PR description, ready except for two answers
+# PR description, ready except for one answer
 
-**Two blanks only you can fill, marked `<<< >>>` below.** Which repository this targets, and which chapters it
-satisfies. Everything else is written and every number in it is checkable against this repo.
+**One blank left, marked `<<< >>>` below: which chapters this satisfies.** The target repository is answered:
+this is a self-contained contribution to `ThisisjayK/SaysWho` rather than to another project. Everything else
+is written and every number in it is checkable against this repo.
 
 Branch: `contrib/jayanth-says-who`
 
@@ -33,7 +34,7 @@ it, e.g. "gate G3 and tests/test_judge.py" rather than "the project demonstrates
 ### How to review it in ten minutes
 
 ```bash
-git clone <<< TARGET REPO >>> && cd SaysWho
+git clone https://github.com/ThisisjayK/SaysWho.git && cd SaysWho
 python3 -m venv .venv && .venv/bin/pip install google-genai
 .venv/bin/python -m pytest -q          # 787 tests, offline except one node process
 .venv/bin/python tools/ethics_gate.py  # privacy and honesty, checked rather than promised
@@ -42,8 +43,10 @@ python3 -m venv .venv && .venv/bin/pip install google-genai
 Then read three files in this order:
 
 1. `FINDINGS.md` item 21, the first honest run. Twenty-four answers, 51 sources, 130 verdicts, and no support
-   rate, because the gold set covers four of the twenty-four splits and gate G4 will not calibrate a rate it
-   cannot calibrate.
+   rate, because the gold set covered four of the twenty-four splits and gate G4 will not calibrate a rate it
+   cannot calibrate. Then item 22, where that run is shown to have spent the blindness a gold set needs, and
+   item 23, where the second product's captures are shown to be missing a third of their citations. The three
+   read as one argument: the gate held, the schedule did not, and both are reported.
 2. `STATUS.md`, which lists every core and stretch item done or not-done with a reason, including the ones
    that would be more flattering to leave out.
 3. `BREAK_ATTEMPTS.md`, where two attempts are kept as passing tests of a failure rather than as fixes.
@@ -57,8 +60,14 @@ Then read three files in this order:
 - The professional query stratum, which was to be drawn from real research questions, **does not run**. The
   sessions it was to be transcribed from are gone, and inventing or retyping the questions would have made a
   published sentence false. The core runs on a synthetic consumer stratum which says so wherever it appears.
-- The gold set has **six labels of a planned thirty to forty**, which is exactly why the run above published
-  nothing.
+- **The citation capture is incomplete on ChatGPT, by a measured floor of 37.7 per cent.** ChatGPT collapses
+  part of its citation list behind "+N" controls that the DOM never renders, so ten captured answers hold 33
+  citations with at least 20 more missing. Unlike an earlier Perplexity loss of the same shape, this cannot be
+  repaired from the stored pages. Any support rate over this stratum is a rate over inline-rendered citations
+  rather than over the product's citations, and those are different claims. `FINDINGS.md` item 23.
+- **A claim whose hidden source supported it is judged against the source that did render**, and comes back
+  `NOT_FOUND_IN_SOURCE`: the one verdict with no span, therefore no span check, and the one that reads as an
+  accusation. The direction of that bias is known and it is against the product.
 
 ### The design decisions most worth arguing with
 
@@ -96,8 +105,10 @@ in the PR rather than buried.
 
 ## Notes for you before sending
 
-- Fill the two blanks. The chapters need naming individually with the artefact that demonstrates each.
-- If the target repo has a `CONTRIBUTING.md`, read it before sending: this description assumes a maintainer
-  who wants the limitations up front, and some projects want a shorter opening.
+- Fill the one remaining blank. The chapters need naming individually with the artefact that demonstrates each.
+- **Check the gold set numbers against the repo before sending.** As of 2026-08-15 the set holds 45 blind
+  labels with 36 comparable, against a floor of 30, and the run that would turn that into a published rate had
+  not been executed. If it has run since, the "how to review" section needs the real figure and the sentence
+  about publishing nothing has to go. If it has not, say so rather than implying a rate exists.
 - `queries/professional.toml` is committed empty on purpose. If a reviewer reads that as unfinished work
   rather than a refusal, the second bullet under "what it does not do" is the sentence to point at.
