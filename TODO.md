@@ -91,10 +91,29 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    `IntervalBar` finishes drawing the band and the written interval before the number is legible, which
    makes the frame `VIDEO.md` warns about unrenderable rather than merely forbidden. The second data beat
    draws both per-class intervals and holds on them missing each other by 0.21 of a point.
-   **Two things block a finished film.** There is no sound: `video/SOUND.md` has the cue sheet and the
-   narration script timed to the cut, and a voice has to be chosen. And the browser take has not been shot:
-   `video/RECORDING.md` says what to record, and the scene, the match cut into it and both camera pushes
-   switch on from one flag in `video/src/footage.ts` once `video/public/footage/audit.mp4` exists
+   **The browser take is shot, reshot, and the film is now 3558 frames, 119 seconds, rather than 90.** The take in the
+   cut was recorded 2026-08-16 at 14:09 and 14:15 and assembled to 902 frames at
+   `video/public/footage/audit.mp4`, so `present` is true and the scene, the match cut into it and every
+   push are switched on. It is the whole flow the earlier takes lacked: an empty chat, the question typed,
+   the answer arriving, the extension opened from the toolbar, Audit clicked in the popup, the panel
+   filling, then four verdict cards including two `Sources disagree`, a state no previous take ever put on
+   screen. Every join is a crossfade and the fast passes carry motion blur, so the speed changes read as
+   speed rather than as cuts. It departs from `video/RECORDING.md` in ways that file now lists, chiefly a
+   new CO-02 conversation rather than the archived one, ten claims rather than day 9's seven, and one join
+   where time is genuinely missing: the first recording ran out mid-audit and the second picks up after it.
+   **The ramp broke a rule that document stated in bold, so the rule was rewritten rather than quietly
+   broken.** The ban existed because a sped-up audit is an unmeasured claim about latency. Two measurements
+   now exist and they disagree by an order of magnitude: **22 seconds over nine claims, and about five
+   minutes over ten claims on the free tier**, both single observations on 2026-08-16. The number for the
+   take in the cut is on screen while the ramp runs, and the rewritten rule says not to average the two
+   into a latency claim, because neither is a benchmark. The same correction went into the beat sheet,
+   which had budgeted the audit one second and could therefore never have been shot.
+   **Nothing in the scene reads a figure off the footage**, which is what makes a fresh conversation safe
+   to show beside day 9's numbers; a caption here that grew a figure would have to take it from this
+   recording and not from `runData.ts`.
+   **One thing still blocks a finished film.** There is no sound: `video/SOUND.md` has the cue sheet and the
+   narration script timed to the cut, and a voice has to be chosen. The cue sheet retimes itself off
+   `timing.ts`, so the 29 seconds the film just grew are already in it
 8. **Fixed: a staleness sweep over the whole repo, and the gate that should have caught most of it.**
    `tests/test_documents.py` read the root, `recipes/` and `extension/README.md`, and had never read
    `queries/` or `video/`. Six tracked documents were making unchecked claims about paths, not because

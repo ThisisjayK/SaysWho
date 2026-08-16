@@ -33,11 +33,23 @@ const CUT_SOUND: Record<string, { file: string; volume: number; note: string }> 
   push: { file: "cut-push.mp3", volume: 0.3, note: "Paper movement, barely there." },
   rule: { file: "cut-rule.mp3", volume: 0.26, note: "A thin sweep travelling with the rule." },
   dip: { file: "cut-dip.mp3", volume: 0.22, note: "Air, no transient. The film letting go." },
+  // The match cut only exists when FOOTAGE.present is true, which is why this
+  // entry was missing until the browser take landed: the cue sheet crashed on
+  // `c.file.padEnd` and the render silently dropped the cue, because
+  // `AVAILABLE[undefined]` is falsy and the filter swallowed it.
+  match: {
+    file: "cut-match.mp3",
+    volume: 0.28,
+    note: "The title becoming the browser. One soft transient, no tail.",
+  },
 };
 
 export const CUES: Cue[] = [
   ...TIMELINE.flatMap((scene) =>
-    scene.cutAt !== null && scene.cutKind
+    // A cut kind with no sound defined produces no cue at all, rather than a
+    // cue with an undefined file. The second kind is worse than silence: it
+    // reads as a cue in the sheet and plays nothing in the film.
+    scene.cutAt !== null && scene.cutKind && CUT_SOUND[scene.cutKind]
       ? [
           {
             id: `cut-after-${scene.name}`,
@@ -52,11 +64,29 @@ export const CUES: Cue[] = [
   ),
 
   {
+    // Chat.tsx types the question per character between frames 12 and 74, so
+    // the keys start with the first character rather than with the scene.
+    id: "question-typing",
+    at: beat("Cold open", 12),
+    file: "keys-typing.mp3",
+    volume: 0.32,
+    note: "The question being typed. Soft, dry, no room. Under everything else.",
+  },
+  {
     id: "question-send",
     at: beat("Cold open", 78),
     file: "ui-send.mp3",
     volume: 0.4,
     note: "The question is sent. One soft key, no click.",
+  },
+  {
+    // STREAM_FROM in Chat.tsx. The answer starts arriving here, and this is the
+    // only notification-shaped sound the film has.
+    id: "answer-arrives",
+    at: beat("Cold open", 128),
+    file: "answer-pop.mp3",
+    volume: 0.38,
+    note: "The answer appears. A soft message pop, not a chime and not a win.",
   },
   {
     id: "verdict-supported",

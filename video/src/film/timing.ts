@@ -12,6 +12,22 @@
  * film by its own length, so the total is the sum of the durations minus the
  * sum of the overlaps.
  *
+ * The two blackouts are 96 frames rather than the 44 they were built with. They
+ * carry the film's two section titles, and at 44 frames the panel held full
+ * black for a single frame and the word was legible for about half a second,
+ * which is not long enough to read six words. 96 gives the dwell about 0.6s of
+ * true black with the word at full opacity inside it.
+ *
+ * Calibration is 800 frames rather than 760 and Close is 250 rather than 186,
+ * both because the narration did not fit once it was recorded and measured.
+ * Calibration carries the kappa, its interval and its n, which is the one line
+ * VIDEO.md says cannot be shortened, so the scene grew instead.
+ *
+ * Close is 250 frames rather than 186 because the last two narration lines did
+ * not fit in 186 once they were recorded and measured. Lengthening the closing
+ * card was the cheaper fix than cutting the sentence that states the tool's
+ * largest limitation.
+ *
  * The cuts are deliberately not all the same. `push` is the ordinary one. `rule`
  * marks a change of subject rather than of argument. `blackout` is used exactly
  * twice, on the two cuts the film exists for, so that it still means something
@@ -35,8 +51,8 @@ export const SCENE_TIMING = [
     : []),
   { name: "What it does", duration: 588 },
   { name: "The refusal", duration: 640 },
-  { name: "Calibration", duration: 760 },
-  { name: "Close", duration: 186 },
+  { name: "Calibration", duration: 800 },
+  { name: "Close", duration: 250 },
 ] satisfies readonly { name: string; duration: number }[];
 
 export const CUTS = [
@@ -47,8 +63,8 @@ export const CUTS = [
         { after: "In the browser", kind: "push", overlap: 26 },
       ] as const)
     : ([{ after: "Title", kind: "rule", overlap: 34 }] as const)),
-  { after: "What it does", kind: "blackout", overlap: 44, word: "Could not verify" },
-  { after: "The refusal", kind: "blackout", overlap: 44, word: "How much is a verdict worth" },
+  { after: "What it does", kind: "blackout", overlap: 96, word: "Could not verify" },
+  { after: "The refusal", kind: "blackout", overlap: 96, word: "How much is a verdict worth" },
   { after: "Calibration", kind: "dip", overlap: 34 },
 ] satisfies readonly {
   after: string;

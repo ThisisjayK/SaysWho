@@ -120,8 +120,15 @@ export const Refusal: React.FC = () => {
               <AbsoluteFill
                 style={{ padding: `${SAFE.y}px ${SAFE.x}px`, justifyContent: "center" }}
               >
+                {/* "gives you a number" was a claim about what competitors do,
+                    and SCOPE.md §5a allows only a claim about what they say,
+                    because the §5a head to head has not been run. The narration
+                    for this beat was already written the careful way, so the
+                    picture was the half of the film making the stronger claim.
+                    "I looked at" and "promise" are both load bearing: the set is
+                    the ones actually read, and the verb is about their copy. */}
                 <MaskText
-                  lines={["Every other tool", "gives you a number here."]}
+                  lines={["Every other tool I looked at", "promises a number here."]}
                   size={TYPE.statement}
                   color={C.dim}
                 />

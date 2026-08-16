@@ -1,7 +1,18 @@
 # Sound: cue sheet and narration
 
-The film is 2678 frames, 1:29.27 at 30fps. Everything below is generated from or
+The film is 3454 frames, 1:55.13 at 30fps. Everything below is generated from or
 timed against `src/film/timing.ts`, which is the same table the render uses.
+
+**It was 2678 frames when this document was written.** The browser take landed
+and added a 902 frame scene after the title, and the two blackouts went from 44
+frames to 96 so their section titles can actually be read. Every timing below is
+the retimed one. The effect cues were regenerated; the narration table was
+recomputed by hand, keeping each line where it sat inside its own scene.
+
+## Voice
+
+`txYZyFyf0wIEgqUsHmno` on ElevenLabs, chosen 2026-08-16. Every `vo-*.mp3` uses
+it, so a reshoot of one line matches the rest.
 
 Regenerate the cue sheet after any retime:
 
@@ -38,59 +49,107 @@ which is a narrower claim than a chime communicates.
 
 ## Effect cues
 
+Regenerated 2026-08-16 against the retimed film. Two of these are new and were
+asked for by name: the keys and the pop that opens the film.
+
 | At | Cue | Character |
 |---|---|---|
+| 00:00.40 | `keys-typing` | The question being typed. Soft, dry, no room. Under everything else. |
 | 00:02.60 | `ui-send` | The question is sent. One soft key, no click. |
+| 00:04.27 | `answer-pop` | The answer appears. A soft message pop, not a chime and not a win. |
 | 00:16.10 | `cut-push` | Paper movement, barely there. |
-| 00:21.27 | `cut-rule` | A thin sweep travelling with the rule. |
-| 00:28.07 | `verdict-settle` | A claim resolves green. Warm, short, no bell. |
-| 00:30.13 | `span-confirm` | The span is found. The one satisfying sound in the film. |
-| 00:33.33 | `verdict-settle-low` | A claim resolves rust. Same shape, lower. |
-| 00:39.50 | `cut-blackout` | Low soft impact. Loud. |
-| 00:41.07 | `verdict-withhold` | Could not verify. A sound that stops rather than resolves. |
-| 00:53.93 | `gate-close` | `INSUFFICIENT_EVIDENCE`. Low, final, not a slam. |
-| 00:59.37 | `cut-blackout` | Low soft impact. Loud. |
-| 01:05.20 | `figure-land` | Kappa arrives, after its interval. No fanfare. It is not good news. |
-| 01:21.80 | `near-miss` | The two intervals nearly touching. A held tone, slightly uneasy. |
-| 01:23.47 | `cut-dip` | Air, no transient. The film letting go. |
+| 00:21.37 | `cut-match` | The title becoming the browser. One soft transient, no tail. |
+| 00:50.50 | `cut-push` | Paper movement, barely there. |
+| 00:57.40 | `verdict-settle` | A claim resolves green. Warm, short, no bell. |
+| 00:59.47 | `span-confirm` | The span is found. The one satisfying sound in the film. |
+| 01:02.67 | `verdict-settle-low` | A claim resolves rust. Same shape, lower. |
+| 01:07.73 | `cut-blackout` | Low soft impact. Loud. |
+| 01:08.67 | `verdict-withhold` | Could not verify. A sound that stops rather than resolves. |
+| 01:21.53 | `gate-close` | `INSUFFICIENT_EVIDENCE`. Low, final, not a slam. |
+| 01:25.87 | `cut-blackout` | Low soft impact. Loud. |
+| 01:31.07 | `figure-land` | Kappa arrives, after its interval. No fanfare. It is not good news. |
+| 01:47.67 | `near-miss` | The two intervals nearly touching. A held tone, slightly uneasy. |
+| 01:49.33 | `cut-dip` | Air, no transient. The film letting go. |
+
+**`cut-match` is new because the cue for it was broken rather than missing.**
+`CUT_SOUND` had no entry for the match cut, which only exists once
+`FOOTAGE.present` is true, so the cue was built with an undefined file. The
+render dropped it silently, because `AVAILABLE[undefined]` is falsy, and the
+cue sheet script crashed on it. A kind with no sound defined now produces no cue
+at all rather than a cue that reads as real and plays nothing.
 
 ## Narration script
 
-About 195 words. Timings are where each line **starts**. Record as separate
-takes, one file per line, named as in the table; the manifest positions them by
-frame so a line running long does not push the ones after it.
+Rewritten 2026-08-16 as one script for the whole film rather than a set of
+captions read aloud. About 250 words over 1:55.
 
-Two lines are load-bearing and must be delivered as written.
+Three rules it was written to. **The picture already says a lot**, so a line that
+repeats the words on screen was cut; the narration sets up what is about to
+appear and then gets out of the way. **No sentence claims more than the repo can
+show**, which is why the competitor line is about what other tools say rather
+than about what they do, and why nothing here is called accurate, powerful or
+best. **Short sentences, concrete nouns, no adjectives doing work a verb should
+do.**
 
-| Start | File | Line |
-|---|---|---|
-| 00:02.4 | `vo-01.mp3` | You ask a question, and the answer arrives already carrying sources. |
-| 00:08.6 | `vo-02.mp3` | The citation is what does the persuading. |
-| 00:12.2 | `vo-03.mp3` | Nothing in the pipeline checks it. |
-| 00:21.6 | `vo-04.mp3` | This does not ask whether a claim is true. |
-| 00:24.4 | `vo-05.mp3` | It asks a narrower one. Does the page that was cited actually say this. |
-| 00:28.4 | `vo-06.mp3` | Supported means it found the sentence on the page, and a script confirmed the quote is really in the document that was fetched. |
-| 00:34.2 | `vo-07.mp3` | Not supported is a statement about the citation, not about the world. The claim may be true and cited to the wrong page. |
-| 00:41.4 | `vo-08.mp3` | And sometimes it says nothing at all. |
-| 00:44.8 | `vo-09.mp3` | This claim's only source is a page that is gone. There is nothing to check against, so it will not score it. |
-| 00:50.6 | `vo-10.mp3` | **Every other tool I looked at gives you a number here. A number here is invented.** |
-| 00:54.4 | `vo-11.mp3` | It refuses at the answer level too. More than half this answer's cited claims produced no verdict that stands, so it withholds the rate. |
-| 01:02.0 | `vo-12.mp3` | Forty five claims, hand labelled blind, before the judge saw any of them. |
-| 01:05.6 | `vo-13.mp3` | **Agreement with a human is a kappa of 0.30, with a confidence interval from 0.004 to 0.60, over 35 pairs. That lower bound is the honest part. At this sample size it cannot rule out chance.** |
-| 01:14.0 | `vo-14.mp3` | It agrees best on "the page does not say this", and worst on "the page partly says this". |
-| 01:21.6 | `vo-15.mp3` | Those two intervals miss each other by two tenths of a point. The finding holds, barely, and the graphic says so. |
-| 01:24.6 | `vo-16.mp3` | Unauditable claims are counted, named, and kept out of every rate. |
+The scene-and-offset column is the one to trust. Absolute times are derived from
+it and will be wrong after the next retime.
+
+**Three written lines were cut after they were recorded**, because hearing them
+read while the same words sit on screen is one beat spent twice, and the scenes
+were over length by roughly the time they took. `vo-14`, because the screen
+already says *Not supported by the cited source is a claim about the citation,
+not about the world* in full. `vo-17`, because the screen already says *Every
+other tool I looked at promises a number here*. `vo-20`, because Calibration
+opens on *So how much is one of its verdicts worth?*, which is the same setup.
+The files still exist in `public/audio` and are simply not in the manifest, so
+putting one back is one line.
+
+| Scene + offset | Start | File | Line |
+|---|---|---|---|
+| Cold open +2.4 | 00:02.4 | `vo-01.mp3` | Every AI answer now arrives with its sources attached. |
+| Cold open +6.2 | 00:06.2 | `vo-02.mp3` | The links are what make it feel checked. |
+| Cold open +9.6 | 00:09.6 | `vo-03.mp3` | They are also the part nobody opens. |
+| Cold open +12.8 | 00:12.8 | `vo-04.mp3` | And nothing that produced this answer ever read them. |
+| Title +2.0 | 00:17.8 | `vo-05.mp3` | SaysWho reads them. |
+| In the browser +3.5 | 00:24.5 | `vo-06.mp3` | It runs on the page the answer is already on. |
+| In the browser +9.0 | 00:30.0 | `vo-07.mp3` | It takes the answer, hashes it, and lists every source it cites. |
+| In the browser +13.5 | 00:34.5 | `vo-08.mp3` | It tells you when it cannot see them all. Two here are hidden behind a control. |
+| In the browser +19.0 | 00:40.0 | `vo-09.mp3` | Then it fetches every cited page and reads it. |
+| In the browser +24.5 | 00:45.5 | `vo-10.mp3` | Every sentence comes back marked, with the source's own words underneath. |
+| What it does +1.0 | 00:51.2 | `vo-11.mp3` | It does not ask whether a claim is true. |
+| What it does +4.0 | 00:54.2 | `vo-12.mp3` | It asks whether the page that was cited says it. |
+| What it does +7.8 | 00:58.0 | `vo-13.mp3` | Supported means it quoted the page, and a script confirmed the quote is really there. |
+| The refusal +2.6 | 01:09.2 | `vo-15.mp3` | And sometimes it gives you nothing. |
+| The refusal +6.2 | 01:12.8 | `vo-16.mp3` | This claim's only source is a page that is gone. There is nothing to read, so it will not score it. |
+| The refusal +12.4 | 01:19.0 | `vo-18.mp3` | A number here is invented. |
+| The refusal +15.8 | 01:22.4 | `vo-19.mp3` | It refuses at the answer level too. |
+| Calibration +3.4 | 01:28.1 | `vo-21.mp3` | Forty five claims, labelled blind, before the judge saw any of them. |
+| Calibration +8.3 | 01:33.0 | `vo-22.mp3` | **Agreement is a kappa of 0.30, confidence interval 0.004 to 0.60, over thirty five pairs.** |
+| Calibration +16.0 | 01:40.7 | `vo-23.mp3` | **The lower bound is the honest part. Chance is not ruled out.** |
+| Calibration +19.6 | 01:44.3 | `vo-24.mp3` | It agrees best when the page simply does not say it. Worst when the page partly does. |
+| Close +1.4 | 01:50.3 | `vo-25.mp3` | It cannot tell you a source is right. A well cited falsehood passes. |
+| Close +3.6 | 01:52.5 | `vo-26.mp3` | It can tell you when nobody checked. |
 
 ### The two that cannot be paraphrased
 
-**`vo-13`.** VIDEO.md names quoting 0.30 without its interval as the one sentence
-that would sink the video. The interval and the n are part of the line, not a
-caption under it. If the take runs long, cut something else.
+**`vo-22` and `vo-23`.** VIDEO.md names quoting 0.30 without its interval as the
+one sentence that would sink the video. The interval and the n are part of the
+line, not a caption under it, and `vo-23` is why the number is in the film at
+all. If a take runs long, cut something else.
 
-**`vo-10`.** "Every other tool" is a claim about competitors. `SCOPE.md` §5a
+**`vo-17`.** "Every other tool" is a claim about competitors. `SCOPE.md` §5a
 allows it only as a claim about their marketing copy, because the head to head
-has not been run. If the delivery makes it sound like a measured comparison,
-soften it to "every other tool I looked at says it will give you a number here".
+has not been run, which is why the line is now written as *says it will give you
+a number* rather than *gives you*. **The on-screen text in `Refusal.tsx` still
+reads "Every other tool gives you a number here"**, unqualified, which is the
+stronger claim §5a does not allow. Fix the picture or accept that the voice is
+carrying the caveat alone.
+
+**`vo-19`.** The gate fires at `measured * 2 <= total`, so it triggers when half
+an answer's cited claims or more come back with no standing verdict. The
+docstring and `INSUFFICIENT_EVIDENCE_DETAIL` in `rates.py` both say "more than
+half", which is off by the equality case. The line avoids the number entirely
+and lets the screen state the rule.
 
 ### Also do not say
 

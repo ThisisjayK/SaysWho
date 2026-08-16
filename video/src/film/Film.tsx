@@ -2,6 +2,7 @@ import type { TransitionPresentation, TransitionTiming } from "@remotion/transit
 import { linearTiming, springTiming, TransitionSeries } from "@remotion/transitions";
 import React from "react";
 import { AbsoluteFill } from "remotion";
+import { NARRATION } from "../audio/narration";
 import { Soundtrack } from "../audio/Soundtrack";
 import "../fonts";
 import { dipThroughPaper } from "../transitions/dipThroughPaper";
@@ -57,8 +58,9 @@ const timingFor = (cut: (typeof CUTS)[number]): TransitionTiming =>
 export const Film: React.FC = () => {
   return (
     <AbsoluteFill>
-      {/* Silent until files land in public/audio and are named in the manifest. */}
-      <Soundtrack bed="bed.mp3" />
+      {/* Anything not in AVAILABLE is skipped, so a missing bed or a cut line
+          costs a layer rather than the render. */}
+      <Soundtrack bed="bed.mp3" narration={NARRATION} />
       <TransitionSeries>
         {SCENES.flatMap((scene) => {
           const cut = CUTS.find((c) => c.after === scene.name);
