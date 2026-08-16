@@ -1,13 +1,18 @@
 # Sound: cue sheet and narration
 
-The film is 3454 frames, 1:55.13 at 30fps. Everything below is generated from or
+The film is 3558 frames, 1:58.60 at 30fps. Everything below is generated from or
 timed against `src/film/timing.ts`, which is the same table the render uses.
 
-**It was 2678 frames when this document was written.** The browser take landed
-and added a 902 frame scene after the title, and the two blackouts went from 44
-frames to 96 so their section titles can actually be read. Every timing below is
-the retimed one. The effect cues were regenerated; the narration table was
-recomputed by hand, keeping each line where it sat inside its own scene.
+**It was 2678 frames when this document was written**, and it has grown three
+times since. The browser take landed and added a 902 frame scene after the title.
+The two blackouts went from 44 frames to 96, so their section titles can be read.
+Then Calibration went to 800 and Close to 250, because the narration did not fit
+in them once it was recorded and measured, and the kappa line carries its own
+interval and n, so the scene moved rather than the sentence.
+
+Every timing below is the retimed one. The effect cues regenerate from
+`timing.ts`, and the narration is anchored to scenes and offsets for the same
+reason, after an earlier version of this table was silently wrong for a day.
 
 ## Voice
 
@@ -22,13 +27,19 @@ npx esbuild scripts/cuesheet.mjs --bundle --platform=node --outfile=.cuesheet.cj
 
 ## How the audio is wired
 
-Three independent layers in `src/audio/Soundtrack.tsx`, so any one can be absent
-without breaking the others.
+Two independent layers in `src/audio/Soundtrack.tsx`, so either can be absent
+without breaking the other.
 
-1. **Bed.** One file, `public/audio/bed.mp3`, at 0.16. Almost subliminal.
-2. **Effects.** One file per cue in `src/audio/cues.ts`. Cut cues derive their
+1. **Effects.** One file per cue in `src/audio/cues.ts`. Cut cues derive their
    position from the timeline, so retiming a scene carries its sound with it.
-3. **Narration.** One file per line, positioned by frame.
+2. **Narration.** One file per line, positioned by scene and offset.
+
+**There is no music.** A bed was built on 2026-08-16 and listened to in the cut
+before it was rejected: a low drone with its level derived from the timeline so
+it pulled back under both blackouts. The film is better without it. The
+`Soundtrack` component still takes a `bed` prop and the manifest still gates it,
+so adding one later is a file and a line, but nothing in this document plans for
+one.
 
 `AVAILABLE` in `Soundtrack.tsx` is the manifest. A file only plays once it is
 both dropped into `public/audio` and named there. That is deliberate: a missing
@@ -36,10 +47,11 @@ asset should not fail a render eighty seconds into a ninety second film.
 
 ## Mix intent
 
-Narration carries the argument. The bed is atmosphere and ducks under every
-line. Effects mark decisions rather than decorate motion.
+Narration carries the argument. Effects mark decisions rather than decorate
+motion. Between them is silence, and that is the intended texture rather than an
+absence waiting to be filled.
 
-**The two blackout cuts at 0:39.50 and 0:59.37 are the only moments allowed to be
+**The two blackout cuts at 1:07.73 and 1:25.87 are the only moments allowed to be
 loud.** They are the cuts the film exists for. If anything else in the mix
 competes with them, that thing is wrong, not the blackout.
 
@@ -81,7 +93,7 @@ at all rather than a cue that reads as real and plays nothing.
 ## Narration script
 
 Rewritten 2026-08-16 as one script for the whole film rather than a set of
-captions read aloud. About 250 words over 1:55.
+captions read aloud. 23 lines, 243 words, over 1:58.
 
 Three rules it was written to. **The picture already says a lot**, so a line that
 repeats the words on screen was cut; the narration sets up what is about to
@@ -137,13 +149,13 @@ one sentence that would sink the video. The interval and the n are part of the
 line, not a caption under it, and `vo-23` is why the number is in the film at
 all. If a take runs long, cut something else.
 
-**`vo-17`.** "Every other tool" is a claim about competitors. `SCOPE.md` §5a
-allows it only as a claim about their marketing copy, because the head to head
-has not been run, which is why the line is now written as *says it will give you
-a number* rather than *gives you*. **The on-screen text in `Refusal.tsx` still
-reads "Every other tool gives you a number here"**, unqualified, which is the
-stronger claim §5a does not allow. Fix the picture or accept that the voice is
-carrying the caveat alone.
+**`vo-17`, which is recorded and not in the film.** "Every other tool" is a claim
+about competitors, and `SCOPE.md` §5a allows it only as a claim about their
+marketing copy, because the head to head has not been run. The recorded line says
+*says it will give you a number* rather than *gives you*, and the on-screen text
+in `Refusal.tsx` was corrected the same day to read *Every other tool I looked at
+promises a number here*. The picture and the voice now make the same careful
+claim, which is what made the spoken line redundant enough to cut.
 
 **`vo-19`.** The gate fires at `measured * 2 <= total`, so it triggers when half
 an answer's cited claims or more come back with no standing verdict. The
