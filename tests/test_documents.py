@@ -228,20 +228,113 @@ def test_the_no_api_rates_decision_is_stated_and_enforced():
     assert "no API-sourced rate is published" in todo
 
 
+#: Paths that mean "run everything". Anything else pytest is pointed at is a narrower selection.
+def _whole_suite_targets() -> set[Path]:
+    return {REPO.resolve(), (REPO / "tests").resolve()}
+
+
+def selection_was_narrowed(config) -> bool:
+    """True when pytest was asked for less than the whole suite.
+
+    This used to be inferred from the collected count, skipping below fifty items. Counting cannot tell a
+    subset from a suite that shrank, which is the direction that matters: two test files collect seventy-five,
+    clear any sane threshold, and then report `STATUS.md` as wrong when it is right. Four false failures in one
+    afternoon, and a check that cries wolf is one people learn to run with their eyes closed.
+
+    So ask pytest what it was told to run rather than guessing from what it found. A bare `pytest` leaves
+    `file_or_dir` empty; naming files, node ids, `-k` or `-m` all show up here.
+    """
+    if config.getoption("keyword", default=""):
+        return True
+    if config.getoption("markexpr", default=""):
+        return True
+    # Re-runs of a remembered subset. Absent on old pytest versions, hence the guarded lookup.
+    for narrowing in ("lf", "failedfirst", "deselect"):
+        try:
+            if config.getoption(narrowing):
+                return True
+        except ValueError:
+            pass
+
+    targets = config.getoption("file_or_dir", default=[]) or []
+    if not targets:
+        return False
+
+    whole = _whole_suite_targets()
+    for target in targets:
+        # A node id narrows even though its path half may not: `tests/x.py::test_y` runs one test.
+        path = Path(str(target).split("::")[0])
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        try:
+            path = path.resolve()
+        except OSError:
+            return True
+        if path not in whole:
+            return True
+    return False
+
+
 def test_the_test_count_in_status_matches_the_suite(request):
     """STATUS.md publishes a test count. A number in a document that nothing checks is a number that drifts,
     and this file exists because of exactly that class of claim."""
     stated = re.search(r"(\d{3,}) tests", (REPO / "STATUS.md").read_text())
     assert stated, "STATUS.md should say how many tests there are"
 
-    actual = len(request.session.items) if request.session.items else 0
-    if actual < 50:
-        pytest.skip("running a subset, so the total is not comparable")
+    if selection_was_narrowed(request.config):
+        pytest.skip("pytest was given a narrower selection, so the total is not comparable")
 
+    actual = len(request.session.items)
     claimed = int(stated.group(1))
-    assert abs(claimed - actual) <= 0, (
+    assert claimed == actual, (
         f"STATUS.md says {claimed} tests, the suite collects {actual}. Update STATUS.md."
     )
+
+
+class _FakeConfig:
+    """Enough of a pytest config to exercise the guard without spawning pytest inside pytest."""
+
+    def __init__(self, **options):
+        self._options = options
+
+    def getoption(self, name, default=None):
+        if name in self._options:
+            return self._options[name]
+        if name in ("lf", "failedfirst", "deselect"):
+            # Mirror old pytest versions, where asking for an unknown option raises.
+            raise ValueError(name)
+        return default
+
+
+def test_a_bare_run_is_not_a_subset():
+    """The case the count threshold got right and this must keep getting right, or the check never runs."""
+    assert selection_was_narrowed(_FakeConfig(file_or_dir=[], keyword="", markexpr="")) is False
+
+
+def test_naming_the_repo_or_the_tests_directory_is_not_a_subset():
+    for target in (str(REPO), str(REPO / "tests"), "tests"):
+        config = _FakeConfig(file_or_dir=[target], keyword="", markexpr="")
+        assert selection_was_narrowed(config) is False, f"{target} should count as the whole suite"
+
+
+def test_naming_two_test_files_is_a_subset():
+    """The bug. Two files collect seventy-five items, which cleared the old threshold of fifty and then
+    failed the count assertion against a STATUS.md that was correct."""
+    config = _FakeConfig(
+        file_or_dir=["tests/test_documents.py", "tests/test_no_confidence_anywhere.py"],
+        keyword="", markexpr="",
+    )
+    assert selection_was_narrowed(config) is True
+
+
+def test_a_node_id_is_a_subset_even_though_its_path_half_is_a_whole_file():
+    config = _FakeConfig(file_or_dir=["tests/test_documents.py::test_x"], keyword="", markexpr="")
+    assert selection_was_narrowed(config) is True
+
+
+def test_dash_k_and_dash_m_are_subsets():
+    assert selection_was_narrowed(_FakeConfig(file_or_dir=[], keyword="span", markexpr="")) is True
+    assert selection_was_narrowed(_FakeConfig(file_or_dir=[], keyword="", markexpr="slow")) is True
 
 
 # ---------------------------------------------------------------- the verified-inferred boundary, §4

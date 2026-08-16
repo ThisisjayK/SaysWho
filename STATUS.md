@@ -3,7 +3,7 @@
 `SCOPE.md` §0a promises this table: every core and stretch item marked done or not-done, with a reason, and
 nothing quietly dropped. It is the honesty overlay's fourth item in §8.
 
-Last updated 2026-08-15, day 9 of ten, where day 5 was 2026-08-11. 794 tests, and `tests/test_documents.py`
+Last updated 2026-08-15, day 9 of ten, where day 5 was 2026-08-11. 799 tests, and `tests/test_documents.py`
 now checks that this number is true rather than leaving it to rot. This file carried the header "day 7" on
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
