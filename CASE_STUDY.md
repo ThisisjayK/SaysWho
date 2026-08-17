@@ -1,10 +1,13 @@
 # SaysWho: building a tool that refuses to give you a number
 
 A case study for a technical reader. What the problem was, which decisions were load bearing, what they cost,
-and what is still unmeasured. Written on day 7 of a ten-day build, so the last section is still longer than
-the results section. That is the accurate shape.
+and what is still unmeasured. Written on day 7 and updated on day 10, when the one measured result arrived.
+It is one calibration at n=35, and the section reporting it spends more words on its limits than on the
+figure itself. On a ten-day build that is the accurate shape.
 
 Repo: https://github.com/ThisisjayK/SaysWho
+Demo: [thisisjayk.github.io/SaysWho](https://thisisjayk.github.io/SaysWho/), including a five minute film
+that runs the whole thing on one real answer, both refusals included.
 
 ---
 
@@ -122,7 +125,7 @@ on a sample the judge chose.
 
 Runs end to end on a real captured answer: capture, hash, fetch every cited URL under a written data
 contract, check drift against the Wayback archive, split into claims, judge each against its source, verify
-every span. 826 tests, each gate with a test that makes it fire on the bug it exists to catch.
+every span. 839 tests, each gate with a test that makes it fire on the bug it exists to catch.
 
 What has actually been observed, all at n=1 and reported as such: a Claude research report that named fifteen
 sources and linked one. A drift check that flagged churning reference lists as drift until it was asked the
@@ -131,15 +134,68 @@ the answer was written". A gzip bug that made every archived comparison report d
 consistent, entirely artefactual result. And an extraction guard that fired twice and was wrong both times,
 because the permissive parser it depended on had been written, tested, and never wired in.
 
-**No measured rate exists yet, and the run that could have produced one refused to print it.** Twenty-four
-answers, 51 sources, 130 verdicts, and no support rate: gate G4 withholds every rate that depends on a
-calibrated judge, the gold set covers four of the twenty-four splits, and two more answers were withheld on
-`INSUFFICIENT_EVIDENCE` before G4 got to them. The refusal is the system behaving correctly. It is also the
-reason there is no results section here, and watching it happen on real data is the closest thing to a result
-this project has.
-
 `STATUS.md` lists every core and stretch item as done or not-done with a reason, including the ones that
 would be more flattering to leave out.
+
+## The one measurable improvement, and why it is smaller than it sounds
+
+**On day 7 this tool could not print a support rate at all. On day 9 it printed several, and the thing that
+changed is a number that does not flatter it.**
+
+Day 7 was twenty-four answers, 51 sources, 130 verdicts and no rate anywhere. Gate G4 withholds every rate
+that depends on a calibrated judge, and there was no calibration, so there was nothing to publish. The
+refusal was the system working, and it was also a dead end: a tool that always refuses is not a useful tool,
+it is a tool with the wrong gate.
+
+Day 9 supplied the missing input by hand. Forty-five claims labelled blind, before the judge saw any of them,
+with a prior-audit scan proving blindness rather than asserting it. Thirty-six were comparable with a
+standing verdict. Against those:
+
+**Cohen's kappa 0.304, 95% CI 0.004 to 0.604, n=35.**
+
+G4 opened, and per-answer and per-domain support rates printed for the first time in the project's history,
+each with its own n and interval. The stratum rate stayed withheld, because one answer of the ten tripped
+`INSUFFICIENT_EVIDENCE`, so the two gates are visibly doing different jobs rather than one standing in for
+the other.
+
+**Now the part that matters more than the headline.** The lower bound is 0.004. At this sample size the run
+cannot rule out that the agreement between the judge and me is chance. The figure is reported as a
+wide-interval estimate, never as a calibration, and it is in the film, the readout and this paragraph
+carrying its interval every time, because kappa 0.30 quoted bare would be doing precisely what the tool
+exists to prevent.
+
+Per class it is uneven in a way the aggregate hides. `NOT_FOUND_IN_SOURCE`, the verdict that accuses the
+audited product, has precision and recall both 77.3% (n=22): the tool is at its most reliable exactly where
+being wrong is most expensive. `PARTIALLY_SUPPORTED` has precision 16.7% (n=6), which is a class the judge
+and I do not agree on and which no aggregate should be allowed to smooth over.
+
+So the honest version of the improvement is narrow: the system moved from publishing nothing to publishing
+per-answer rates with a stated agreement figure whose interval nearly spans chance. That is one calibration
+at n=35 on one stratum against one judge, and every sentence above says so.
+
+## What is verified and what is inferred
+
+Every field the tool emits is classified, and the classification is a Python object rather than a paragraph,
+because a table of provenance is exactly the kind of prose that rots when a payload gains a field.
+`sayswho/boundary.py` holds the seven classes, `SCOPE.md` §4 is generated from it, and
+`tests/test_documents.py` fails if the document and the code disagree or if a run record emits a field no row
+covers.
+
+| Class | What it means for a reader |
+|---|---|
+| `record` | A primary observation, written as it arrived: what the product emitted, what a server returned, when |
+| `local-evidence` | An artefact this project stored and reads back, chiefly the fetch cache and the stored page |
+| `external-source` | Fetched from a third party that is not the audited product: the cited page, the Wayback snapshot |
+| `script-output` | Computed by deterministic code from the three above. Reproducible, carrying no judgement |
+| `model-inference` | Produced by a language model. Marked as a judgement in every surface, never printed bare beside a record-derived number |
+| `your-input` | Supplied by a person. The gold set labels and the pre-registered cost of error, and the only class this tool can neither generate nor check |
+| `missing` | Not produced at all, named so its absence is visible |
+
+The line that matters: **claim splitting and every verdict are `model-inference`. Source outcomes, span
+presence and every rate are `script-output`.** So "this page does not say that" is a judgement, and "this
+page could not be fetched" and "this quoted span is really on the page" are not. The panel, the readout and
+the film all keep that boundary visible, and `runs/day9/TRACE.md` traces every number in the run back to the
+record it came from.
 
 ## What I would do differently
 

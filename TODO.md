@@ -1238,8 +1238,14 @@ The machinery is built and tested. What is left on this list is the labelling it
       repository-shape decision it implied, was about a deliverable SaysWho does not owe. Withdrawn
       2026-08-16 and `PR_DESCRIPTION.md` deleted with it.
 - [x] Portfolio piece, 35 points: the case study. `CASE_STUDY.md`, for a technical reader, with the four
-      load-bearing decisions and what each cost. The "what I would do differently" section is longer than
-      the results section, which is the accurate shape on day 5
+      load-bearing decisions and what each cost. **Brought to day 10 on 2026-08-16, because it had been
+      written on day 7 and was stale in the three places this row is graded on.** It said "no measured rate
+      exists yet", which stopped being true on day 9; it had no verified/inferred line at all, though
+      `sayswho/boundary.py` and `SCOPE.md` §4 have carried one since day 6; and it did not link the demo.
+      It now carries the one measurable improvement, kappa 0.304 with its 95% CI of 0.004 to 0.604 over 35
+      pairs, and spends more of that section on the lower bound than on the figure. The per-class split is
+      there too, because the aggregate hides that `NOT_FOUND_IN_SOURCE` runs at 77.3% precision and recall
+      (n=22) while `PARTIALLY_SUPPORTED` runs at 16.7% precision (n=6)
 - [x] Portfolio piece, the install half. `README.md` now opens with it: clone, load unpacked, two buttons.
       Capture needs nothing running; the extra three lines for verdicts are separated out and labelled, so the
       thirty-second path is not padded with the five-minute one
