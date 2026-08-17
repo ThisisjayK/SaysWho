@@ -113,9 +113,32 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    **Nothing in the scene reads a figure off the footage**, which is what makes a fresh conversation safe
    to show beside day 9's numbers; a caption here that grew a figure would have to take it from this
    recording and not from `runData.ts`.
-   **One thing still blocks a finished film.** There is no sound: `video/SOUND.md` has the cue sheet and the
-   narration script timed to the cut, and a voice has to be chosen. The cue sheet retimes itself off
-   `timing.ts`, so the 29 seconds the film just grew are already in it
+   **The film has a voice now, and deliberately no music.** Twenty six lines were generated in the
+   `video/SOUND.md` voice and then measured rather than trusted: ten overran their slots, six were
+   shortened, three were cut because the same words were already on screen, and two scenes grew instead,
+   because the kappa line cannot be shortened without dropping the interval that has to travel with it.
+   Narration is positioned by scene and offset in `video/src/audio/narration.ts` rather than by frame, so
+   the next retime carries its own voice with it. A bed was built, listened to in the cut, and rejected.
+   **The graded explainer is cut, narrated and wired into the site at 3:33.** It is assembled from three
+   screen recordings made 2026-08-16, bookended with the film's title and closing cards, and carries twelve
+   narration lines. `video/scripts/explainer.py` is the build, and it holds the segment table, every offset
+   and all twelve lines as written text, because `video/public/audio/` is gitignored on the rule that the
+   written line is the source and the mp3 is output, and because the first assembly of this cut existed only
+   in a temporary directory that gets wiped.
+   **Its narration was landing on the wrong picture, and has been re-timed against measured beats.** The
+   opening browser shot ran four seconds long, so the capture click and the panel printing `INCOMPLETE` were
+   legible from 0:12 while the voice introduced capture at 0:49 and treated `INCOMPLETE` as news at 1:03.
+   The click now sits at the head of the main browser run, every line is placed against a beat measured off
+   the picture, and the blocker row is on screen under the sentence that points at it rather than 0.3
+   seconds after it. Two misses are recorded rather than fixed: `ex-09` names the answer level refusal while
+   the box showing it left the screen forty seconds earlier, because the line's own words forbid moving it
+   ahead of the line before it, and the `FINDINGS.md` shot runs 22.7 seconds with no line written for it.
+   **The sidebar mask had a hole in it, and the file with the hole was the one on disk.** The blur over the
+   ChatGPT conversation titles started nine frames late on the second browser block, so between 47.20 and
+   47.50 seconds every title was readable at full contrast. Spot checks at 6, 60, 96 and 130 seconds all
+   missed it, which is what spot checking a time gate is worth. The mask is not a time gate any more:
+   `explainer.py` reapplies it over every browser frame, and its docstring carries the `signalstats` command
+   that reads the sidebar column back so a rebuild can be checked rather than assumed
 8. **Fixed: a staleness sweep over the whole repo, and the gate that should have caught most of it.**
    `tests/test_documents.py` read the root, `recipes/` and `extension/README.md`, and had never read
    `queries/` or `video/`. Six tracked documents were making unchecked claims about paths, not because
@@ -1196,10 +1219,12 @@ The machinery is built and tested. What is left on this list is the labelling it
       the person who wrote them and already knows which folder to pick. One outsider following the README
       cold, and whatever they trip on, is the whole of this row. It was worded as "the case study half"
       until day 8, which read as though `CASE_STUDY.md` were outstanding when it has existed since day 5
-- [ ] Explainer video, 20 points. **Script and shot list written: `VIDEO.md`.** Six shots, the uncut segment
-      specified step by step on `CO-22`, the three sentences to get exactly right, and what not to do on
-      camera. Recording it is yours. The refusal is the middle of the demo rather than a caveat at the end,
-      because a claim the tool declines to score is the argument
+- [x] Explainer video, 20 points. **Shot, cut, narrated and on the site: `site/media/explainer.mp4`, 3:33,
+      built by `video/scripts/explainer.py`.** `VIDEO.md` is the script and shot list it was cut from. The
+      audit runs on `CO-02` as one unbroken take, and the claim the tool refuses to score sits in the middle
+      of that take rather than as a caveat at the end, because a claim it declines to score is the argument.
+      Two known weaknesses are named in item 7 rather than smoothed over: one line lands away from the panel
+      it names, and the `FINDINGS.md` shot carries no narration
 - [x] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named and verified against its own
       documentation twice, the §5a failure condition declared before any data existed, and the §0a status
       table maintained rather than assembled at the end
