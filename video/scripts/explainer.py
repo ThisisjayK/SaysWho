@@ -38,15 +38,21 @@ take, and the join at frame 1416 is seamless because it is continuous in the sou
 from 47.2s onward sits at the same timestamp it did before, which is why the poster frame is still the
 poster frame.
 
-## What could not be fixed here
+## The script names what is on screen
 
-`ex-09` names the answer level refusal. Its picture home, the "No overall score" box, is only on screen
-between 1:15.7 and about 1:28, and the script's own wording ("the second refusal") forbids moving it ahead
-of `ex-08`. It sits at 2:09 instead, over the sources list, which is the closest honest slot. Fixing it
-properly means re-recording the scroll or rewriting the line.
+The first version had twelve lines and left three stretches with picture and no voice: the report panel
+opening on its verdict tally, the claim list scrolling, and twenty seconds of `FINDINGS.md` going past with
+nothing said about what it is. `ex-07`, `ex-09` and `ex-14` were written for those three, so every file the
+demo opens is now named and explained while it is on screen.
 
-The `FINDINGS.md` shot has no line of its own in the twelve line script, so it runs silent. That is left
-alone: `SOUND.md` says silence is the intended texture rather than an absence waiting to be filled.
+The whole script was then rewritten to be spoken rather than recited. Every figure survived that pass
+unchanged, and `ex-13` still carries the interval and the n, because kappa without them is the one sentence
+that would sink this video.
+
+`ex-11` is the one line still short of its picture. It names the answer level refusal, whose "No overall
+score" box is only up between 1:15.7 and about 1:28, and the script's own wording, "the second refusal",
+forbids moving it ahead of the grey claims it follows. It sits at 2:08 over the sources list. Fixing that
+properly means re-recording the scroll, not rewriting the line.
 """
 
 import subprocess
@@ -93,56 +99,73 @@ NARRATION = [
     ("film-title.wav", 1.25, "SaysWho reads them.",
      "the film's title card, left where it was"),
     ("ex-01.mp3", 2.95,
-     "Every answer here arrives with its sources attached. The citation is what does the persuading. "
-     "Nothing that produced this answer ever read them.",
+     "Every answer here arrives with its sources attached. The citation is the part that does the "
+     "persuading. And nothing that wrote this answer ever read them.",
      "the answer and its chips, 4.03 to 10.53"),
     ("ex-02.mp3", 12.60,
-     "So the questions came first. Twenty four of them, written and frozen with hashes before a single "
-     "answer was captured. If I had tuned one after seeing a result, this check fails. It passes.",
+     "So I wrote the questions first. Twenty four of them, frozen with hashes before I captured a single "
+     "answer. If I'd tuned one after seeing a result, this check fails. It passes.",
      "the freeze check, which prints OK at about 15.5"),
-    ("ex-03.mp3", 30.00,
-     "Capture works on its own. Verdicts need this: a local auditor that fetches every cited page and "
+    ("ex-03.mp3", 30.50,
+     "Capture works on its own. Verdicts need this one: a local auditor that fetches every cited page and "
      "reads it. It refuses to start unless its judge can actually answer.",
      "the server banner, which finishes printing at about 33.6"),
-    ("ex-04.mp3", 44.60,
-     "Capture takes the answer, hashes it, and lists every source it cites.",
+    ("ex-04.mp3", 44.50,
+     "So capture grabs the answer, hashes it, and lists every source it cites.",
      "the click lands at 44.20 and the panel draws at 44.30"),
-    ("ex-05.mp3", 49.30,
-     "And straight away it tells me something I would rather not know. Two controls are hiding citations "
-     "it could not reach. Across ten answers that is at least twenty missing out of fifty three. A tool "
-     "that did not count them would look more accurate and be less honest.",
+    ("ex-05.mp3", 49.00,
+     "And straight away it tells me something I'd rather not know. Two controls are hiding citations it "
+     "couldn't reach. Across ten answers that's at least twenty missing out of fifty three. A tool that "
+     "didn't count them would look more accurate and be less honest.",
      "INCOMPLETE is on the panel until it is dismissed at about 52.5"),
-    ("ex-06.mp3", 66.10,
-     "Now the audit. Every cited page fetched. Every claim judged against the page it points at. Every "
-     "quote checked by a script against the document that came back.",
+    ("ex-06.mp3", 66.20,
+     "Now the audit. Every cited page gets fetched. Every claim gets judged against the page it points "
+     "at. And every quote gets checked by a script against the document that came back.",
      "the audit is running, and the panel opens at 75.7 as the line ends"),
-    ("ex-07.mp3", 91.00,
-     "Here it is, claim by claim. Green means a passage was quoted and a script confirmed it is really on "
-     "the page. Rust means the page was read and does not say this, which is a statement about the "
+    ("ex-07.mp3", 77.60,
+     "So this is the report it writes. The answer's hash, the adapter it used to read the page, and every "
+     "claim sorted by what its source turned out to say. Six of the twelve aren't cited at all, so "
+     "they're listed and left unscored.",
+     "the panel opens on its tally and its No overall score box, 75.7 to about 88"),
+    ("ex-08.mp3", 92.00,
+     "Here it is, claim by claim. Green means it quoted a passage and a script confirmed that passage is "
+     "really on the page. Rust means the page was read and doesn't say this. That's a statement about the "
      "citation, not about the world.",
-     "the marked answer, then the green card at 96 and the rust card at 104"),
-    ("ex-08.mp3", 114.00,
-     "And three come back grey. Could not verify. Those pages could not be read, so nothing is scored. "
-     "Every other tool I looked at promises a number here. A number here is invented.",
+     "the green card at 96 and the rust card at 104"),
+    ("ex-09.mp3", 109.00,
+     "Every claim's here, including the ones with nothing to check. I could drop those and the report "
+     "would look tidier. It'd also tell you less.",
+     "the list opens, uncited rows and all"),
+    ("ex-10.mp3", 117.50,
+     "And three come back grey. Could not verify. Those pages couldn't be read, so nothing gets scored. "
+     "Every other tool I looked at promises you a number here. A number here is invented.",
      "ALL CLAIMS, with the three Could not verify rows on screen"),
-    ("ex-09.mp3", 129.60,
-     "Then the second refusal, which is the better one. No overall score, because more than half this "
+    ("ex-11.mp3", 128.50,
+     "Then the second refusal, and it's the better one. No overall score, because more than half this "
      "answer's cited claims produced no verdict that stands.",
      "the sources list, ending as the cut to the run readout lands"),
-    ("ex-10.mp3", 139.20,
-     "Ten answers, a hundred and thirty nine model calls. The stratum rate: withheld, with the gate naming "
-     "its own reason. Then the number that matters most, because it is about this tool and not about "
-     "anybody else's.",
+    ("ex-12.mp3", 139.10,
+     "Ten answers. A hundred and thirty nine model calls. The stratum rate is withheld, and the gate "
+     "names its own reason. Then the one number I care about most, because it's about this tool and not "
+     "about anybody else's.",
      "STRATUM RATE withheld is on screen from 143.9 to 150.5"),
-    ("ex-11.mp3", 153.20,
-     "Forty five claims labelled by hand, blind, before the judge saw any of them. Cohen's kappa is zero "
-     "point three zero, confidence interval zero point zero zero four to zero point six, over thirty five "
-     "pairs. That lower bound does not rule out chance, and it is published because it is unflattering.",
+    # Trimmed from a longer take. The readout shot runs 30.6s and this line plus the one before it have to
+    # end inside it, so the wind-up went and every figure stayed. The interval is not negotiable here.
+    ("ex-13.mp3", 152.40,
+     "Forty five claims, labelled blind before the judge saw them. Cohen's kappa is zero point three "
+     "zero, interval zero point zero zero four to zero point six, over thirty five pairs. That lower "
+     "bound doesn't rule out chance. It's published because it's unflattering.",
      "JUDGE AGAINST HUMAN, kappa and its interval, from about 156"),
-    ("ex-12.mp3", 192.10,
-     "One last row, the one I would leave out if I could. The real research questions this was built for "
-     "are gone, and retyping them from memory would have made a published sentence false. So it never "
-     "ran. The table says so.",
+    ("ex-14.mp3", 169.90,
+     "This is FINDINGS.md. It's where things that went wrong get written down while they're still "
+     "embarrassing. A research report that named fifteen sources and linked exactly one of them. A gate "
+     "that threw out an entire table because it looked like furniture. A span guard narrower than the "
+     "design document promised.",
+     "the FINDINGS.md shot, 169.4 to 189.5"),
+    ("ex-15.mp3", 192.10,
+     "One last row. The one I'd leave out if I could. The real research questions this was built for are "
+     "gone, and retyping them from memory would have made a published sentence false. So it never ran, "
+     "and the table says so.",
      "the blocker table lands at 202.3, under the last sentence"),
     ("film-close.wav", 205.75,
      "It cannot tell you a source is right. A well cited falsehood passes. It can tell you when nobody "

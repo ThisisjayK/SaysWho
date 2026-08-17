@@ -119,20 +119,41 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    because the kappa line cannot be shortened without dropping the interval that has to travel with it.
    Narration is positioned by scene and offset in `video/src/audio/narration.ts` rather than by frame, so
    the next retime carries its own voice with it. A bed was built, listened to in the cut, and rejected.
-   **The graded explainer is cut, narrated and wired into the site at 3:33.** It is assembled from three
-   screen recordings made 2026-08-16, bookended with the film's title and closing cards, and carries twelve
-   narration lines. `video/scripts/explainer.py` is the build, and it holds the segment table, every offset
-   and all twelve lines as written text, because `video/public/audio/` is gitignored on the rule that the
-   written line is the source and the mp3 is output, and because the first assembly of this cut existed only
-   in a temporary directory that gets wiped.
-   **Its narration was landing on the wrong picture, and has been re-timed against measured beats.** The
+   **The graded explainer is cut, narrated and wired into the site.** It is assembled from three screen
+   recordings made 2026-08-16 and carries fifteen narration lines. `video/scripts/explainer.py` is the build
+   and holds the segment table, every offset and all fifteen lines as written text, because
+   `video/public/audio/` is gitignored on the rule that the written line is the source and the mp3 is
+   output, and because the first assembly of this cut existed only in a temporary directory that gets wiped.
+   `video/scripts/explainer_tts.py` turns the written lines back into audio, so a wiped audio directory is a
+   command rather than a loss.
+   **The film and the walkthrough are one film now, `site/media/sayswho.mp4`, 5:20.** Two embeds asked a
+   reader to pick, and the explainer had already borrowed the film's title and closing cards, so playing
+   both in a row said two things twice. `video/scripts/consolidate.py` runs the film up to its closing card,
+   the walkthrough without the bookends it borrowed, then that closing card. Every trim point sits inside a
+   measured silence, so no word is clipped. The tail is a splice rather than a dissolve: crossfading the
+   closing card into itself one beat out of step prints the wordmark twice, which is what the second attempt
+   did, and taking the tail from 110.00 reopens on the calibration bars, which is what the first one did.
+   **The script now names every file it opens, and it was shortened in the wrong place first.** Three
+   stretches ran with picture and no voice: the report panel on its verdict tally, the claim list scrolling,
+   and twenty seconds of `FINDINGS.md`. The first repair trimmed 19 seconds of that footage out. That was
+   backwards. The picture was not too long, the script was too short, so three lines were written for those
+   three shots and the footage came back. The longest silence in the finished film is 7.0 seconds, against
+   22.8 before, and the four that remain are all beats between shots.
+   **Every line was then rewritten to be spoken rather than recited, and every figure survived it.** The
+   twelve line version used no contractions anywhere, which is not how anybody narrates their own screen.
+   The rewrite is checked against the numbers rather than trusted: 24 frozen questions, twenty of fifty
+   three citations missing, three grey claims, six of twelve uncited, 139 model calls, 45 blind labels. The
+   kappa line came back 20.4 seconds long against a readout shot of 30.6 that it has to share, so its
+   wind-up was cut and it was regenerated at 16.9. It still carries the interval and the n, which is the
+   only part of that sentence that was never available to cut.
+   **Its narration had been landing on the wrong picture, and was re-timed against measured beats.** The
    opening browser shot ran four seconds long, so the capture click and the panel printing `INCOMPLETE` were
    legible from 0:12 while the voice introduced capture at 0:49 and treated `INCOMPLETE` as news at 1:03.
    The click now sits at the head of the main browser run, every line is placed against a beat measured off
    the picture, and the blocker row is on screen under the sentence that points at it rather than 0.3
-   seconds after it. Two misses are recorded rather than fixed: `ex-09` names the answer level refusal while
-   the box showing it left the screen forty seconds earlier, because the line's own words forbid moving it
-   ahead of the line before it, and the `FINDINGS.md` shot runs 22.7 seconds with no line written for it.
+   seconds after it. One miss is recorded rather than fixed: `ex-11` names the answer level refusal while
+   the box showing it has left the screen, because the line's own words, "the second refusal", forbid moving
+   it ahead of the grey claims it follows. Fixing that means re-recording the scroll, not rewriting the line.
    **The sidebar mask had a hole in it, and the file with the hole was the one on disk.** The blur over the
    ChatGPT conversation titles started nine frames late on the second browser block, so between 47.20 and
    47.50 seconds every title was readable at full contrast. Spot checks at 6, 60, 96 and 130 seconds all
@@ -1219,12 +1240,13 @@ The machinery is built and tested. What is left on this list is the labelling it
       the person who wrote them and already knows which folder to pick. One outsider following the README
       cold, and whatever they trip on, is the whole of this row. It was worded as "the case study half"
       until day 8, which read as though `CASE_STUDY.md` were outstanding when it has existed since day 5
-- [x] Explainer video, 20 points. **Shot, cut, narrated and on the site: `site/media/explainer.mp4`, 3:33,
-      built by `video/scripts/explainer.py`.** `VIDEO.md` is the script and shot list it was cut from. The
-      audit runs on `CO-02` as one unbroken take, and the claim the tool refuses to score sits in the middle
-      of that take rather than as a caveat at the end, because a claim it declines to score is the argument.
-      Two known weaknesses are named in item 7 rather than smoothed over: one line lands away from the panel
-      it names, and the `FINDINGS.md` shot carries no narration
+- [x] Explainer video, 20 points. **One film, shot, cut, narrated and on the site:
+      `site/media/sayswho.mp4`, 5:20, built by `video/scripts/consolidate.py` out of the Remotion film and
+      the narrated walkthrough.** `VIDEO.md` is the script and shot list it was cut from. The audit runs on
+      `CO-02` as one unbroken take, and the claim the tool refuses to score sits in the middle of that take
+      rather than as a caveat at the end, because a claim it declines to score is the argument. One known
+      weakness is named in item 7 rather than smoothed over: the second refusal is spoken after the panel
+      showing it has scrolled away
 - [x] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named and verified against its own
       documentation twice, the §5a failure condition declared before any data existed, and the §0a status
       table maintained rather than assembled at the end
