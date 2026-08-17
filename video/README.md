@@ -1,10 +1,22 @@
-# The explainer film
+# The film
 
-A 90 second film about what SaysWho does, built in [Remotion](https://remotion.dev), which is video as
-React. 1920x1080, 30fps.
+Two things live here. The Remotion project, which is video as React, and the scripts that cut the live demo
+and join the two into the film the site carries.
 
-This is the short film. `../VIDEO.md` is the script and shot list for the longer graded cut, which contains
-the uncut demo segment the rubric asks for. Both are meant to share this design system.
+**The published file is `../site/media/sayswho.mp4`, 5:20, narrated.** It is the only video any page links.
+
+| | |
+|---|---|
+| `src/`, `remotion.config.ts` | The Remotion short. 1920x1080, 30fps, 3558 frames, 118.6s. `npx remotion render Film out/film.mp4` |
+| `scripts/explainer.py` | The live demo, recut so every narration line lands on the picture it describes, and masked so the ChatGPT sidebar cannot be read. Writes `out/explainer-web.mp4` |
+| `scripts/explainer_tts.py` | The fifteen narration lines, written in `explainer.py`, turned back into audio in the `SOUND.md` voice |
+| `scripts/consolidate.py` | The short and the demo, joined into one film. Writes `../site/media/sayswho.mp4` |
+
+Nothing in `out/` is published and nothing in it is committed. `site/media/` holds only what a page links,
+which is the film, its poster and the install clip.
+
+`../VIDEO.md` is the script and shot list the demo was cut from, with a section at the top on where the
+finished film departs from it.
 
 ```bash
 npm i
@@ -53,12 +65,16 @@ deny.
 | `src/audio/` | The soundtrack, silent until files land in `public/audio` and are named in the manifest. See `SOUND.md`. |
 | `src/footage.ts` | One flag. The browser scene is not in the cut until the take exists. See `RECORDING.md`. |
 
-## Two things it is missing
+## The two things it was missing, and no longer is
 
-**Sound.** `SOUND.md` has the cue sheet with timecodes and the narration script timed to the cut.
+**Sound.** Twenty six lines in the `SOUND.md` voice, positioned by scene and offset in
+`src/audio/narration.ts` so a retime carries its own narration. There is no music: a bed was built,
+listened to in the cut, and rejected.
 
-**The browser take.** `RECORDING.md` says what to record. The match cut into the frame and both camera
-pushes are built and switch on from `src/footage.ts`.
+**The browser take.** Shot 2026-08-16 and cut to 902 frames at `public/footage/audit.mp4`, so
+`src/footage.ts` says `present` and the match cut and both camera pushes are switched on. `RECORDING.md`
+lists where the take departs from what it asked for, including the one join where time is genuinely missing
+rather than compressed.
 
 ## The cue sheet
 

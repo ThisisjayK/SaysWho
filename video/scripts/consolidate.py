@@ -4,8 +4,9 @@ Run it from `video/`:
 
     python3 scripts/consolidate.py
 
-`site/media/film.mp4` is the two minute Remotion piece and `site/media/explainer.mp4` is the narrated
-walkthrough. They were separate embeds, and the explainer already borrows the film's title card to open on
+`out/film-web.mp4` is the two minute Remotion piece at web size and `out/explainer-web.mp4` is the
+narrated walkthrough. Both are build output and neither is published: only the film this script writes
+is. They were separate embeds on the site, and the explainer already borrows the film's title card to open on
 and its closing card to end on, so playing both in a row says two things twice.
 
 So the join is not a concatenation. The film plays up to its closing card, the explainer's body plays
@@ -25,7 +26,7 @@ the voice covers it.
 
 ## The mask still travels
 
-`site/media/explainer.mp4` carries the blur over the ChatGPT conversation titles, and the film's browser take
+`out/explainer-web.mp4` carries the blur over the ChatGPT conversation titles, and the film's browser take
 was shot with the sidebar collapsed, so neither input needs masking here. This script only trims and
 dissolves, so the pixels arrive as they left. Re-run the scan in `explainer.py` against the output anyway;
 the point of that scan is that it costs nothing and the failure it catches is invisible.
@@ -37,8 +38,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
 SITE = HERE.parent / "site" / "media"
-FILM = SITE / "film.mp4"
-EXPL = SITE / "explainer.mp4"
+OUTDIR = HERE / "out"
+FILM = OUTDIR / "film-web.mp4"
+EXPL = OUTDIR / "explainer-web.mp4"
 OUT = SITE / "sayswho.mp4"
 
 # source, start, end, crossfade into the next piece, what it is.

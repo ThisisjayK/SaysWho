@@ -20,7 +20,7 @@ terminal and card segments do not, because their text starts at x=128 and would 
 
 **Check after every rebuild, and do not take the absence of a report as proof:**
 
-    ffmpeg -v error -ss 47.2 -to 138.7 -i ../site/media/explainer.mp4 \
+    ffmpeg -v error -ss 47.2 -to 138.7 -i out/explainer-web.mp4 \
       -vf "crop=292:720:0:0,signalstats,metadata=print:key=lavfi.signalstats.YMAX:file=-" -f null -
 
 Any frame reporting `YMAX` above about 110 inside a browser block is a readable sidebar.
@@ -63,7 +63,7 @@ HERE = Path(__file__).resolve().parent.parent
 SOURCE = HERE / "out" / "explainer-masked.mp4"
 VO = HERE / "public" / "audio" / "explainer"
 WORK = HERE / "out" / "recut"
-OUT = HERE.parent / "site" / "media" / "explainer.mp4"
+OUT = HERE / "out" / "explainer-web.mp4"
 
 FPS = 30
 TOTAL_FRAMES = 6396

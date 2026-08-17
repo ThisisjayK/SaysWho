@@ -126,6 +126,8 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    output, and because the first assembly of this cut existed only in a temporary directory that gets wiped.
    `video/scripts/explainer_tts.py` turns the written lines back into audio, so a wiped audio directory is a
    command rather than a loss.
+   **`site/media/` holds only what a page links now.** The two cuts the film is built from moved to
+   `video/out/`, which is gitignored build output, so about 23 MB stopped deploying for nothing.
    **The film and the walkthrough are one film now, `site/media/sayswho.mp4`, 5:20.** Two embeds asked a
    reader to pick, and the explainer had already borrowed the film's title and closing cards, so playing
    both in a row said two things twice. `video/scripts/consolidate.py` runs the film up to its closing card,

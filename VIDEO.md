@@ -7,6 +7,32 @@ argument, and it belongs in the middle of the demo where nobody can miss it.
 **Every number below is from the day 9 run and checkable in `runs/day9/`.** Updated 2026-08-16, after that run
 landed. Nothing here is rounded in a flattering direction and nothing is quoted without its n.
 
+## What was delivered, 2026-08-16
+
+**`site/media/sayswho.mp4`, 5:20, narrated, published at
+[thisisjayk.github.io/SaysWho](https://thisisjayk.github.io/SaysWho/).** Inside the three to six minute
+window. Everything below is the plan it was cut from, kept because the departures are worth reading, not
+because it describes the file.
+
+Three departures, all deliberate:
+
+1. **It is one film, not two.** The Remotion short and the live walkthrough were separate embeds until the
+   page stopped asking a reader to pick. The short runs to its closing card, the walkthrough runs without
+   the title and closing cards it had borrowed from it, and that closing card ends the whole thing.
+   `video/scripts/consolidate.py`.
+2. **The shot list below is six shots. The walkthrough is seven.** The extra one is `FINDINGS.md`, and the
+   order differs: the answer, the frozen query set, the auditor starting, the whole audit in one take, the
+   run readout, `FINDINGS.md`, then `STATUS.md`.
+3. **`CO-02` is a new conversation, not the archived one behind `runs/day9/`.** Ten claims and a verdict mix
+   of its own. Nothing in the demo reads a figure off that recording; every number spoken comes from day 9,
+   and the two that describe what is on screen, three grey claims and six of twelve uncited, are checked
+   against `reports/report-chatgpt-20260816T2304300000.json`.
+
+The fifteen narration lines live in `video/scripts/explainer.py` with the offset each one is measured
+against, and `video/scripts/explainer_tts.py` regenerates the audio from them. The rule at the top of the
+next section is enforced there rather than remembered: the kappa line was regenerated shorter when it
+outgrew its shot, and it kept the interval and the n while losing its wind-up.
+
 ## The one line the video has to land
 
 Every other tool in `SCOPE.md` §1b answers "is this true" with a confidence score. This one answers a narrower

@@ -12,6 +12,11 @@ time, against the page that was actually fetched.
 Note: this is a graduate capstone, not a product. It is independent work and is not affiliated with Anthropic,
 OpenAI, Google or Perplexity. Their sites are named only because they are what it reads.
 
+There is a five minute film at [thisisjayk.github.io/SaysWho](https://thisisjayk.github.io/SaysWho/) which
+runs the whole thing on one real answer: a question captured on chatgpt.com, every cited page fetched, each
+claim marked, and both of the refusals. It is narrated, and the numbers in it carry their intervals for the
+same reason the ones below do.
+
 ## What it does
 
 Point it at an answer with footnotes. It splits the answer into individual factual claims, fetches every cited
@@ -160,8 +165,13 @@ SaysWho/
 │   ├── goldset.py          # Labels, agreement, kappa
 │   └── harness.py          # Run records, readout, trace table
 ├── tools/                  # Query freezing, binding, labelling, stratum runs, break attempts
-├── tests/                  # 826 tests, offline except the node parity check
+├── tests/                  # 839 tests, offline except the node parity check
 │   └── parity/
+├── site/                   # The three published pages, and the film they carry
+│   └── media/              # Only what a page links. Build inputs live in video/out/
+├── video/                  # The film: a Remotion project, and the cut of the live demo
+│   ├── src/                # Scenes, timing, narration positions, the soundtrack
+│   └── scripts/            # sync-run, the recut, the narration, the consolidation
 ├── queries/                # The frozen query strata
 ├── captures/               # Captured answers
 ├── splits/                 # Stored claim splits

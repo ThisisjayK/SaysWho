@@ -8,12 +8,16 @@ now checks that this number is true rather than leaving it to rot. This file car
 2026-08-14 while its own anchor made that date day 8, which was corrected on day 8 and is the smaller half of
 what day 8 found.
 
-**Day 10 moved no row in the tables below, and that is the accurate summary of it.** It was a correction day:
-a staleness sweep over every tracked document, one withdrawn finding, and the code fix behind the
-withdrawal. Nothing new was measured and nothing new was built, so every state below is day 9's state. What
+**Day 10 moved no row in the measurement tables below, and that is the accurate summary of it.** It was a
+correction day: a staleness sweep over every tracked document, one withdrawn finding, and the code fix behind
+the withdrawal. Nothing new was measured, so every state in the core and stretch tables is day 9's state. What
 changed is that three documents stopped claiming things that were not true, and the gate that should have
 caught two of them can now see the directories they lived in. `TODO.md` items 8 to 10 carry it, `FINDINGS.md`
 item 24 carries the withdrawal.
+
+**What day 10 did build is the film, and it is a deliverable rather than a measurement.** It quotes day 9 and
+measures nothing of its own, which is why no row above moved. See "The film, and the site that carries it"
+below, including the one thing on it that was nearly published and should not have been.
 
 **The one finding day 10 produced is a withdrawal, and it is the kind this project is built to make.** Day 9
 reported that `goldset.attribution` had cleared `extract.py` of the 13 judge-human disagreements. The check
@@ -184,6 +188,17 @@ the corrected extraction they now get 305 of 549 characters through, where the b
 about 170, and then fail on `non-Boston`, because the judge quoted `nonBoston` from an extraction that had
 dropped an en dash. A span quoted from text this tool no longer produces cannot be settled by re-checking. So
 the fabricated-span count over PDF sources stays separate from one over HTML, and stays withdrawn.
+
+## The film, and the site that carries it
+
+| Item | State | Note |
+|---|---|---|
+| The film | **done, `site/media/sayswho.mp4`, 5:20, narrated** | One film rather than two. The Remotion piece runs to its closing card, the live walkthrough runs without the bookends it had borrowed from that film, then the closing card ends it, so the title card is seen once and the two closing lines are heard once. Built by `video/scripts/consolidate.py` from two build outputs, neither of which is published. Fifteen narration lines, written in `video/scripts/explainer.py` and regenerated from there by `video/scripts/explainer_tts.py`, because `video/public/audio/` is gitignored on the rule that the written line is the source and the mp3 is output |
+| Every figure spoken aloud carries what it needs | **checked, not assumed** | The script was rewritten to be spoken rather than recited, and every number was checked across that pass: 24 frozen questions, at least twenty of fifty three citations missing, three grey claims, six of twelve uncited, 139 model calls, 45 blind labels. The kappa line came back 20.4s against a 30.6s shot it has to share, so its wind-up was cut and it was regenerated at 16.9s with the interval and the n intact. `VIDEO.md` names quoting kappa bare as the one thing that would sink the video, and that is enforced by rebuilding the line rather than by remembering |
+| The narration lands on the picture it describes | **fixed** | It did not. The opening browser shot ran four seconds long and carried the capture click with it, so the panel printing `INCOMPLETE` was legible from 0:12 while the voice introduced capture at 0:49 and treated `INCOMPLETE` as news at 1:03. The click moved to the head of the main browser run and all fourteen clips were re-placed against beats measured off the picture. One line is still short of its picture: the second refusal is spoken after the panel showing it has scrolled away, and the script's own wording forbids moving it earlier, so it needs a re-recorded scroll rather than a rewrite |
+| Three files went past unexplained | **fixed, and fixed the wrong way first** | The report panel, the claim list and twenty seconds of `FINDINGS.md` ran with picture and no voice. The first repair cut 19 seconds of that footage out. That was backwards: the picture was not too long, the script was too short. Three lines were written for those three shots, the footage came back, and the longest silence in the finished film is 7.0 seconds against 22.8 before |
+| The ChatGPT sidebar is masked | **done, and it had a hole** | The browser take carries real conversation titles. The render on disk already had a blur over them, but the blur started nine frames late on the second browser block: between 47.20 and 47.50 seconds every title was readable at full contrast. Spot checks at 6, 60, 96 and 130 seconds all missed it, which is what checking a time gate by sampling is worth. **The file with the hole was never published**: it was untracked, and the deployed page still pointed at the old B-roll. The mask is not a time gate now, `explainer.py` reapplies it over every browser frame, and its docstring carries the `signalstats` command that reads the sidebar column back |
+| The site publishes one video | **done** | `site/media/` holds only what a page links. The two cuts the film is built from moved to `video/out/`, which is gitignored build output, so about 23 MB stopped deploying for nothing |
 
 ## What changed on day 9, and what it means
 
