@@ -55,7 +55,7 @@ python3 -m sayswho.reextract <page.html> --capture <capture.json>
 python3 tools/freeze_queries.py check
 
 # privacy and honesty, shown passing. run_stratum runs this first and refuses to continue if it fails
-python3 tools/ethics_gate.py
+.venv/bin/python tools/ethics_gate.py
 ```
 
 ## What it produces

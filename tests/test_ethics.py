@@ -210,3 +210,26 @@ def test_the_cli_exits_zero_on_this_repository(capsys):
 
     assert ethics_gate.main(["--repo", str(REPO), "--no-suite"]) == 0
     assert "GATE PASSED" in capsys.readouterr().out
+
+
+def test_an_interpreter_without_pytest_says_so_rather_than_blaming_a_document(monkeypatch):
+    """The failure this prevents is a wrong diagnosis, not a missed one.
+
+    Every document naming this gate used to say `python3 tools/ethics_gate.py`, and on a machine where that
+    resolves to an interpreter without pytest, both honesty runs returned 1 with an empty stdout. The gate
+    rendered that as `no output` under the remedy "a document is claiming something untrue about this code",
+    which is a sentence that sends somebody hunting a prose bug that does not exist. The gate should still
+    fail, because honesty really was not checked, and it should name the interpreter.
+    """
+    def no_pytest(cmd, *args, **kwargs):
+        if cmd[1:] == ["-c", "import pytest"]:
+            return subprocess.CompletedProcess(cmd, 1, "", "No module named pytest")
+        raise AssertionError("the gate ran an honesty test after the probe said pytest was missing")
+
+    monkeypatch.setattr("sayswho.ethics.subprocess.run", no_pytest)
+    checks, _skipped = honesty_checks(REPO)
+
+    assert len(checks) == 1, "one accurate check, not two misleading ones"
+    assert not checks[0].passed, "honesty was not checked, so it must not report a pass"
+    assert "pytest" in checks[0].name
+    assert ".venv/bin/python" in checks[0].remedy, "the remedy has to name the interpreter that works"

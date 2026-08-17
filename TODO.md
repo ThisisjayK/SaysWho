@@ -1193,7 +1193,7 @@ The machinery is built and tested. What is left on this list is the labelling it
 ## The ethics gate
 
 - [x] **Privacy and honesty, shown passing rather than promised.** `sayswho/ethics.py` and
-      `python3 tools/ethics_gate.py`. The attestation row asks for the gate passing, and a paragraph saying
+      `.venv/bin/python tools/ethics_gate.py`. The attestation row asks for the gate passing, and a paragraph saying
       the contract holds is not evidence that it does, which is the argument this whole project rests on
 - [x] Privacy checked against git, not against the `.gitignore` text. Four checks: nothing private staged,
       nothing private already tracked (ignoring a directory does not untrack what is in it), every private
@@ -1223,11 +1223,18 @@ The machinery is built and tested. What is left on this list is the labelling it
       the trace table never having run over real data, which it now has: `runs/day7/TRACE.md` is generated
       from the run rather than typed. The §4 boundary table is generated from `sayswho/boundary.py` and
       `tests/test_documents.py` fails if the document and the code disagree. The gate output is
-      `python3 tools/ethics_gate.py`. What this replaces, kept because deleting it would hide the change:
+      `.venv/bin/python tools/ethics_gate.py`. **That command was wrong in five places until 2026-08-16, and
+      the row it supports is the one that asks for the gate shown passing.** Every document said `python3`,
+      which on this machine resolves to an interpreter without pytest, so a reader following the recipe got
+      `GATE FAILED` on a repository where the gate passes. `ethics.py` had already learned this and used
+      `sys.executable`; the documents had not. The same bug was found and fixed for the popup's server
+      command on day 9 and missed here. The gate now probes for pytest first and names the interpreter
+      instead of reporting that a document is claiming something untrue, and a test fires on that
+      misdiagnosis. What this replaces, kept because deleting it would hide the change:
 - [x] ~~Verified-data attestation, blocked on the trace table.~~ Two of the three parts were done. The §4 boundary table is
       generated from `sayswho/boundary.py` rather than typed, carries all seven classifications, and
       `tests/test_documents.py` fails if the document and the code disagree or if a run record emits a field
-      no row covers. The privacy and honesty gate output is `python3 tools/ethics_gate.py`. The per-number
+      no row covers. The privacy and honesty gate output is `.venv/bin/python tools/ethics_gate.py`. The per-number
       trace table exists and is generated, but it has never run over real data, which is the blocker
 - [x] The honest run, 35 points. All five parts exist: `runs/day7/` holds the transcript and the metric
       readout, the plausibility audit is written and signed as a judgement in `FINDINGS.md` item 21, break

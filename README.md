@@ -165,7 +165,7 @@ SaysWho/
 │   ├── goldset.py          # Labels, agreement, kappa
 │   └── harness.py          # Run records, readout, trace table
 ├── tools/                  # Query freezing, binding, labelling, stratum runs, break attempts
-├── tests/                  # 839 tests, offline except the node parity check
+├── tests/                  # 840 tests, offline except the node parity check
 │   └── parity/
 ├── site/                   # The three published pages, and the film they carry
 │   └── media/              # Only what a page links. Build inputs live in video/out/

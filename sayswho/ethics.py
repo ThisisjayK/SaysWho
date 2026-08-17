@@ -238,6 +238,21 @@ def honesty_checks(repo: Path, run_suite: bool = True) -> tuple[list[Check], lis
         skipped.append("the honesty tests were not run, so this half of the gate says nothing")
         return checks, skipped
 
+    # Probe once, before running anything. `sys.executable` is the interpreter that launched this gate, and
+    # if it has no pytest then every run below returns 1 with an empty stdout, which renders as "no output"
+    # under a remedy telling somebody to go and find the document that is lying. There is no such document.
+    # It is the wrong interpreter, and saying so is the difference between a two-second fix and an afternoon.
+    # Every document naming this gate says to launch it with `.venv/bin/python` for exactly this reason.
+    probe = subprocess.run([sys.executable, "-c", "import pytest"], capture_output=True, text=True)
+    if probe.returncode != 0:
+        checks.append(Check(
+            "pytest is importable by this interpreter", False,
+            f"{sys.executable} cannot import pytest, so neither honesty test ran",
+            "launch the gate with the interpreter holding the dependencies: "
+            "`.venv/bin/python tools/ethics_gate.py`",
+        ))
+        return checks, skipped
+
     for path in HONESTY_TESTS:
         if not (repo / path).exists():
             checks.append(Check(
