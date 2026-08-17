@@ -7,6 +7,15 @@
 # be a version behind the code it claims to be.
 #
 # One manual step, once: Settings, Pages, Source, GitHub Actions.
+#
+# Action versions, bumped 2026-08-16 because every one of them was running on a
+# forced Node 24 fallback and printing a deprecation annotation on every run. All
+# five majors between the old pins and these are the Node 24 move and nothing
+# else, checked against their release notes rather than assumed. Two behaviour
+# changes came with them and neither touches this workflow: `upload-pages-artifact`
+# v4 stopped putting dotfiles in the artifact, and `site/` has none, so nothing
+# silently stops publishing; `checkout` v7 blocks checking out a fork PR under
+# `pull_request_target` and `workflow_run`, and this runs on `push`.
 
 name: Pages
 
@@ -30,9 +39,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -59,9 +68,9 @@ jobs:
           print(f"archive ok: {len(names)} files")
           PY
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -73,4 +82,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
