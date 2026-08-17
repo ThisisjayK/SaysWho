@@ -27,6 +27,12 @@ Three departures, all deliberate:
    of its own. Nothing in the demo reads a figure off that recording; every number spoken comes from day 9,
    and the two that describe what is on screen, three grey claims and six of twelve uncited, are checked
    against `reports/report-chatgpt-20260816T2304300000.json`.
+4. **Step 8 of the segment below, "then the second refusal", is not how the film says it.** That wording
+   needs the claim level refusal to come first, and in this recording the panel puts the answer level one at
+   the top of the report and never scrolls back to it, so saying it in plan order meant saying it forty five
+   seconds after its box had gone. The refusal is now spoken while that box is up, which puts it before the
+   grey claims rather than after them. Both refusals are still in the middle of the take, which is what this
+   document actually cares about. The framing was spent deliberately and is recorded in `STATUS.md`.
 
 The fifteen narration lines live in `video/scripts/explainer.py` with the offset each one is measured
 against, and `video/scripts/explainer_tts.py` regenerates the audio from them. The rule at the top of the

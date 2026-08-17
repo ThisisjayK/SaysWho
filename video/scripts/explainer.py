@@ -49,10 +49,20 @@ The whole script was then rewritten to be spoken rather than recited. Every figu
 unchanged, and `ex-13` still carries the interval and the n, because kappa without them is the one sentence
 that would sink this video.
 
-`ex-11` is the one line still short of its picture. It names the answer level refusal, whose "No overall
-score" box is only up between 1:15.7 and about 1:28, and the script's own wording, "the second refusal",
-forbids moving it ahead of the grey claims it follows. It sits at 2:08 over the sources list. Fixing that
-properly means re-recording the scroll, not rewriting the line.
+## The answer level refusal now happens where its box is
+
+It used to be `ex-11`, spoken at 2:08 over the sources list, about forty five seconds after the "No overall
+score" box had scrolled away. It could not simply move, because it opened "then the second refusal", which
+made it dependent on the grey claims at 1:57 coming first.
+
+So the refusal moved into `ex-07`, where the box actually is, and leads that line rather than trailing it:
+the box is readable from 75.7 to about 84 and never returns, so the sentence naming it has to be the first
+one out. `ex-11` was rewritten for what is on screen in its own slot, the sources and the gate G1 skip.
+
+The film keeps both refusals and loses the "first, then second" framing, which is a real cost and was
+approved rather than assumed. They are now spoken in the order the report itself presents them: the answer
+level refusal at the top of the panel, then the claim level one when the grey rows are on screen. `ex-10`
+still ends on "a number here is invented" and was not touched.
 """
 
 import subprocess
@@ -110,40 +120,47 @@ NARRATION = [
      "Capture works on its own. Verdicts need this one: a local auditor that fetches every cited page and "
      "reads it. It refuses to start unless its judge can actually answer.",
      "the server banner, which finishes printing at about 33.6"),
-    ("ex-04.mp3", 44.50,
+    ("ex-04.mp3", 43.20,
      "So capture grabs the answer, hashes it, and lists every source it cites.",
      "the click lands at 44.20 and the panel draws at 44.30"),
-    ("ex-05.mp3", 49.00,
+    ("ex-05.mp3", 47.70,
      "And straight away it tells me something I'd rather not know. Two controls are hiding citations it "
      "couldn't reach. Across ten answers that's at least twenty missing out of fifty three. A tool that "
      "didn't count them would look more accurate and be less honest.",
      "INCOMPLETE is on the panel until it is dismissed at about 52.5"),
-    ("ex-06.mp3", 66.20,
+    ("ex-06.mp3", 64.85,
      "Now the audit. Every cited page gets fetched. Every claim gets judged against the page it points "
      "at. And every quote gets checked by a script against the document that came back.",
      "the audit is running, and the panel opens at 75.7 as the line ends"),
-    ("ex-07.mp3", 77.60,
-     "So this is the report it writes. The answer's hash, the adapter it used to read the page, and every "
-     "claim sorted by what its source turned out to say. Six of the twelve aren't cited at all, so "
-     "they're listed and left unscored.",
-     "the panel opens on its tally and its No overall score box, 75.7 to about 88"),
+    # Leads with the refusal on purpose. The "No overall score" box is readable from 75.7 to about 84 and
+    # never comes back, so the sentence naming it has to be the first one out, not the last.
+    ("ex-07.mp3", 76.00,
+     "So this is the report. No overall score, because more than half this answer's cited claims produced "
+     "no verdict that stands. Under that, every claim sorted by what its source turned out to say, and "
+     "six of the twelve with no citation to check at all.",
+     "the panel opens on its tally and its No overall score box, readable 75.7 to about 84"),
     ("ex-08.mp3", 92.00,
      "Here it is, claim by claim. Green means it quoted a passage and a script confirmed that passage is "
      "really on the page. Rust means the page was read and doesn't say this. That's a statement about the "
      "citation, not about the world.",
      "the green card at 96 and the rust card at 104"),
-    ("ex-09.mp3", 109.00,
+    ("ex-09.mp3", 108.50,
      "Every claim's here, including the ones with nothing to check. I could drop those and the report "
      "would look tidier. It'd also tell you less.",
      "the list opens, uncited rows and all"),
-    ("ex-10.mp3", 117.50,
+    ("ex-10.mp3", 116.50,
      "And three come back grey. Could not verify. Those pages couldn't be read, so nothing gets scored. "
      "Every other tool I looked at promises you a number here. A number here is invented.",
      "ALL CLAIMS, with the three Could not verify rows on screen"),
-    ("ex-11.mp3", 128.50,
-     "Then the second refusal, and it's the better one. No overall score, because more than half this "
-     "answer's cited claims produced no verdict that stands.",
-     "the sources list, ending as the cut to the run readout lands"),
+    # This line used to be the answer level refusal, spoken forty five seconds after the box showing it had
+    # scrolled away. The refusal moved to `ex-07`, where its picture is, and this slot got a line about what
+    # is actually on screen here. Both figures are checked against
+    # `reports/report-chatgpt-20260816T2304300000.json`: two sources, one `SOURCE_OK` and one
+    # `SOURCE_DEAD_LINK`, and 8 skipped lines.
+    ("ex-11.mp3", 127.20,
+     "And the sources it worked from. One fetched, one a dead link, which is where those three grey claims "
+     "came from. Under them, the eight lines it didn't treat as claims, listed rather than dropped.",
+     "SOURCES and SKIPPED BY GATE G1, ending as the cut to the run readout lands"),
     ("ex-12.mp3", 139.10,
      "Ten answers. A hundred and thirty nine model calls. The stratum rate is withheld, and the gate "
      "names its own reason. Then the one number I care about most, because it's about this tool and not "

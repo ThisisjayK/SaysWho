@@ -153,9 +153,16 @@ withholding is enough. `runs/day9/` and `FINDINGS.md` item 24.
    legible from 0:12 while the voice introduced capture at 0:49 and treated `INCOMPLETE` as news at 1:03.
    The click now sits at the head of the main browser run, every line is placed against a beat measured off
    the picture, and the blocker row is on screen under the sentence that points at it rather than 0.3
-   seconds after it. One miss is recorded rather than fixed: `ex-11` names the answer level refusal while
-   the box showing it has left the screen, because the line's own words, "the second refusal", forbid moving
-   it ahead of the grey claims it follows. Fixing that means re-recording the scroll, not rewriting the line.
+   seconds after it.
+   **The answer level refusal now happens where its box is, which cost two rewritten lines.** It was spoken
+   at 3:55, about forty five seconds after the "No overall score" box had scrolled away, and it could not
+   just move: the line opened "then the second refusal", so it depended on the grey claims at 3:44 coming
+   first. The refusal moved into the line that already sits over that box and now leads it, because the box
+   is readable from 3:02.8 to about 3:11 and never comes back. The slot it left got a line about what is
+   actually on screen there, the sources and the gate G1 skip, both checked against
+   `reports/report-chatgpt-20260816T2304300000.json`. The film keeps both refusals and loses the "first,
+   then second" framing, which was approved rather than assumed: they now arrive in the order the report
+   itself presents them, and the claim level one still ends on "a number here is invented".
    **The sidebar mask had a hole in it, and the file with the hole was the one on disk.** The blur over the
    ChatGPT conversation titles started nine frames late on the second browser block, so between 47.20 and
    47.50 seconds every title was readable at full contrast. Spot checks at 6, 60, 96 and 130 seconds all
@@ -1245,10 +1252,9 @@ The machinery is built and tested. What is left on this list is the labelling it
 - [x] Explainer video, 20 points. **One film, shot, cut, narrated and on the site:
       `site/media/sayswho.mp4`, 5:20, built by `video/scripts/consolidate.py` out of the Remotion film and
       the narrated walkthrough.** `VIDEO.md` is the script and shot list it was cut from. The audit runs on
-      `CO-02` as one unbroken take, and the claim the tool refuses to score sits in the middle of that take
-      rather than as a caveat at the end, because a claim it declines to score is the argument. One known
-      weakness is named in item 7 rather than smoothed over: the second refusal is spoken after the panel
-      showing it has scrolled away
+      `CO-02` as one unbroken take, and both of the refusals sit in the middle of that take rather than as a
+      caveat at the end, because a claim the tool declines to score is the argument. Each is spoken while
+      the panel showing it is on screen, which took two rewritten lines and is recorded in item 7
 - [x] Honesty overlay, 10 points. Calibrated verbs throughout, prior art named and verified against its own
       documentation twice, the §5a failure condition declared before any data existed, and the §0a status
       table maintained rather than assembled at the end
